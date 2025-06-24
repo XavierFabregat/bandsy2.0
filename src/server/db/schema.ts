@@ -55,6 +55,7 @@ export const users = createTable(
       .default(sql`CURRENT_TIMESTAMP`)
       .notNull(),
     updatedAt: d.timestamp({ withTimezone: true }).$onUpdate(() => new Date()),
+    deletedAt: d.timestamp({ withTimezone: true }), // for soft delete
   }),
   (t) => [
     index("users_clerk_id_idx").on(t.clerkId),
