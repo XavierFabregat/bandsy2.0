@@ -23,13 +23,13 @@
   - [x] Create `.env.local` file
   - [x] Add `DATABASE_URL` for PostgreSQL
   - [x] Add Clerk authentication keys
-  - [ ] Add UploadThing keys for file uploads
+  - [x] Add UploadThing keys for file uploads
 - [x] **Configure database connection**
   - [x] Test database connectivity
   - [x] Set up database pooling for production
-- [ ] **Set up file upload service**
-  - [ ] Install and configure UploadThing
-  - [ ] Set up audio/video upload endpoints
+- [x] **Set up file upload service**
+  - [x] Install and configure UploadThing
+  - [x] Set up audio/video upload endpoints
 
 ### Themeing W/ Shadcn
 
