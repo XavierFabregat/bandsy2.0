@@ -4,7 +4,7 @@ import { browseUsers, getInstruments, getGenres } from "@/server/queries";
 import type { BrowseFilters } from "@/types/api";
 
 interface BrowsePageProps {
-  searchParams: {
+  searchParams: Promise<{
     page?: string;
     search?: string;
     instrument?: string;
@@ -13,7 +13,7 @@ interface BrowsePageProps {
     location?: string;
     sortBy?: string;
     sortOrder?: string;
-  };
+  }>;
 }
 
 export default async function BrowsePage({ searchParams }: BrowsePageProps) {
@@ -23,21 +23,24 @@ export default async function BrowsePage({ searchParams }: BrowsePageProps) {
     redirect("/sign-in");
   }
 
+  // Await searchParams (Next.js 15 change)
+  const params = await searchParams;
+
   // Parse filters from search params
   const filters: BrowseFilters = {
-    page: searchParams.page ? parseInt(searchParams.page) : 1,
-    search: searchParams.search ?? "",
-    instrument: searchParams.instrument,
-    genre: searchParams.genre,
-    skillLevel: searchParams.skillLevel as
+    page: params.page ? parseInt(params.page) : 1,
+    search: params.search ?? "",
+    instrument: params.instrument,
+    genre: params.genre,
+    skillLevel: params.skillLevel as
       | "beginner"
       | "intermediate"
       | "advanced"
       | "professional"
       | undefined,
-    location: searchParams.location,
-    sortBy: searchParams.sortBy as "recent" | "name" | "location" | undefined,
-    sortOrder: searchParams.sortOrder as "asc" | "desc" | undefined,
+    location: params.location,
+    sortBy: params.sortBy as "recent" | "name" | "location" | undefined,
+    sortOrder: params.sortOrder as "asc" | "desc" | undefined,
   };
 
   // Fetch data using server-side queries
