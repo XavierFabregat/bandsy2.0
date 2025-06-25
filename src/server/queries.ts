@@ -285,3 +285,33 @@ export async function getInstruments() {
 export async function getGenres() {
   return db.select().from(genres).orderBy(genres.name);
 }
+
+export async function getUserInstruments(clerkId: string) {
+  const result = await db
+    .select({
+      instrumentId: userInstruments.instrumentId,
+      skillLevel: userInstruments.skillLevel,
+      yearsOfExperience: userInstruments.yearsOfExperience,
+      isPrimary: userInstruments.isPrimary,
+    })
+    .from(userInstruments)
+    .innerJoin(users, eq(userInstruments.userId, users.id))
+    .where(eq(users.clerkId, clerkId))
+    .orderBy(userInstruments.isPrimary, userInstruments.createdAt);
+
+  return result;
+}
+
+export async function getUserGenres(clerkId: string) {
+  const result = await db
+    .select({
+      genreId: userGenres.genreId,
+      preference: userGenres.preference,
+    })
+    .from(userGenres)
+    .innerJoin(users, eq(userGenres.userId, users.id))
+    .where(eq(users.clerkId, clerkId))
+    .orderBy(userGenres.preference, userGenres.createdAt);
+
+  return result;
+}

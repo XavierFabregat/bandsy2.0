@@ -1,89 +1,37 @@
-"use client";
+import { auth } from "@clerk/nextjs/server";
+import { redirect } from "next/navigation";
+import { db } from "@/server/db";
+import { users } from "@/server/db/schema";
+import { eq } from "drizzle-orm";
+import { LocationForm } from "../location-form";
 
-import type { ProfileSetupData } from "../profile-setup-wizard";
+export default async function LocationStep() {
+  const { userId } = await auth();
 
-interface LocationStepProps {
-  formData: ProfileSetupData;
-  updateFormData: (updates: Partial<ProfileSetupData>) => void;
-  userId: string;
-}
+  if (!userId) {
+    redirect("/sign-in");
+  }
 
-export function LocationStep({ formData, updateFormData }: LocationStepProps) {
-  return (
-    <div className="space-y-6">
-      <div className="text-center">
-        <h3 className="text-foreground mb-2 text-lg font-medium">
-          Where are you located?
-        </h3>
-        <p className="text-muted-foreground text-sm">
-          This helps us find musicians near you
-        </p>
-      </div>
+  // Fetch user location data
+  const user = await db
+    .select({
+      city: users.city,
+      region: users.region,
+      country: users.country,
+      latitude: users.latitude,
+      longitude: users.longitude,
+    })
+    .from(users)
+    .where(eq(users.clerkId, userId))
+    .limit(1);
 
-      <div className="space-y-4">
-        {/* City */}
-        <div>
-          <label
-            htmlFor="city"
-            className="text-foreground mb-2 block text-sm font-medium"
-          >
-            City *
-          </label>
-          <input
-            type="text"
-            id="city"
-            value={formData.city}
-            onChange={(e) => updateFormData({ city: e.target.value })}
-            className="border-border text-foreground bg-background focus:border-primary focus:ring-primary w-full rounded-lg border px-3 py-2 focus:ring-1 focus:outline-none"
-            placeholder="e.g., San Francisco"
-          />
-        </div>
+  const userLocation = user[0] ?? {
+    city: null,
+    region: null,
+    country: null,
+    latitude: null,
+    longitude: null,
+  };
 
-        {/* Region/State */}
-        <div>
-          <label
-            htmlFor="region"
-            className="text-foreground mb-2 block text-sm font-medium"
-          >
-            Region/State *
-          </label>
-          <input
-            type="text"
-            id="region"
-            value={formData.region}
-            onChange={(e) => updateFormData({ region: e.target.value })}
-            className="border-border text-foreground bg-background focus:border-primary focus:ring-primary w-full rounded-lg border px-3 py-2 focus:ring-1 focus:outline-none"
-            placeholder="e.g., California"
-          />
-        </div>
-
-        {/* Country */}
-        <div>
-          <label
-            htmlFor="country"
-            className="text-foreground mb-2 block text-sm font-medium"
-          >
-            Country *
-          </label>
-          <input
-            type="text"
-            id="country"
-            value={formData.country}
-            onChange={(e) => updateFormData({ country: e.target.value })}
-            className="border-border text-foreground bg-background focus:border-primary focus:ring-primary w-full rounded-lg border px-3 py-2 focus:ring-1 focus:outline-none"
-            placeholder="e.g., United States"
-          />
-        </div>
-      </div>
-
-      <div className="bg-muted border-border rounded-lg border p-4">
-        <h3 className="text-foreground mb-2 font-medium">Privacy Note:</h3>
-        <p className="text-muted-foreground text-sm">
-          Your exact location is never shared. We only use this information to
-          help you find musicians in your area. You can always update your
-          location later.
-        </p>
-      </div>
-    </div>
-  );
+  return <LocationForm userLocation={userLocation} />;
 }
