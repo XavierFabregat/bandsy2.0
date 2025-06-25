@@ -19,7 +19,7 @@
 
 ### Environment & Configuration
 
-- [ ] **Set up environment variables**
+- [x] **Set up environment variables**
   - [x] Create `.env.local` file
   - [x] Add `DATABASE_URL` for PostgreSQL
   - [x] Add Clerk authentication keys
