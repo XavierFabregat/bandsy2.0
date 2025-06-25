@@ -4,6 +4,7 @@ import { Geist, Geist_Mono } from "next/font/google";
 import "@/styles/globals.css";
 import { ThemeProvider } from "@/providers/theme-provider";
 import { ModeToggle } from "./_components/mode-toggle";
+import { ProfileGuardClient } from "@/components/profile-guard-client";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -38,6 +39,7 @@ export default function RootLayout({
             disableTransitionOnChange
           >
             <ModeToggle />
+            <ProfileGuardClient />
             {children}
           </ThemeProvider>
         </body>
