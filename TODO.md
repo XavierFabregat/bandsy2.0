@@ -31,10 +31,14 @@
   - [ ] Install and configure UploadThing
   - [ ] Set up audio/video upload endpoints
 
+### Themeing W/ Shadcn
+
+- [x] Set up super early themeing w/ Shadcn
+
 ### Authentication & User Management
 
 - [ ] **Complete Clerk integration**
-  - [ ] Test sign up/sign in flow
+  - [x] Test sign up/sign in flow
   - [ ] Add user profile creation after signup
   - [ ] Implement user session management
 - [ ] **Create user profile system**

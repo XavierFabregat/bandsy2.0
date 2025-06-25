@@ -49,23 +49,25 @@ export default async function BrowsePage({ searchParams }: BrowsePageProps) {
 
   return (
     <div className="container mx-auto px-4 py-8">
-      <h1 className="mb-8 text-3xl font-bold text-white">Browse Musicians</h1>
+      <h1 className="text-foreground mb-8 text-3xl font-bold">
+        Browse Musicians
+      </h1>
 
       {/* Filters Section */}
-      <div className="mb-8 rounded-lg bg-white/5 p-6">
-        <h2 className="mb-4 text-xl font-semibold text-white">Filters</h2>
+      <div className="bg-muted/50 mb-8 rounded-lg p-6">
+        <h2 className="text-foreground mb-4 text-xl font-semibold">Filters</h2>
         <form className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
           <input
             type="text"
             name="search"
             placeholder="Search musicians..."
             defaultValue={filters.search}
-            className="rounded-lg bg-white/10 px-4 py-2 text-white placeholder-gray-400"
+            className="bg-background border-input text-foreground placeholder-muted-foreground focus:ring-ring rounded-lg border px-4 py-2 focus:ring-2 focus:outline-none"
           />
           <select
             name="instrument"
             defaultValue={filters.instrument}
-            className="rounded-lg bg-white/10 px-4 py-2 text-white"
+            className="bg-background border-input text-foreground focus:ring-ring rounded-lg border px-4 py-2 focus:ring-2 focus:outline-none"
           >
             <option value="">All Instruments</option>
             {instruments.map((instrument) => (
@@ -77,7 +79,7 @@ export default async function BrowsePage({ searchParams }: BrowsePageProps) {
           <select
             name="genre"
             defaultValue={filters.genre}
-            className="rounded-lg bg-white/10 px-4 py-2 text-white"
+            className="bg-background border-input text-foreground focus:ring-ring rounded-lg border px-4 py-2 focus:ring-2 focus:outline-none"
           >
             <option value="">All Genres</option>
             {genres.map((genre) => (
@@ -88,7 +90,7 @@ export default async function BrowsePage({ searchParams }: BrowsePageProps) {
           </select>
           <button
             type="submit"
-            className="rounded-lg bg-[#6c47ff] px-4 py-2 font-semibold text-white hover:bg-[#5a3fd8]"
+            className="bg-primary text-primary-foreground hover:bg-primary/90 rounded-lg px-4 py-2 font-semibold transition-colors"
           >
             Apply Filters
           </button>
@@ -98,7 +100,7 @@ export default async function BrowsePage({ searchParams }: BrowsePageProps) {
       {/* Results Section */}
       <div className="mb-8">
         <div className="mb-4 flex items-center justify-between">
-          <p className="text-gray-300">
+          <p className="text-muted-foreground">
             Showing {usersResult.data.length} of {usersResult.pagination.total}{" "}
             musicians
           </p>
@@ -106,7 +108,7 @@ export default async function BrowsePage({ searchParams }: BrowsePageProps) {
             <select
               name="sortBy"
               defaultValue={filters.sortBy}
-              className="rounded-lg bg-white/10 px-3 py-1 text-sm text-white"
+              className="bg-background border-input text-foreground focus:ring-ring rounded-lg border px-3 py-1 text-sm focus:ring-2 focus:outline-none"
             >
               <option value="recent">Recent</option>
               <option value="name">Name</option>
@@ -115,7 +117,7 @@ export default async function BrowsePage({ searchParams }: BrowsePageProps) {
             <select
               name="sortOrder"
               defaultValue={filters.sortOrder}
-              className="rounded-lg bg-white/10 px-3 py-1 text-sm text-white"
+              className="bg-background border-input text-foreground focus:ring-ring rounded-lg border px-3 py-1 text-sm focus:ring-2 focus:outline-none"
             >
               <option value="desc">Desc</option>
               <option value="asc">Asc</option>
@@ -128,40 +130,46 @@ export default async function BrowsePage({ searchParams }: BrowsePageProps) {
           {usersResult.data.map((user) => (
             <div
               key={user.id}
-              className="rounded-lg bg-white/5 p-6 transition hover:bg-white/10"
+              className="bg-card border-border hover:bg-muted/50 rounded-lg border p-6 transition-colors"
             >
               <div className="mb-4 flex items-center gap-4">
                 <img
                   src={user.profileImageUrl ?? "/default-avatar.png"}
                   alt={user.displayName}
-                  className="h-16 w-16 rounded-full object-cover"
+                  className="border-border h-16 w-16 rounded-full border object-cover"
                 />
                 <div>
-                  <h3 className="text-lg font-semibold text-white">
+                  <h3 className="text-foreground text-lg font-semibold">
                     {user.displayName}
                   </h3>
-                  <p className="text-sm text-gray-300">@{user.username}</p>
+                  <p className="text-muted-foreground text-sm">
+                    @{user.username}
+                  </p>
                   {user.city && (
-                    <p className="text-sm text-gray-400">📍 {user.city}</p>
+                    <p className="text-muted-foreground text-sm">
+                      📍 {user.city}
+                    </p>
                   )}
                 </div>
               </div>
 
               {user.bio && (
-                <p className="mb-4 line-clamp-2 text-gray-300">{user.bio}</p>
+                <p className="text-muted-foreground mb-4 line-clamp-2">
+                  {user.bio}
+                </p>
               )}
 
               {/* Instruments */}
               {user.instruments.length > 0 && (
                 <div className="mb-3">
-                  <h4 className="mb-2 text-sm font-semibold text-white">
+                  <h4 className="text-foreground mb-2 text-sm font-semibold">
                     Instruments
                   </h4>
                   <div className="flex flex-wrap gap-1">
                     {user.instruments.map((instrument) => (
                       <span
                         key={instrument.id}
-                        className="rounded-full bg-[#6c47ff]/20 px-2 py-1 text-xs text-[#6c47ff]"
+                        className="bg-primary/10 text-primary border-primary/20 rounded-full border px-2 py-1 text-xs"
                       >
                         {instrument.name} ({instrument.skillLevel})
                       </span>
@@ -173,20 +181,20 @@ export default async function BrowsePage({ searchParams }: BrowsePageProps) {
               {/* Genres */}
               {user.genres.length > 0 && (
                 <div className="mb-4">
-                  <h4 className="mb-2 text-sm font-semibold text-white">
+                  <h4 className="text-foreground mb-2 text-sm font-semibold">
                     Genres
                   </h4>
                   <div className="flex flex-wrap gap-1">
                     {user.genres.slice(0, 3).map((genre) => (
                       <span
                         key={genre.id}
-                        className="rounded-full bg-white/10 px-2 py-1 text-xs text-white"
+                        className="bg-secondary text-secondary-foreground rounded-full px-2 py-1 text-xs"
                       >
                         {genre.name}
                       </span>
                     ))}
                     {user.genres.length > 3 && (
-                      <span className="rounded-full bg-white/10 px-2 py-1 text-xs text-white">
+                      <span className="bg-secondary text-secondary-foreground rounded-full px-2 py-1 text-xs">
                         +{user.genres.length - 3} more
                       </span>
                     )}
@@ -194,7 +202,7 @@ export default async function BrowsePage({ searchParams }: BrowsePageProps) {
                 </div>
               )}
 
-              <button className="w-full rounded-lg bg-[#6c47ff] py-2 font-semibold text-white transition hover:bg-[#5a3fd8]">
+              <button className="bg-primary text-primary-foreground hover:bg-primary/90 w-full rounded-lg py-2 font-semibold transition-colors">
                 View Profile
               </button>
             </div>
@@ -207,19 +215,19 @@ export default async function BrowsePage({ searchParams }: BrowsePageProps) {
             {usersResult.pagination.hasPrevPage && (
               <a
                 href={`/browse?page=${usersResult.pagination.page - 1}`}
-                className="rounded-lg bg-white/10 px-4 py-2 text-white hover:bg-white/20"
+                className="bg-secondary text-secondary-foreground hover:bg-secondary/80 rounded-lg px-4 py-2 transition-colors"
               >
                 Previous
               </a>
             )}
-            <span className="rounded-lg bg-white/10 px-4 py-2 text-white">
+            <span className="bg-secondary text-secondary-foreground rounded-lg px-4 py-2">
               Page {usersResult.pagination.page} of{" "}
               {usersResult.pagination.totalPages}
             </span>
             {usersResult.pagination.hasNextPage && (
               <a
                 href={`/browse?page=${usersResult.pagination.page + 1}`}
-                className="rounded-lg bg-white/10 px-4 py-2 text-white hover:bg-white/20"
+                className="bg-secondary text-secondary-foreground hover:bg-secondary/80 rounded-lg px-4 py-2 transition-colors"
               >
                 Next
               </a>

@@ -1,7 +1,9 @@
 import { type Metadata } from "next";
 import { ClerkProvider } from "@clerk/nextjs";
 import { Geist, Geist_Mono } from "next/font/google";
-import "../styles/globals.css";
+import "@/styles/globals.css";
+import { ThemeProvider } from "@/providers/theme-provider";
+import { ModeToggle } from "./_components/mode-toggle";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -29,7 +31,15 @@ export default function RootLayout({
         <body
           className={`${geistSans.variable} ${geistMono.variable} antialiased`}
         >
-          {children}
+          <ThemeProvider
+            attribute="class"
+            defaultTheme="system"
+            enableSystem
+            disableTransitionOnChange
+          >
+            <ModeToggle />
+            {children}
+          </ThemeProvider>
         </body>
       </html>
     </ClerkProvider>
