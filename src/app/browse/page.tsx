@@ -2,6 +2,12 @@ import { auth } from "@clerk/nextjs/server";
 import { redirect } from "next/navigation";
 import { browseUsers, getInstruments, getGenres } from "@/server/queries";
 import type { BrowseFilters } from "@/types/api";
+import {
+  Avatar,
+  AvatarFallback,
+  AvatarImage,
+} from "../../components/ui/avatar";
+import Link from "next/link";
 
 interface BrowsePageProps {
   searchParams: Promise<{
@@ -136,11 +142,16 @@ export default async function BrowsePage({ searchParams }: BrowsePageProps) {
               className="bg-card border-border hover:bg-muted/50 rounded-lg border p-6 transition-colors"
             >
               <div className="mb-4 flex items-center gap-4">
-                <img
-                  src={user.profileImageUrl ?? "/default-avatar.png"}
-                  alt={user.displayName}
-                  className="border-border h-16 w-16 rounded-full border object-cover"
-                />
+                <Avatar className="h-16 w-16 rounded-full border object-cover">
+                  <AvatarImage
+                    src={user.profileImageUrl ?? "/default-avatar.png"}
+                    className="h-16 w-16 rounded-full border object-cover"
+                  />
+                  <AvatarFallback className="h-16 w-16 rounded-full border object-cover text-4xl">
+                    {user.displayName.charAt(0)}
+                  </AvatarFallback>
+                </Avatar>
+
                 <div>
                   <h3 className="text-foreground text-lg font-semibold">
                     {user.displayName}
@@ -205,9 +216,12 @@ export default async function BrowsePage({ searchParams }: BrowsePageProps) {
                 </div>
               )}
 
-              <button className="bg-primary text-primary-foreground hover:bg-primary/90 w-full rounded-lg py-2 font-semibold transition-colors">
+              <Link
+                href={`/u/${user.username}`}
+                className="bg-primary text-primary-foreground hover:bg-primary/90 block w-full rounded-lg py-2 text-center font-semibold transition-colors"
+              >
                 View Profile
-              </button>
+              </Link>
             </div>
           ))}
         </div>

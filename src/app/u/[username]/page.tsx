@@ -1,34 +1,20 @@
-import { auth } from "@clerk/nextjs/server";
-import { redirect } from "next/navigation";
-import Link from "next/link";
-import { getCurrentUserProfile } from "@/server/queries";
-import { Button } from "@/components/ui/button";
+import { notFound } from "next/navigation";
+import { getUserByUsername } from "@/server/queries";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import {
-  MapPin,
-  Calendar,
-  Music,
-  Guitar,
-  Edit,
-  Eye,
-  Clock,
-  User,
-  Activity,
-} from "lucide-react";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { MapPin, Calendar, Music, Guitar, User, Clock } from "lucide-react";
 
-export default async function ProfilePage() {
-  const { userId } = await auth();
+interface PageProps {
+  params: Promise<{ username: string }>;
+}
 
-  if (!userId) {
-    redirect("/sign-in");
-  }
+export default async function UserProfilePage({ params }: PageProps) {
+  const { username } = await params;
 
-  const user = await getCurrentUserProfile(userId);
+  const user = await getUserByUsername(username);
 
   if (!user) {
-    redirect("/profile/setup");
+    notFound();
   }
 
   const formatDate = (date: Date) => {
@@ -42,60 +28,38 @@ export default async function ProfilePage() {
   const getSkillLevelColor = (level: string) => {
     switch (level.toLowerCase()) {
       case "beginner":
-        return "bg-green-100 text-green-800";
+        return "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200";
       case "intermediate":
-        return "bg-blue-100 text-blue-800";
+        return "bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200";
       case "advanced":
-        return "bg-purple-100 text-purple-800";
+        return "bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-200";
       case "professional":
-        return "bg-red-100 text-red-800";
+        return "bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200";
       default:
-        return "bg-gray-100 text-gray-800";
+        return "bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-200";
     }
   };
 
   return (
     <div className="container mx-auto px-4 py-8">
       {/* Header */}
-      <div className="mb-8 flex flex-col items-center justify-between gap-4 md:flex-row">
-        <div>
-          <h1 className="text-3xl font-bold">My Profile</h1>
-          <p className="text-muted-foreground">
-            Manage your profile and preferences
-          </p>
-        </div>
-        <div className="flex gap-2">
-          <Button variant="outline" asChild>
-            <Link href="/profile/edit">
-              <Edit className="mr-2 h-4 w-4" />
-              Edit Profile
-            </Link>
-          </Button>
-          <Button variant="outline" asChild>
-            <Link href={`/u/${user.username}`}>
-              <Eye className="mr-2 h-4 w-4" />
-              View Public Profile
-            </Link>
-          </Button>
-        </div>
+      <div className="mb-8">
+        <h1 className="text-3xl font-bold">{user.displayName}</h1>
+        <p className="text-muted-foreground">@{user.username}</p>
       </div>
 
       <div className="grid gap-6 lg:grid-cols-3">
         {/* Profile Card */}
         <div className="lg:col-span-1">
-          <Card className="h-full">
+          <Card>
             <CardHeader className="text-center">
               <div className="bg-muted mx-auto mb-4 h-24 w-24 overflow-hidden rounded-full">
                 {user.profileImageUrl ? (
-                  <Avatar className="h-full w-full">
-                    <AvatarImage
-                      src={user.profileImageUrl}
-                      className="h-full w-full object-cover"
-                    />
-                    <AvatarFallback>
-                      {user.displayName.charAt(0)}
-                    </AvatarFallback>
-                  </Avatar>
+                  <img
+                    src={user.profileImageUrl}
+                    alt={user.displayName}
+                    className="h-full w-full object-cover"
+                  />
                 ) : (
                   <div className="flex h-full w-full items-center justify-center">
                     <User className="text-muted-foreground h-12 w-12" />
@@ -131,16 +95,6 @@ export default async function ProfilePage() {
                 <Clock className="text-muted-foreground h-4 w-4" />
                 <span>Member since {formatDate(user.createdAt)}</span>
               </div>
-
-              {/* Last Updated */}
-              <div className="flex items-center gap-2 text-sm">
-                <Edit className="text-muted-foreground h-4 w-4" />
-                <span>Updated {formatDate(user.updatedAt!)}</span>
-              </div>
-              <div className="flex items-center gap-2 text-sm">
-                <Activity className="text-muted-foreground h-4 w-4" />
-                <span>Recent Activity</span> (To Be Implemented)
-              </div>
             </CardContent>
           </Card>
         </div>
@@ -150,7 +104,7 @@ export default async function ProfilePage() {
           {/* Bio */}
           <Card>
             <CardHeader>
-              <CardTitle>About Me</CardTitle>
+              <CardTitle>About</CardTitle>
             </CardHeader>
             <CardContent>
               {user.bio ? (
@@ -159,13 +113,7 @@ export default async function ProfilePage() {
                 </p>
               ) : (
                 <p className="text-muted-foreground italic">
-                  No bio added yet.
-                  <Link
-                    href="/profile/edit"
-                    className="text-primary ml-1 hover:underline"
-                  >
-                    Add one now
-                  </Link>
+                  No bio available.
                 </p>
               )}
             </CardContent>
@@ -213,13 +161,7 @@ export default async function ProfilePage() {
                 </div>
               ) : (
                 <p className="text-muted-foreground italic">
-                  No instruments added yet.
-                  <Link
-                    href="/profile/edit"
-                    className="text-primary ml-1 hover:underline"
-                  >
-                    Add your instruments
-                  </Link>
+                  No instruments listed.
                 </p>
               )}
             </CardContent>
@@ -254,39 +196,9 @@ export default async function ProfilePage() {
                 </div>
               ) : (
                 <p className="text-muted-foreground italic">
-                  No genres added yet.
-                  <Link
-                    href="/profile/edit"
-                    className="text-primary ml-1 hover:underline"
-                  >
-                    Add your genres
-                  </Link>
+                  No genres listed.
                 </p>
               )}
-            </CardContent>
-          </Card>
-
-          {/* Profile Completion */}
-          <Card>
-            <CardHeader>
-              <CardTitle>Profile Completion</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-2">
-                <div className="flex justify-between text-sm">
-                  <span>Profile Status</span>
-                  <span className="font-medium">Complete</span>
-                </div>
-                <div className="bg-muted h-2 rounded-full">
-                  <div
-                    className="h-2 rounded-full bg-green-500"
-                    style={{ width: "100%" }}
-                  />
-                </div>
-                <p className="text-muted-foreground text-xs">
-                  Your profile is complete and visible to other musicians!
-                </p>
-              </div>
             </CardContent>
           </Card>
         </div>
