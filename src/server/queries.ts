@@ -8,7 +8,7 @@ import {
   mediaSamples,
 } from "@/server/db/schema";
 import { eq, ne, and, or, desc, asc, sql, count } from "drizzle-orm";
-import type { BrowseFilters, UserGenre, UserInstrument } from "@/types/api";
+import type { BrowseFilters, Genre, UserInstrument } from "@/types/api";
 
 export interface BrowseUsersResult {
   data: Array<{
@@ -350,7 +350,7 @@ export async function getCurrentUserProfile(clerkId: string) {
         ) FILTER (WHERE ${instruments.id} IS NOT NULL),
         '[]'::json
       )`.as("instruments"),
-      genres: sql<UserGenre[]>`COALESCE(
+      genres: sql<Genre[]>`COALESCE(
         json_agg(
           DISTINCT CASE 
             WHEN ${genres.id} IS NOT NULL 
@@ -414,7 +414,7 @@ export async function getUserByUsername(username: string) {
         ) FILTER (WHERE ${instruments.id} IS NOT NULL),
         '[]'::json
       )`.as("instruments"),
-      genres: sql<UserGenre[]>`COALESCE(
+      genres: sql<Genre[]>`COALESCE(
         json_agg(
           DISTINCT CASE 
             WHEN ${genres.id} IS NOT NULL 
@@ -446,21 +446,25 @@ export async function getUserByUsername(username: string) {
 }
 
 export async function getUserSamples(userId: string) {
-  const result = await db
-    .select({
-      id: mediaSamples.id,
-      title: mediaSamples.title,
-      description: mediaSamples.description,
-      fileUrl: mediaSamples.fileUrl,
-      fileType: mediaSamples.fileType,
-      duration: mediaSamples.duration,
-      instrumentId: mediaSamples.instrumentId,
-      createdAt: mediaSamples.createdAt,
-      metadata: mediaSamples.metadata,
-    })
-    .from(mediaSamples)
-    .where(eq(mediaSamples.userId, userId))
-    .orderBy(desc(mediaSamples.createdAt));
+  const result = await db.query.mediaSamples.findMany({
+    where: eq(mediaSamples.userId, userId),
+    with: {
+      instrument: true,
+      mediaSampleGenres: {
+        with: {
+          genre: true,
+        },
+      },
+    },
+    orderBy: desc(mediaSamples.createdAt),
+  });
 
-  return result;
+  // Transform the result to flatten genres
+  return result.map((sample) => ({
+    ...sample,
+    genres: sample.mediaSampleGenres.map(
+      (msg) => (msg.genre as Genre) ?? ({} as Genre),
+    ),
+    mediaSampleGenres: undefined, // Remove the junction table data
+  }));
 }

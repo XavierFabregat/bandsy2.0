@@ -2,8 +2,8 @@ import { auth } from "@clerk/nextjs/server";
 import { redirect } from "next/navigation";
 import { getUserByClerkId, getUserSamples } from "@/server/queries";
 import SampleUploadZone from "../_components/sampleUploadZone";
-import { Button } from "@/components/ui/button";
-import { Edit, Trash2, Play, Video, Music, Clock, Plus } from "lucide-react";
+import Sample from "./_components/sample";
+import { Plus } from "lucide-react";
 
 export default async function SamplesPage() {
   const { userId } = await auth();
@@ -47,57 +47,7 @@ export default async function SamplesPage() {
       {samples.length > 0 ? (
         <div className="divide-border divide-y rounded-lg border">
           {samples.map((sample) => (
-            <div
-              key={sample.id}
-              className="flex flex-col items-center gap-4 p-6 md:flex-row"
-            >
-              <div className="flex-shrink-0">
-                {sample.fileType === "audio" ? (
-                  <Music className="h-10 w-10 text-blue-500" />
-                ) : (
-                  <Video className="h-10 w-10 text-purple-500" />
-                )}
-              </div>
-              <div className="min-w-0 flex-1">
-                <div className="flex items-center gap-2">
-                  <span className="truncate text-lg font-medium">
-                    {sample.title}
-                  </span>
-                  <span className="text-muted-foreground text-xs">
-                    {sample.duration
-                      ? `${Math.floor(sample.duration / 60)}:${(sample.duration % 60).toString().padStart(2, "0")}`
-                      : "Unknown"}
-                  </span>
-                </div>
-                <div className="text-muted-foreground truncate text-sm">
-                  {sample.description}
-                </div>
-                <div className="mt-2">
-                  {/* Media preview (audio/video) */}
-                  {sample.fileType === "audio" ? (
-                    <audio
-                      controls
-                      src={sample.fileUrl}
-                      className="w-full max-w-xs"
-                    />
-                  ) : (
-                    <video
-                      controls
-                      src={sample.fileUrl}
-                      className="w-full max-w-xs rounded-lg"
-                    />
-                  )}
-                </div>
-              </div>
-              <div className="flex flex-col gap-2">
-                <Button variant="outline" size="sm">
-                  <Edit className="mr-1 h-4 w-4" /> Edit
-                </Button>
-                <Button variant="destructive" size="sm">
-                  <Trash2 className="mr-1 h-4 w-4" /> Delete
-                </Button>
-              </div>
-            </div>
+            <Sample key={sample.id} sample={sample} />
           ))}
         </div>
       ) : (

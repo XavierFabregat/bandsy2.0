@@ -495,7 +495,9 @@ export const genresRelations = relations(genres, ({ one, many }) => ({
     relationName: "subGenres",
   }),
   subGenres: many(genres, { relationName: "subGenres" }),
-  mediaSamples: many(mediaSamples),
+
+  // Fix: Use the junction table instead of direct relation
+  mediaSampleGenres: many(mediaSampleGenres),
 
   // Other relations
   userGenres: many(userGenres),
@@ -541,9 +543,8 @@ export const mediaSamplesRelations = relations(
       fields: [mediaSamples.instrumentId],
       references: [instruments.id],
     }),
-    genres: many(genres, {
-      relationName: "genres",
-    }),
+    // Fix: Use the junction table instead of direct relation
+    mediaSampleGenres: many(mediaSampleGenres),
   }),
 );
 
@@ -682,3 +683,18 @@ export const eventsRelations = relations(events, ({ one }) => ({
     references: [groups.id],
   }),
 }));
+
+// Media Sample Genres relations (add this if not already present)
+export const mediaSampleGenresRelations = relations(
+  mediaSampleGenres,
+  ({ one }) => ({
+    mediaSample: one(mediaSamples, {
+      fields: [mediaSampleGenres.mediaSampleId],
+      references: [mediaSamples.id],
+    }),
+    genre: one(genres, {
+      fields: [mediaSampleGenres.genreId],
+      references: [genres.id],
+    }),
+  }),
+);
