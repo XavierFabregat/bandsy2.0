@@ -7,7 +7,7 @@ import {
   genres,
 } from "@/server/db/schema";
 import { eq, ne, and, or, desc, asc, sql, count } from "drizzle-orm";
-import type { BrowseFilters } from "@/types/api";
+import type { BrowseFilters, UserGenre, UserInstrument } from "@/types/api";
 
 export interface BrowseUsersResult {
   data: Array<{
@@ -314,4 +314,68 @@ export async function getUserGenres(clerkId: string) {
     .orderBy(userGenres.preference, userGenres.createdAt);
 
   return result;
+}
+
+export async function getCurrentUserProfile(clerkId: string) {
+  const result = await db
+    .select({
+      id: users.id,
+      username: users.username,
+      displayName: users.displayName,
+      bio: users.bio,
+      age: users.age,
+      showAge: users.showAge,
+      city: users.city,
+      region: users.region,
+      country: users.country,
+      profileImageUrl: users.profileImageUrl,
+      createdAt: users.createdAt,
+      updatedAt: users.updatedAt,
+      // Aggregate instruments and genres
+      instruments: sql<UserInstrument[]>`COALESCE(
+        json_agg(
+          DISTINCT CASE 
+            WHEN ${instruments.id} IS NOT NULL 
+            THEN jsonb_build_object(
+              'id', ${instruments.id},
+              'name', ${instruments.name},
+              'category', ${instruments.category},
+              'skillLevel', ${userInstruments.skillLevel},
+              'yearsOfExperience', ${userInstruments.yearsOfExperience},
+              'isPrimary', ${userInstruments.isPrimary}
+            )
+            ELSE NULL
+          END
+        ) FILTER (WHERE ${instruments.id} IS NOT NULL),
+        '[]'::json
+      )`.as("instruments"),
+      genres: sql<UserGenre[]>`COALESCE(
+        json_agg(
+          DISTINCT CASE 
+            WHEN ${genres.id} IS NOT NULL 
+            THEN jsonb_build_object(
+              'id', ${genres.id},
+              'name', ${genres.name},
+              'preference', ${userGenres.preference}
+            )
+            ELSE NULL
+          END
+        ) FILTER (WHERE ${genres.id} IS NOT NULL),
+        '[]'::json
+      )`.as("genres"),
+    })
+    .from(users)
+    .leftJoin(userInstruments, eq(users.id, userInstruments.userId))
+    .leftJoin(instruments, eq(userInstruments.instrumentId, instruments.id))
+    .leftJoin(userGenres, eq(users.id, userGenres.userId))
+    .leftJoin(genres, eq(userGenres.genreId, genres.id))
+    .where(eq(users.clerkId, clerkId))
+    .groupBy(users.id)
+    .limit(1);
+
+  if (!result.length) return null;
+
+  const user = result[0]!;
+
+  return user;
 }

@@ -123,7 +123,7 @@ function Dashboard() {
               className="bg-card border-border hover:bg-muted rounded-lg border p-4 text-center transition-colors"
             >
               <div className="mb-2 text-2xl">👤</div>
-              <h3 className="text-foreground font-semibold">Edit Profile</h3>
+              <h3 className="text-foreground font-semibold">My Profile</h3>
             </Link>
             <Link
               href="/groups"
