@@ -3,11 +3,11 @@
 import { auth } from "@clerk/nextjs/server";
 import { redirect } from "next/navigation";
 import { db } from "@/server/db";
-import { users, mediaSamples } from "@/server/db/schema";
+import { users } from "@/server/db/schema";
 import { eq } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 
-export async function updateMedia(formData: FormData) {
+export async function updateMedia(_formData: FormData) {
   const { userId } = await auth();
 
   if (!userId) {
@@ -25,7 +25,7 @@ export async function updateMedia(formData: FormData) {
     redirect("/sign-in");
   }
 
-  const internalUserId = user[0]!.id;
+  // const internalUserId = user[0]!.id;
 
   // For now, we'll skip media upload and just mark the profile as complete
   // In a real implementation, you'd handle file uploads here

@@ -3,6 +3,7 @@ import { getUserByUsername } from "@/server/queries";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { MapPin, Calendar, Music, Guitar, User, Clock } from "lucide-react";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 
 interface PageProps {
   params: Promise<{ username: string }>;
@@ -55,11 +56,15 @@ export default async function UserProfilePage({ params }: PageProps) {
             <CardHeader className="text-center">
               <div className="bg-muted mx-auto mb-4 h-24 w-24 overflow-hidden rounded-full">
                 {user.profileImageUrl ? (
-                  <img
-                    src={user.profileImageUrl}
-                    alt={user.displayName}
-                    className="h-full w-full object-cover"
-                  />
+                  <Avatar className="h-full w-full">
+                    <AvatarImage
+                      src={user.profileImageUrl}
+                      className="h-full w-full object-cover"
+                    />
+                    <AvatarFallback>
+                      {user.displayName.charAt(0)}
+                    </AvatarFallback>
+                  </Avatar>
                 ) : (
                   <div className="flex h-full w-full items-center justify-center">
                     <User className="text-muted-foreground h-12 w-12" />

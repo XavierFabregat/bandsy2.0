@@ -26,7 +26,7 @@ export function GenresForm({ genres, userGenres }: GenresFormProps) {
 
   // Group genres by parent (main genres and sub-genres)
   const mainGenres = genres.filter((genre) => !genre.parentGenreId);
-  const subGenres = genres.filter((genre) => genre.parentGenreId);
+  // const subGenres = genres.filter((genre) => genre.parentGenreId);
 
   const addGenre = () => {
     const newGenre = {
@@ -76,9 +76,9 @@ export function GenresForm({ genres, userGenres }: GenresFormProps) {
     setFormGenres(newGenres);
   };
 
-  const getSubGenresForParent = (parentId: string) => {
-    return subGenres.filter((genre) => genre.parentGenreId === parentId);
-  };
+  // const getSubGenresForParent = (parentId: string) => {
+  //   return subGenres.filter((genre) => genre.parentGenreId === parentId);
+  // };
 
   return (
     <div className="space-y-6">
@@ -108,7 +108,7 @@ export function GenresForm({ genres, userGenres }: GenresFormProps) {
                     <input
                       type="checkbox"
                       checked={genre.preference === 5}
-                      onChange={(e) => setPrimaryGenre(index)}
+                      onChange={(_e) => setPrimaryGenre(index)}
                       className="border-border text-primary focus:ring-primary h-4 w-4 rounded border focus:ring-2"
                     />
                     Primary

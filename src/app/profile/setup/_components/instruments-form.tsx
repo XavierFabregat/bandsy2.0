@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { updateInstruments } from "../_actions/instruments";
 
 interface Instrument {
