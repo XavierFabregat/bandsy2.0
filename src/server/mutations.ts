@@ -76,3 +76,18 @@ export async function updateUserGenres(
   await db.delete(userGenres).where(eq(userGenres.userId, userId));
   await db.insert(userGenres).values(data);
 }
+
+/**
+ * Update user profile image
+ * @param clerkUserId - The Clerk ID of the user to update
+ * @param imageUrl - The URL of the image to update the user profile with
+ */
+export async function updateUserProfileImage(
+  clerkUserId: string,
+  imageUrl: string,
+) {
+  await db
+    .update(users)
+    .set({ profileImageUrl: imageUrl })
+    .where(eq(users.clerkId, clerkUserId));
+}

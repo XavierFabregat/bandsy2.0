@@ -1,13 +1,16 @@
 import { createUploadthing, type FileRouter } from "uploadthing/next";
-import { UploadThingError } from "uploadthing/server";
+import { UTApi } from "uploadthing/server";
 import { auth } from "@clerk/nextjs/server";
+import { updateUserProfileImage } from "@/server/mutations";
+import { getUserByClerkId } from "@/server/queries";
 
 const f = createUploadthing();
+const ut = new UTApi();
 
 // FileRouter for your app, can contain multiple FileRoutes
 export const ourFileRouter = {
   // Define as many FileRoutes as you like, each with a unique routeSlug
-  imageUploader: f({
+  avatarUploader: f({
     image: {
       /**
        * For full list of options and defaults, see the File Route API reference
@@ -29,10 +32,36 @@ export const ourFileRouter = {
       return { userId };
     })
     .onUploadComplete(async ({ metadata, file }) => {
-      // This code RUNS ON YOUR SERVER after upload
-      console.log("Upload complete for userId:", metadata.userId);
+      const { userId } = metadata;
+      const { ufsUrl } = file;
 
-      console.log("file url", file.ufsUrl);
+      try {
+        // Get current user to find their existing profile image
+        const user = await getUserByClerkId(userId);
+
+        if (user?.profileImageUrl) {
+          // Extract the file key from the URL
+          // UploadThing URLs are typically: https://uploadthing.com/f/[fileKey]
+          const urlParts = user.profileImageUrl.split("/");
+          const fileKey = urlParts[urlParts.length - 1];
+
+          if (fileKey && fileKey !== file.key) {
+            // Delete the old file
+            await ut.deleteFiles([fileKey]);
+            console.log(`Deleted old avatar: ${fileKey}`);
+          }
+        }
+
+        // Update user with new image URL
+        await updateUserProfileImage(userId, ufsUrl);
+
+        console.log(`Updated avatar for user ${userId}: ${ufsUrl}`);
+      } catch (error) {
+        console.error("Error updating avatar:", error);
+        // Optionally delete the new file if update failed
+        await ut.deleteFiles([file.key]);
+        throw error;
+      }
 
       // !!! Whatever is returned here is sent to the clientside `onClientUploadComplete` callback
       return { uploadedBy: metadata.userId };

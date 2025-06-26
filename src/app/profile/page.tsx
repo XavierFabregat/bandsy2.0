@@ -17,6 +17,7 @@ import {
   Activity,
 } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import PencilUTButton from "../_components/pencilUTButton";
 
 export default async function ProfilePage() {
   const { userId } = await auth();
@@ -85,22 +86,22 @@ export default async function ProfilePage() {
         <div className="lg:col-span-1">
           <Card className="h-full">
             <CardHeader className="text-center">
-              <div className="bg-muted mx-auto mb-4 h-24 w-24 overflow-hidden rounded-full">
+              <div className="bg-muted relative mx-auto mb-4 h-24 w-24 overflow-visible rounded-full">
                 {user.profileImageUrl ? (
                   <Avatar className="h-full w-full">
-                    <AvatarImage
-                      src={user.profileImageUrl}
-                      className="h-full w-full object-cover"
-                    />
+                    <AvatarImage src={user.profileImageUrl} />
                     <AvatarFallback>
                       {user.displayName.charAt(0)}
                     </AvatarFallback>
                   </Avatar>
                 ) : (
-                  <div className="flex h-full w-full items-center justify-center">
+                  <div className="flex h-full w-full items-center justify-center rounded-full">
                     <User className="text-muted-foreground h-12 w-12" />
                   </div>
                 )}
+                <div className="absolute -right-1 -bottom-1 z-20">
+                  <PencilUTButton />
+                </div>
               </div>
               <CardTitle className="text-xl">{user.displayName}</CardTitle>
               <p className="text-muted-foreground">@{user.username}</p>
