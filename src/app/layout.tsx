@@ -3,8 +3,9 @@ import { ClerkProvider } from "@clerk/nextjs";
 import { Geist, Geist_Mono } from "next/font/google";
 import "@/styles/globals.css";
 import { ThemeProvider } from "@/providers/theme-provider";
-import { ModeToggle } from "./_components/mode-toggle";
+// import { ModeToggle } from "./_components/mode-toggle";
 import { ProfileGuardClient } from "@/components/profile-guard-client";
+import { TopNav } from "@/components/top-nav";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -28,9 +29,9 @@ export default function RootLayout({
 }>) {
   return (
     <ClerkProvider>
-      <html lang="en">
+      <html lang="en" suppressHydrationWarning>
         <body
-          className={`${geistSans.variable} ${geistMono.variable} antialiased`}
+          className={`${geistSans.variable} ${geistMono.variable} min-h-screen antialiased`}
         >
           <ThemeProvider
             attribute="class"
@@ -38,9 +39,13 @@ export default function RootLayout({
             enableSystem
             disableTransitionOnChange
           >
-            <ModeToggle />
-            <ProfileGuardClient />
-            {children}
+            <div className="grid h-screen w-screen grid-rows-[auto_1fr]">
+              <TopNav />
+              <main className="h-full overflow-y-auto bg-red-900">
+                <ProfileGuardClient />
+                {children}
+              </main>
+            </div>
           </ThemeProvider>
         </body>
       </html>

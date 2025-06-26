@@ -39,10 +39,10 @@
 
 - [ ] **Complete Clerk integration**
   - [x] Test sign up/sign in flow
-  - [ ] Add user profile creation after signup
-  - [ ] Implement user session management
+  - [x] Add user profile creation after signup
+  - [ ] Implement user session management (low priority)
 - [ ] **Create user profile system**
-  - [ ] Build profile creation form
+  - [x] Build profile creation form
   - [ ] Add profile editing functionality
   - [ ] Implement profile image upload
 

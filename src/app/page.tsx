@@ -1,11 +1,10 @@
 import Link from "next/link";
 import { SignedIn, SignedOut, SignInButton, SignUpButton } from "@clerk/nextjs";
-import { UserButton } from "@clerk/nextjs";
 
 // Landing Page Component (for unauthenticated users)
 function LandingPage() {
   return (
-    <main className="from-background to-muted text-foreground flex min-h-screen flex-col bg-gradient-to-b">
+    <div className="from-background to-muted text-foreground flex h-full flex-col border-blue-900 bg-gradient-to-b">
       {/* Hero Section */}
       <section className="flex flex-col items-center justify-center px-4 py-20 text-center">
         <h1 className="text-5xl font-extrabold tracking-tight sm:text-7xl">
@@ -67,20 +66,19 @@ function LandingPage() {
           </div>
         </div>
       </section>
-    </main>
+    </div>
   );
 }
 
 // Dashboard Component (for authenticated users)
 function Dashboard() {
   return (
-    <main className="from-background to-muted text-foreground flex min-h-screen flex-col bg-gradient-to-b">
+    <div className="from-background to-muted text-foreground flex h-full flex-col bg-gradient-to-b">
       <div className="container mx-auto px-4 py-8">
-        <div className="mb-8 flex items-center justify-between">
+        <div className="mb-8">
           <h1 className="text-foreground text-3xl font-bold">
             Welcome to Bandsy
           </h1>
-          <UserButton />
         </div>
 
         {/* Quick Stats */}
@@ -156,7 +154,7 @@ function Dashboard() {
           </div>
         </div>
       </div>
-    </main>
+    </div>
   );
 }
 
