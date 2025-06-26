@@ -41,10 +41,10 @@
   - [x] Test sign up/sign in flow
   - [x] Add user profile creation after signup
   - [ ] Implement user session management (low priority)
-- [ ] **Create user profile system**
+- [x] **Create user profile system**
   - [x] Build profile creation form
   - [x] Add profile editing functionality
-  - [ ] Implement profile image upload
+  - [x] Implement profile image upload
 
 ---
 
