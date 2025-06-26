@@ -52,12 +52,11 @@
 
 ### User Profile System
 
-- [ ] **Profile creation flow**
-  - [ ] Create profile setup wizard
-  - [ ] Add instrument selection with skill levels
-  - [ ] Add genre preferences with rating system
-  - [ ] Add location input (city/region)
-  - [ ] Add age and visibility settings
+- [x] **Profile creation flow**
+  - [x] Add instrument selection with skill levels
+  - [x] Add genre preferences with rating system
+  - [x] Add location input (city/region)
+  - [x] Add age and visibility settings
 - [ ] **Media upload system**
   - [ ] Create audio/video upload component
   - [ ] Add file validation (size, format)

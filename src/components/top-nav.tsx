@@ -1,6 +1,16 @@
 import Link from "next/link";
 import { UserButton } from "@clerk/nextjs";
 import { ModeToggle } from "@/app/_components/mode-toggle";
+import {
+  NavigationMenu,
+  NavigationMenuContent,
+  NavigationMenuItem,
+  NavigationMenuLink,
+  NavigationMenuList,
+  NavigationMenuTrigger,
+} from "./ui/navigation-menu";
+import { SignedIn } from "@clerk/nextjs";
+import { UserIcon, UserPen } from "lucide-react";
 
 export function TopNav() {
   return (
@@ -13,6 +23,52 @@ export function TopNav() {
               <span className="text-2xl">🎵</span>
               <span className="text-foreground text-xl font-bold">Bandsy</span>
             </Link>
+
+            <div className="hidden items-center gap-4 md:flex">
+              <SignedIn>
+                <NavigationMenu>
+                  <NavigationMenuList>
+                    <NavigationMenuItem>
+                      <NavigationMenuLink asChild>
+                        <Link href="/">Home</Link>
+                      </NavigationMenuLink>
+                    </NavigationMenuItem>
+                    <NavigationMenuItem>
+                      <NavigationMenuLink asChild>
+                        <Link href="/browse">Browse</Link>
+                      </NavigationMenuLink>
+                    </NavigationMenuItem>
+                    <NavigationMenuItem>
+                      <NavigationMenuTrigger>Profile</NavigationMenuTrigger>
+                      <NavigationMenuContent>
+                        <ul className="grid w-[200px] gap-4">
+                          <li>
+                            <NavigationMenuLink asChild>
+                              <Link
+                                href="/profile"
+                                className="flex-row items-center gap-2"
+                              >
+                                <UserIcon />
+                                My Profile
+                              </Link>
+                            </NavigationMenuLink>
+                            <NavigationMenuLink asChild>
+                              <Link
+                                href="/profile/edit"
+                                className="flex-row items-center gap-2"
+                              >
+                                <UserPen />
+                                Edit Profile
+                              </Link>
+                            </NavigationMenuLink>
+                          </li>
+                        </ul>
+                      </NavigationMenuContent>
+                    </NavigationMenuItem>
+                  </NavigationMenuList>
+                </NavigationMenu>
+              </SignedIn>
+            </div>
           </div>
 
           {/* Right side actions */}

@@ -41,7 +41,7 @@ export default function RootLayout({
           >
             <div className="grid h-screen w-screen grid-rows-[auto_1fr]">
               <TopNav />
-              <main className="h-full overflow-y-auto bg-red-900">
+              <main className="h-full overflow-y-auto">
                 <ProfileGuardClient />
                 {children}
               </main>
