@@ -2,16 +2,13 @@
 
 import { auth } from "@clerk/nextjs/server";
 import { redirect } from "next/navigation";
-import { db } from "@/server/db";
-import { users, userInstruments, userGenres } from "@/server/db/schema";
-import { eq } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
-import { getUserByClerkId } from "../../../../server/queries";
+import { getUserByClerkId } from "@/server/queries";
 import {
   updateUserGenres,
   updateUserInstruments,
   updateUserProfile,
-} from "../../../../server/mutations";
+} from "@/server/mutations";
 
 export interface ProfileFormData {
   displayName: string;

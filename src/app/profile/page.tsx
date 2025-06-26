@@ -16,6 +16,7 @@ import {
   User,
   Activity,
 } from "lucide-react";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 
 export default async function ProfilePage() {
   const { userId } = await auth();
@@ -86,11 +87,15 @@ export default async function ProfilePage() {
             <CardHeader className="text-center">
               <div className="bg-muted mx-auto mb-4 h-24 w-24 overflow-hidden rounded-full">
                 {user.profileImageUrl ? (
-                  <img
-                    src={user.profileImageUrl}
-                    alt={user.displayName}
-                    className="h-full w-full object-cover"
-                  />
+                  <Avatar className="h-full w-full">
+                    <AvatarImage
+                      src={user.profileImageUrl}
+                      className="h-full w-full object-cover"
+                    />
+                    <AvatarFallback>
+                      {user.displayName.charAt(0)}
+                    </AvatarFallback>
+                  </Avatar>
                 ) : (
                   <div className="flex h-full w-full items-center justify-center">
                     <User className="text-muted-foreground h-12 w-12" />
