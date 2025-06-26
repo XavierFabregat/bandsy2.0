@@ -43,7 +43,7 @@
   - [ ] Implement user session management (low priority)
 - [ ] **Create user profile system**
   - [x] Build profile creation form
-  - [ ] Add profile editing functionality
+  - [x] Add profile editing functionality
   - [ ] Implement profile image upload
 
 ---
@@ -63,10 +63,10 @@
   - [ ] Implement media player for samples
   - [ ] Add media management (delete, reorder)
 - [ ] **Profile display**
-  - [ ] Create profile view component
+  - [x] Create profile view component
   - [ ] Add media gallery
-  - [ ] Show instruments and skill levels
-  - [ ] Display genre preferences
+  - [x] Show instruments and skill levels
+  - [x] Display genre preferences
 
 ### Matching System
 
