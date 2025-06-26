@@ -1,7 +1,7 @@
 import { createUploadthing, type FileRouter } from "uploadthing/next";
 import { UTApi } from "uploadthing/server";
 import { auth } from "@clerk/nextjs/server";
-import { updateUserProfileImage } from "@/server/mutations";
+import { updateUserProfileImage, uploadSample } from "@/server/mutations";
 import { getUserByClerkId } from "@/server/queries";
 
 const f = createUploadthing();
@@ -66,27 +66,11 @@ export const ourFileRouter = {
       // !!! Whatever is returned here is sent to the clientside `onClientUploadComplete` callback
       return { uploadedBy: metadata.userId };
     }),
-  audioUploader: f({
+  sampleUploader: f({
     audio: {
       maxFileSize: "16MB",
       maxFileCount: 1,
     },
-  })
-    .middleware(async ({ req: _req }) => {
-      const { userId } = await auth();
-
-      if (!userId) throw new Error("Unauthorized");
-
-      return { userId };
-    })
-    .onUploadComplete(async ({ metadata, file }) => {
-      console.log("Upload complete for userId:", metadata.userId);
-
-      console.log("file url", file.ufsUrl);
-
-      return { uploadedBy: metadata.userId };
-    }),
-  videoUploader: f({
     video: {
       maxFileSize: "16MB",
       maxFileCount: 1,
@@ -100,11 +84,19 @@ export const ourFileRouter = {
       return { userId };
     })
     .onUploadComplete(async ({ metadata, file }) => {
-      console.log("Upload complete for userId:", metadata.userId);
+      const user = await getUserByClerkId(metadata.userId);
 
-      console.log("file url", file.ufsUrl);
+      if (!user?.id) throw new Error("User not found");
 
-      return { uploadedBy: metadata.userId };
+      const { id } = await uploadSample(
+        user.id,
+        file.ufsUrl,
+        file.type,
+        file.name,
+        "",
+      );
+
+      return { uploadedBy: user.id, sampleId: id };
     }),
 } satisfies FileRouter;
 

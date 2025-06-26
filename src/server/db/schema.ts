@@ -435,6 +435,22 @@ export const events = createTable(
   ],
 );
 
+// MediaSample-Genre relations
+export const mediaSampleGenres = createTable(
+  "media_sample_to_genre",
+  (d) => ({
+    id: d.uuid().primaryKey().defaultRandom(),
+    mediaSampleId: d
+      .uuid()
+      .references(() => mediaSamples.id, { onDelete: "cascade" }),
+    genreId: d.uuid().references(() => genres.id, { onDelete: "cascade" }),
+  }),
+  (t) => [
+    index("media_sample_to_genre_media_sample_idx").on(t.mediaSampleId),
+    index("media_sample_to_genre_genre_idx").on(t.genreId),
+  ],
+);
+
 // ============================================================================
 // RELATIONS
 // ============================================================================
@@ -479,6 +495,7 @@ export const genresRelations = relations(genres, ({ one, many }) => ({
     relationName: "subGenres",
   }),
   subGenres: many(genres, { relationName: "subGenres" }),
+  mediaSamples: many(mediaSamples),
 
   // Other relations
   userGenres: many(userGenres),
@@ -513,16 +530,22 @@ export const userGenresRelations = relations(userGenres, ({ one }) => ({
 }));
 
 // Media Samples relations
-export const mediaSamplesRelations = relations(mediaSamples, ({ one }) => ({
-  user: one(users, {
-    fields: [mediaSamples.userId],
-    references: [users.id],
+export const mediaSamplesRelations = relations(
+  mediaSamples,
+  ({ one, many }) => ({
+    user: one(users, {
+      fields: [mediaSamples.userId],
+      references: [users.id],
+    }),
+    instrument: one(instruments, {
+      fields: [mediaSamples.instrumentId],
+      references: [instruments.id],
+    }),
+    genres: many(genres, {
+      relationName: "genres",
+    }),
   }),
-  instrument: one(instruments, {
-    fields: [mediaSamples.instrumentId],
-    references: [instruments.id],
-  }),
-}));
+);
 
 // Groups relations
 export const groupsRelations = relations(groups, ({ many }) => ({

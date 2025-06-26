@@ -5,6 +5,7 @@ import {
   userGenres,
   instruments,
   genres,
+  mediaSamples,
 } from "@/server/db/schema";
 import { eq, ne, and, or, desc, asc, sql, count } from "drizzle-orm";
 import type { BrowseFilters, UserGenre, UserInstrument } from "@/types/api";
@@ -442,4 +443,24 @@ export async function getUserByUsername(username: string) {
   const user = result[0]!;
 
   return user;
+}
+
+export async function getUserSamples(userId: string) {
+  const result = await db
+    .select({
+      id: mediaSamples.id,
+      title: mediaSamples.title,
+      description: mediaSamples.description,
+      fileUrl: mediaSamples.fileUrl,
+      fileType: mediaSamples.fileType,
+      duration: mediaSamples.duration,
+      instrumentId: mediaSamples.instrumentId,
+      createdAt: mediaSamples.createdAt,
+      metadata: mediaSamples.metadata,
+    })
+    .from(mediaSamples)
+    .where(eq(mediaSamples.userId, userId))
+    .orderBy(desc(mediaSamples.createdAt));
+
+  return result;
 }

@@ -65,6 +65,11 @@ export function TopNav() {
                         </ul>
                       </NavigationMenuContent>
                     </NavigationMenuItem>
+                    <NavigationMenuItem>
+                      <NavigationMenuLink asChild>
+                        <Link href="/samples">Samples</Link>
+                      </NavigationMenuLink>
+                    </NavigationMenuItem>
                   </NavigationMenuList>
                 </NavigationMenu>
               </SignedIn>

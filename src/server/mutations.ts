@@ -1,6 +1,12 @@
 import { db } from "./db";
-import { userGenres, userInstruments, users } from "./db/schema";
-import { eq } from "drizzle-orm";
+import {
+  mediaSampleGenres,
+  mediaSamples,
+  userGenres,
+  userInstruments,
+  users,
+} from "./db/schema";
+import { and, eq } from "drizzle-orm";
 
 export interface UpdateUserProfileData {
   displayName: string;
@@ -90,4 +96,78 @@ export async function updateUserProfileImage(
     .update(users)
     .set({ profileImageUrl: imageUrl })
     .where(eq(users.clerkId, clerkUserId));
+}
+
+/**
+ * Upload a sample to the database
+ * @param userId - The ID of the user to upload the sample for
+ * @param fileUrl - The URL of the sample file
+ * @param fileType - The type of the sample file
+ * @param title - The title of the sample
+ * @param description - The description of the sample
+ */
+export async function uploadSample(
+  userId: string,
+  fileUrl: string,
+  fileType: string,
+  title: string,
+  description: string,
+): Promise<{ id: string }> {
+  const result = await db
+    .insert(mediaSamples)
+    .values({
+      userId,
+      fileUrl,
+      fileType,
+      title,
+      description,
+    })
+    .returning({
+      id: mediaSamples.id,
+    });
+
+  return result[0]!;
+}
+
+export interface UpdateSampleMetadata {
+  title: string;
+  description: string;
+  instrumentId: string;
+  genreIds?: string[];
+  duration: number;
+  fileType?: string;
+}
+
+export async function updateSample(
+  userId: string,
+  sampleId: string,
+  metadata: UpdateSampleMetadata,
+) {
+  await db
+    .update(mediaSamples)
+    .set({
+      ...metadata,
+      isPublic: true,
+    })
+    .where(and(eq(mediaSamples.id, sampleId), eq(mediaSamples.userId, userId)));
+
+  if (!metadata.genreIds) return;
+
+  // We also need to update the genres for every genre in the metadata.genreIds
+  for (const genreId of metadata.genreIds) {
+    await db
+      .update(mediaSampleGenres)
+      .set({
+        genreId: genreId,
+      })
+      .where(eq(mediaSampleGenres.mediaSampleId, sampleId));
+  }
+
+  // fetch the sample and return it
+  const sample = await db
+    .select()
+    .from(mediaSamples)
+    .where(eq(mediaSamples.id, sampleId));
+
+  return sample;
 }
