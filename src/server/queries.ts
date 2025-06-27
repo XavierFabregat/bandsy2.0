@@ -8,7 +8,12 @@ import {
   mediaSamples,
 } from "@/server/db/schema";
 import { eq, ne, and, or, desc, asc, sql, count } from "drizzle-orm";
-import type { BrowseFilters, Genre, UserInstrument } from "@/types/api";
+import type {
+  BrowseFilters,
+  Genre,
+  UserGenre,
+  UserInstrument,
+} from "@/types/api";
 
 export interface BrowseUsersResult {
   data: Array<{
@@ -350,7 +355,7 @@ export async function getCurrentUserProfile(clerkId: string) {
         ) FILTER (WHERE ${instruments.id} IS NOT NULL),
         '[]'::json
       )`.as("instruments"),
-      genres: sql<Genre[]>`COALESCE(
+      genres: sql<UserGenre[]>`COALESCE(
         json_agg(
           DISTINCT CASE 
             WHEN ${genres.id} IS NOT NULL 
@@ -414,7 +419,7 @@ export async function getUserByUsername(username: string) {
         ) FILTER (WHERE ${instruments.id} IS NOT NULL),
         '[]'::json
       )`.as("instruments"),
-      genres: sql<Genre[]>`COALESCE(
+      genres: sql<UserGenre[]>`COALESCE(
         json_agg(
           DISTINCT CASE 
             WHEN ${genres.id} IS NOT NULL 
