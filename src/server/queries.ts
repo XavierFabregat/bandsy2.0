@@ -14,7 +14,9 @@ import type {
   Sample,
   UserGenre,
   UserInstrument,
+  UserProfile,
 } from "@/types/api";
+import { auth } from "@clerk/nextjs/server";
 
 export interface BrowseUsersResult {
   data: Array<{
@@ -58,6 +60,11 @@ export async function browseUsers(
   currentUserId: string,
   filters: BrowseFilters = {},
 ): Promise<BrowseUsersResult> {
+  const { userId } = await auth();
+
+  if (!userId) {
+    throw new Error("Unauthorized");
+  }
   const {
     page = 1,
     limit = 20,
@@ -448,11 +455,21 @@ export async function getUserByUsername(username: string) {
 
   const user = result[0]!;
 
-  return user;
+  return user as UserProfile;
 }
 
 export async function getUserSamples(userId: string) {
-  const result = await db.query.mediaSamples.findMany({
+  const user = await db.select().from(users).where(eq(users.id, userId));
+
+  if (!user.length) {
+    throw new Error("User not found");
+  }
+
+  const { userId: currentUserClerkId } = await auth();
+
+  const isOwnUser = user[0]?.clerkId === currentUserClerkId;
+
+  let result = await db.query.mediaSamples.findMany({
     where: eq(mediaSamples.userId, userId),
     with: {
       instrument: true,
@@ -464,6 +481,11 @@ export async function getUserSamples(userId: string) {
     },
     orderBy: desc(mediaSamples.createdAt),
   });
+
+  if (!isOwnUser) {
+    // filter out private samples
+    result = result.filter((sample) => sample.isPublic);
+  }
 
   // Transform the result to flatten genres
   const samples = result.map((sample) => ({
