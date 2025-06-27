@@ -59,10 +59,10 @@
   - [x] Add age and visibility settings
 - [ ] **Media upload system**
   - [x] Create audio upload component
-  - [ ] Create video upload component
+  - [ ] Create video upload component (low priority)
   - [x] Add file validation (size, format)
   - [x] Implement media player for samples
-  - [ ] Add media management (delete, reorder)
+  - [x] Add media management (delete, reorder)
 - [ ] **Profile display**
   - [x] Create profile view component
   - [ ] Add media gallery
