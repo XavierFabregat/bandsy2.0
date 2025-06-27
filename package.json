@@ -18,6 +18,9 @@
     "lint:fix": "next lint --fix",
     "preview": "next build && next start",
     "start": "next start",
+    "test:matching": "tsx tests/matching/run-tests.ts",
+    "test:matching:perf": "tsx tests/matching/performance-test.ts",
+    "test:matching:all": "./test-matching.sh",
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
