@@ -45,7 +45,7 @@ export default async function SamplesPage() {
 
       {/* Samples List */}
       {samples.length > 0 ? (
-        <div className="divide-border divide-y rounded-lg border">
+        <div className="divide-border divide-y border-t border-b">
           {samples.map((sample) => (
             <Sample key={sample.id} sample={sample} />
           ))}

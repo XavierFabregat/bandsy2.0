@@ -3,6 +3,7 @@
 import { Button } from "@/components/ui/button";
 import { Edit, Trash2, Video, Music } from "lucide-react";
 import type { Genre, Instrument } from "@/types/api";
+import AudioPlayer from "./audio-player";
 
 interface Sample {
   id: string;
@@ -40,7 +41,7 @@ export default function Sample({ sample }: SampleProps) {
   return (
     <div className="flex flex-col items-center gap-4 p-6 md:flex-row">
       {/* File Icon */}
-      <div className="flex-shrink-0">
+      <div className="border-border flex flex-shrink-0">
         {sample.fileType === "audio" ? (
           <Music className="h-10 w-10 text-blue-500" />
         ) : (
@@ -51,24 +52,43 @@ export default function Sample({ sample }: SampleProps) {
       {/* Sample Content */}
       <div className="min-w-0 flex-1">
         {/* Title and Duration */}
-        <div className="flex items-center gap-2">
-          <span className="truncate text-lg font-medium">{sample.title}</span>
-          <span className="text-muted-foreground text-xs">
-            {formatDuration(sample.duration)}
-          </span>
-        </div>
+        <div className="border-border flex flex-row justify-between gap-2 border-b px-5 py-2">
+          <div className="flex flex-col gap-1">
+            <div className="flex items-center gap-2">
+              <span className="truncate text-lg font-medium">
+                {sample.title}
+              </span>
+              <span className="text-muted-foreground text-xs">
+                {formatDuration(sample.duration)}
+              </span>
+            </div>
 
-        {/* Description */}
-        {sample.description && (
-          <div className="text-muted-foreground truncate text-sm">
-            {sample.description}
+            {/* Description */}
+            {sample.description && (
+              <div className="text-muted-foreground truncate pb-2 text-sm">
+                {sample.description}
+              </div>
+            )}
           </div>
-        )}
+          {/* Actions */}
+          <div className="flex flex-col gap-2">
+            <Button variant="outline" size="sm" onClick={handleEdit}>
+              <Edit className="mr-1 h-4 w-4" /> Edit
+            </Button>
+            <Button variant="destructive" size="sm" onClick={handleDelete}>
+              <Trash2 className="mr-1 h-4 w-4" /> Delete
+            </Button>
+          </div>
+        </div>
 
         {/* Media Player */}
         <div className="mt-2">
           {sample.fileType === "audio" ? (
-            <audio controls src={sample.fileUrl} className="w-full max-w-xs" />
+            <AudioPlayer
+              src={sample.fileUrl}
+              title={sample.title}
+              className=""
+            />
           ) : (
             <video
               controls
@@ -77,16 +97,6 @@ export default function Sample({ sample }: SampleProps) {
             />
           )}
         </div>
-      </div>
-
-      {/* Actions */}
-      <div className="flex flex-col gap-2">
-        <Button variant="outline" size="sm" onClick={handleEdit}>
-          <Edit className="mr-1 h-4 w-4" /> Edit
-        </Button>
-        <Button variant="destructive" size="sm" onClick={handleDelete}>
-          <Trash2 className="mr-1 h-4 w-4" /> Delete
-        </Button>
       </div>
     </div>
   );
