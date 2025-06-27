@@ -1,9 +1,9 @@
 import { auth } from "@clerk/nextjs/server";
 import { redirect } from "next/navigation";
 import { getUserByClerkId, getUserSamples } from "@/server/queries";
-import SampleUploadZone from "../_components/sampleUploadZone";
 import Sample from "./_components/sample";
 import { Plus } from "lucide-react";
+import Link from "next/link";
 
 export default async function SamplesPage() {
   const { userId } = await auth();
@@ -23,24 +23,15 @@ export default async function SamplesPage() {
   return (
     <div className="container mx-auto px-4 py-8">
       {/* Header */}
-      <div className="mb-8">
+      <div className="mb-8 flex justify-between">
         <h1 className="text-3xl font-bold tracking-tight">My Samples</h1>
-        <p className="text-muted-foreground mt-2">
-          Upload and manage your audio/video samples
-        </p>
-      </div>
-
-      {/* Upload Section */}
-      <div className="mb-8">
-        <div className="bg-muted rounded-xl border p-6">
-          <div className="mb-4 flex items-center justify-between">
-            <h2 className="flex items-center gap-2 text-xl font-semibold">
-              <Plus className="h-5 w-5" />
-              Add New Sample
-            </h2>
-          </div>
-          <SampleUploadZone />
-        </div>
+        <Link
+          href="/samples/upload"
+          className="bg-primary text-primary-foreground hover:bg-primary/90 flex items-center gap-2 rounded-md px-4 py-2 text-sm font-medium"
+        >
+          <Plus className="h-5 w-5" />
+          Add New Sample
+        </Link>
       </div>
 
       {/* Samples List */}

@@ -71,10 +71,6 @@ export const ourFileRouter = {
       maxFileSize: "16MB",
       maxFileCount: 1,
     },
-    video: {
-      maxFileSize: "16MB",
-      maxFileCount: 1,
-    },
   })
     .middleware(async ({ req: _req }) => {
       const { userId } = await auth();
@@ -91,7 +87,7 @@ export const ourFileRouter = {
       const { id } = await uploadSample(
         user.id,
         file.ufsUrl,
-        file.type,
+        "audio",
         file.name,
         "",
       );

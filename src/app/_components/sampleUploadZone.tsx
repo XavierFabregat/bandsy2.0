@@ -1,7 +1,7 @@
 "use client";
 
 import { useUploadThing } from "@/lib/uploadthing";
-import { Loader2, Upload, FileAudio, FileVideo, X, Clock } from "lucide-react";
+import { Loader2, Upload, FileAudio, X, Clock } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useCallback, useState, useEffect } from "react";
 
@@ -12,6 +12,7 @@ interface FileWithMetadata {
   instrumentId: string;
   genreIds: string[];
   duration: number | null;
+  size: number;
 }
 
 interface Instrument {
@@ -85,7 +86,7 @@ export default function SampleUploadZone() {
                   instrumentId: selectedFile.instrumentId,
                   genreIds: selectedFile.genreIds,
                   duration: selectedFile.duration,
-                  fileType: selectedFile.file.type.split("/")[0],
+                  fileType: "audio",
                 },
               }),
             });
@@ -95,10 +96,6 @@ export default function SampleUploadZone() {
             setIsUploading(false);
           }
         }
-
-        router.refresh();
-        setSelectedFile(null);
-        setIsUploading(false);
       } catch (error) {
         console.error("Error updating sample:", error);
         setIsUploading(false);
@@ -130,43 +127,22 @@ export default function SampleUploadZone() {
     });
   };
 
-  const getVideoDuration = (file: File): Promise<number> => {
-    return new Promise((resolve, reject) => {
-      const video = document.createElement("video");
-      const url = URL.createObjectURL(file);
-
-      video.addEventListener("loadedmetadata", () => {
-        URL.revokeObjectURL(url);
-        resolve(Math.round(video.duration));
-      });
-
-      video.addEventListener("error", () => {
-        URL.revokeObjectURL(url);
-        reject(new Error("Failed to load video file"));
-      });
-
-      video.src = url;
-    });
-  };
-
   const handleFiles = useCallback(async (files: FileList) => {
-    const fileArray = Array.from(files).filter(
-      (file) =>
-        file.type.startsWith("audio/") || file.type.startsWith("video/"),
+    const fileArray = Array.from(files).filter((file) =>
+      file.type.startsWith("audio/"),
     );
+
+    if (fileArray.length === 0) {
+      alert("Please select an audio file (MP3, WAV, M4A, AAC, or FLAC)");
+      return;
+    }
 
     if (fileArray.length > 0) {
       const file = fileArray[0]!;
       const fileName = file.name.replace(/\.[^/.]+$/, "");
 
       try {
-        // Get duration based on file type
-        let duration: number | null = null;
-        if (file.type.startsWith("audio/")) {
-          duration = await getAudioDuration(file);
-        } else if (file.type.startsWith("video/")) {
-          duration = await getVideoDuration(file);
-        }
+        const duration = await getAudioDuration(file);
 
         setSelectedFile({
           file,
@@ -175,10 +151,10 @@ export default function SampleUploadZone() {
           instrumentId: "",
           genreIds: [],
           duration,
+          size: file.size,
         });
       } catch (error) {
         console.error("Error getting duration:", error);
-        // Set file without duration if extraction fails
         setSelectedFile({
           file,
           title: fileName,
@@ -186,6 +162,7 @@ export default function SampleUploadZone() {
           instrumentId: "",
           genreIds: [],
           duration: null,
+          size: file.size,
         });
       }
     }
@@ -216,7 +193,6 @@ export default function SampleUploadZone() {
   const handleClick = useCallback(() => {
     const input = document.createElement("input");
     input.type = "file";
-    input.accept = "audio/*,video/*";
     input.multiple = false;
     input.onchange = async (e) => {
       const target = e.target as HTMLInputElement;
@@ -309,27 +285,22 @@ export default function SampleUploadZone() {
           {/* Text Content */}
           <div className="space-y-2 text-center">
             <h3 className="text-foreground text-lg font-semibold">
-              {isDragOver ? "Drop your file here" : "Upload your sample"}
+              {isDragOver
+                ? "Drop your audio file here"
+                : "Upload your audio sample"}
             </h3>
             <p className="text-muted-foreground text-sm">
-              Drag and drop an audio or video file, or{" "}
+              Drag and drop an audio file, or{" "}
               <span className="text-primary font-medium underline underline-offset-2">
                 browse
               </span>
             </p>
           </div>
 
-          {/* File Type Icons */}
-          <div className="text-muted-foreground/60 flex items-center gap-3">
-            <div className="flex items-center gap-1 text-xs">
-              <FileAudio className="h-4 w-4" />
-              <span>Audio</span>
-            </div>
-            <div className="bg-border h-4 w-px" />
-            <div className="flex items-center gap-1 text-xs">
-              <FileVideo className="h-4 w-4" />
-              <span>Video</span>
-            </div>
+          {/* File Type Icon */}
+          <div className="text-muted-foreground/60 flex items-center gap-1 text-xs">
+            <FileAudio className="h-4 w-4" />
+            <span>Audio files only</span>
           </div>
         </div>
 
@@ -342,7 +313,7 @@ export default function SampleUploadZone() {
       {/* File Requirements */}
       <div className="mt-4 text-center">
         <p className="text-muted-foreground text-xs">
-          Supports MP3, WAV, MP4, MOV • Max 16MB per file
+          Supports MP3, WAV, FLAC, AAC • Max 16MB per file
         </p>
       </div>
 
@@ -355,11 +326,7 @@ export default function SampleUploadZone() {
             {/* File Info Header */}
             <div className="flex items-start gap-4 border-b pb-4">
               <div className="flex-shrink-0">
-                {selectedFile.file.type.startsWith("audio/") ? (
-                  <FileAudio className="h-8 w-8 text-blue-500" />
-                ) : (
-                  <FileVideo className="h-8 w-8 text-purple-500" />
-                )}
+                <FileAudio className="h-8 w-8 text-blue-500" />
               </div>
 
               <div className="min-w-0 flex-1">

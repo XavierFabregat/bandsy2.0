@@ -10,7 +10,7 @@ import {
   NavigationMenuTrigger,
 } from "./ui/navigation-menu";
 import { SignedIn } from "@clerk/nextjs";
-import { UserIcon, UserPen } from "lucide-react";
+import { UserIcon, UserPen, Music, Upload } from "lucide-react";
 
 export function TopNav() {
   return (
@@ -26,7 +26,7 @@ export function TopNav() {
 
             <div className="hidden items-center gap-4 md:flex">
               <SignedIn>
-                <NavigationMenu>
+                <NavigationMenu viewport={false}>
                   <NavigationMenuList>
                     <NavigationMenuItem>
                       <NavigationMenuLink asChild>
@@ -66,9 +66,31 @@ export function TopNav() {
                       </NavigationMenuContent>
                     </NavigationMenuItem>
                     <NavigationMenuItem>
-                      <NavigationMenuLink asChild>
-                        <Link href="/samples">Samples</Link>
-                      </NavigationMenuLink>
+                      <NavigationMenuTrigger>Samples</NavigationMenuTrigger>
+                      <NavigationMenuContent>
+                        <ul className="grid w-[200px] gap-4">
+                          <li>
+                            <NavigationMenuLink asChild>
+                              <Link
+                                href="/samples"
+                                className="flex-row items-center gap-2"
+                              >
+                                <Music />
+                                My Samples
+                              </Link>
+                            </NavigationMenuLink>
+                            <NavigationMenuLink asChild>
+                              <Link
+                                href="/samples/upload"
+                                className="flex-row items-center gap-2"
+                              >
+                                <Upload />
+                                Upload Sample
+                              </Link>
+                            </NavigationMenuLink>
+                          </li>
+                        </ul>
+                      </NavigationMenuContent>
                     </NavigationMenuItem>
                   </NavigationMenuList>
                 </NavigationMenu>
