@@ -63,9 +63,9 @@
   - [x] Add file validation (size, format)
   - [x] Implement media player for samples
   - [x] Add media management (delete, reorder)
-- [ ] **Profile display**
+- [x] **Profile display**
   - [x] Create profile view component
-  - [ ] Add media gallery
+  - [x] Add media gallery
   - [x] Show instruments and skill levels
   - [x] Display genre preferences
 
