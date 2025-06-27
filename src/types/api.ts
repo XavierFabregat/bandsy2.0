@@ -26,7 +26,8 @@ export interface Sample {
   instrument?: Instrument | null;
   genres?: Genre[] | null;
   createdAt: Date;
-  metadata: Record<string, unknown>;
+  metadata: unknown;
+  isPublic: boolean;
 }
 
 export interface Instrument {

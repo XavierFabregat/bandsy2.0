@@ -9,6 +9,7 @@ import { TopNav } from "@/components/top-nav";
 import { extractRouterConfig } from "uploadthing/server";
 import { ourFileRouter } from "./api/uploadthing/core";
 import { NextSSRPlugin } from "@uploadthing/react/next-ssr-plugin";
+import { Toaster } from "@/components/ui/sonner";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -58,6 +59,7 @@ export default function RootLayout({
                 {children}
               </main>
             </div>
+            <Toaster />
           </ThemeProvider>
         </body>
       </html>

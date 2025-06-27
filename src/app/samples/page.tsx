@@ -18,7 +18,6 @@ export default async function SamplesPage() {
   }
 
   const samples = await getUserSamples(user.id);
-  console.log(samples);
 
   return (
     <div className="container mx-auto px-4 py-8">

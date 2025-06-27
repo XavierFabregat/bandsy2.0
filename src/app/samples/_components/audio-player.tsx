@@ -19,7 +19,13 @@ export default function AudioPlayer({
         </div>
       )}
 
-      <audio controls src={src} className="w-full" preload="none" />
+      <audio
+        controls
+        src={src}
+        className="w-full"
+        preload="none"
+        controlsList="nodownload noplaybackrate"
+      />
     </div>
   );
 }

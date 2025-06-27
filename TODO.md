@@ -58,9 +58,10 @@
   - [x] Add location input (city/region)
   - [x] Add age and visibility settings
 - [ ] **Media upload system**
-  - [ ] Create audio/video upload component
-  - [ ] Add file validation (size, format)
-  - [ ] Implement media player for samples
+  - [x] Create audio upload component
+  - [ ] Create video upload component
+  - [x] Add file validation (size, format)
+  - [x] Implement media player for samples
   - [ ] Add media management (delete, reorder)
 - [ ] **Profile display**
   - [x] Create profile view component

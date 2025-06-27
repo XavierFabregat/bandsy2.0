@@ -7,6 +7,7 @@ import {
   users,
 } from "./db/schema";
 import { and, eq } from "drizzle-orm";
+import { UTApi } from "uploadthing/server";
 
 export interface UpdateUserProfileData {
   displayName: string;
@@ -136,6 +137,7 @@ export interface UpdateSampleMetadata {
   genreIds?: string[];
   duration: number;
   fileType?: string;
+  isPublic: boolean;
 }
 
 export async function updateSample(
@@ -145,22 +147,25 @@ export async function updateSample(
 ) {
   await db
     .update(mediaSamples)
-    .set({
-      ...metadata,
-      isPublic: true,
-    })
+    .set(metadata)
     .where(and(eq(mediaSamples.id, sampleId), eq(mediaSamples.userId, userId)));
+
+  console.log(metadata.genreIds);
 
   if (!metadata.genreIds) return;
 
   // We also need to update the genres for every genre in the metadata.genreIds
+  // first we delete all the genres that sample has
+  await db
+    .delete(mediaSampleGenres)
+    .where(and(eq(mediaSampleGenres.mediaSampleId, sampleId)));
   for (const genreId of metadata.genreIds) {
-    await db
-      .update(mediaSampleGenres)
-      .set({
-        genreId: genreId,
-      })
-      .where(eq(mediaSampleGenres.mediaSampleId, sampleId));
+    // then we add the new genres
+    console.log(`Adding genre ${genreId} to sample ${sampleId}`);
+    await db.insert(mediaSampleGenres).values({
+      mediaSampleId: sampleId,
+      genreId,
+    });
   }
 
   // fetch the sample and return it
@@ -170,4 +175,37 @@ export async function updateSample(
     .where(eq(mediaSamples.id, sampleId));
 
   return sample;
+}
+
+export async function deleteSample(userId: string, sampleId: string) {
+  // first we fetch the sample
+  const [sample] = await db
+    .select()
+    .from(mediaSamples)
+    .where(and(eq(mediaSamples.id, sampleId), eq(mediaSamples.userId, userId)))
+    .limit(1);
+
+  if (!sample) {
+    throw new Error("Sample not found");
+  }
+
+  // then we extract the ut id from the file url
+  const utId = sample.fileUrl.split("/").pop();
+  if (!utId) {
+    throw new Error("Invalid file url");
+  }
+
+  // first we delete the sample from ut
+  const ut = new UTApi();
+  const { success, deletedCount } = await ut.deleteFiles(utId);
+  if (!success || deletedCount !== 1) {
+    throw new Error("Failed to delete sample from ut");
+  }
+
+  // then we delete the sample from the database
+  await db
+    .delete(mediaSamples)
+    .where(and(eq(mediaSamples.id, sampleId), eq(mediaSamples.userId, userId)));
+
+  return { success: true };
 }

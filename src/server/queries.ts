@@ -11,6 +11,7 @@ import { eq, ne, and, or, desc, asc, sql, count } from "drizzle-orm";
 import type {
   BrowseFilters,
   Genre,
+  Sample,
   UserGenre,
   UserInstrument,
 } from "@/types/api";
@@ -465,11 +466,38 @@ export async function getUserSamples(userId: string) {
   });
 
   // Transform the result to flatten genres
-  return result.map((sample) => ({
+  const samples = result.map((sample) => ({
     ...sample,
     genres: sample.mediaSampleGenres.map(
       (msg) => (msg.genre as Genre) ?? ({} as Genre),
     ),
     mediaSampleGenres: undefined, // Remove the junction table data
   }));
+
+  return samples as Sample[];
+}
+
+export async function getSample(userId: string, sampleId: string) {
+  const result = await db.query.mediaSamples.findFirst({
+    where: and(eq(mediaSamples.id, sampleId), eq(mediaSamples.userId, userId)),
+    with: {
+      instrument: true,
+      mediaSampleGenres: {
+        with: {
+          genre: true,
+        },
+      },
+    },
+  });
+
+  if (!result) return null;
+
+  // Transform the result to flatten genres
+  return {
+    ...result,
+    genres: result.mediaSampleGenres.map(
+      (msg) => (msg.genre as Genre) ?? ({} as Genre),
+    ),
+    mediaSampleGenres: undefined, // Remove the junction table data
+  } as Sample;
 }
