@@ -2,7 +2,13 @@
 // https://orm.drizzle.team/docs/sql-schema-declaration
 
 import { sql, relations } from "drizzle-orm";
-import { index, pgTableCreator, pgEnum } from "drizzle-orm/pg-core";
+import {
+  index,
+  pgTableCreator,
+  pgEnum,
+  unique,
+  uniqueIndex,
+} from "drizzle-orm/pg-core";
 
 /**
  * This is an example of how to use the multi-project schema feature of Drizzle ORM. Use the same
@@ -29,6 +35,19 @@ export const messageTypeEnum = pgEnum("message_type", [
   "text",
   "audio",
   "image",
+]);
+
+export const interactionTypeEnum = pgEnum("interaction_type", [
+  "like",
+  "pass",
+  "super_like",
+  "block",
+]);
+
+export const interactionContextEnum = pgEnum("interaction_context", [
+  "discovery",
+  "search",
+  "recommendation",
 ]);
 
 // Users table
@@ -231,34 +250,6 @@ export const groupGenres = createTable(
   ],
 );
 
-// Matches between users
-export const matches = createTable(
-  "match",
-  (d) => ({
-    id: d.uuid().primaryKey().defaultRandom(),
-    initiatorId: d
-      .uuid()
-      .notNull()
-      .references(() => users.id, { onDelete: "cascade" }),
-    targetId: d
-      .uuid()
-      .notNull()
-      .references(() => users.id, { onDelete: "cascade" }),
-    status: matchStatusEnum().notNull(),
-    initiatorMessage: d.text(), // Optional message when swiping
-    matchedAt: d.timestamp({ withTimezone: true }),
-    createdAt: d
-      .timestamp({ withTimezone: true })
-      .default(sql`CURRENT_TIMESTAMP`)
-      .notNull(),
-  }),
-  (t) => [
-    index("matches_initiator_idx").on(t.initiatorId),
-    index("matches_target_idx").on(t.targetId),
-    index("matches_status_idx").on(t.status),
-  ],
-);
-
 // Conversations (for matched users)
 export const conversations = createTable(
   "conversation",
@@ -451,6 +442,135 @@ export const mediaSampleGenres = createTable(
   ],
 );
 
+// Add to your existing schema.ts file
+
+// User matching profiles - pre-computed data for fast matching
+export const userMatchProfiles = createTable(
+  "user_match_profile",
+  (d) => ({
+    id: d.uuid().primaryKey().defaultRandom(),
+    userId: d
+      .uuid()
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+
+    // Location data
+    locationLat: d.numeric({ precision: 10, scale: 8 }),
+    locationLng: d.numeric({ precision: 11, scale: 8 }),
+    city: d.varchar({ length: 100 }),
+    region: d.varchar({ length: 100 }),
+    country: d.varchar({ length: 100 }),
+
+    // Preferences
+    searchRadius: d.integer().default(50), // km
+    ageRangeMin: d.integer(),
+    ageRangeMax: d.integer(),
+    lookingFor: d.varchar({ length: 50 }).default("any"),
+
+    // Computed scores for performance
+    skillLevelAverage: d.numeric({ precision: 3, scale: 2 }),
+    activityScore: d.integer().default(0),
+
+    // Status
+    isActive: d.boolean().default(true),
+    lastActive: d
+      .timestamp({ withTimezone: true })
+      .default(sql`CURRENT_TIMESTAMP`),
+
+    createdAt: d
+      .timestamp({ withTimezone: true })
+      .default(sql`CURRENT_TIMESTAMP`)
+      .notNull(),
+    updatedAt: d
+      .timestamp({ withTimezone: true })
+      .default(sql`CURRENT_TIMESTAMP`)
+      .notNull(),
+  }),
+  (table) => ({
+    userIdIdx: index("user_match_profile_user_id_idx").on(table.userId),
+    locationIdx: index("user_match_profile_location_idx").on(
+      table.locationLat,
+      table.locationLng,
+    ),
+    activeIdx: index("user_match_profile_active_idx").on(
+      table.isActive,
+      table.lastActive,
+    ),
+  }),
+);
+
+// Track user interactions for better matching
+export const userInteractions = createTable(
+  "user_interaction",
+  (d) => ({
+    id: d.uuid().primaryKey().defaultRandom(),
+    fromUserId: d
+      .uuid()
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    toUserId: d
+      .uuid()
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+
+    type: interactionTypeEnum().notNull(),
+    context: interactionContextEnum().notNull(),
+
+    createdAt: d
+      .timestamp({ withTimezone: true })
+      .default(sql`CURRENT_TIMESTAMP`)
+      .notNull(),
+  }),
+  (table) => ({
+    fromUserIdx: index("user_interaction_from_user_idx").on(table.fromUserId),
+    toUserIdx: index("user_interaction_to_user_idx").on(table.toUserId),
+    typeIdx: index("user_interaction_type_idx").on(table.type),
+    uniqueInteraction: uniqueIndex("unique_user_interaction").on(
+      table.fromUserId,
+      table.toUserId,
+      table.type,
+    ),
+  }),
+);
+
+// Matches when both users like each other
+export const matches = createTable(
+  "match",
+  (d) => ({
+    id: d.uuid().primaryKey().defaultRandom(),
+    user1Id: d
+      .uuid()
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    user2Id: d
+      .uuid()
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+
+    // Match metadata
+    matchScore: d.numeric({ precision: 5, scale: 2 }),
+    matchFactors: d.json(), // Store the detailed scoring breakdown
+
+    // Status
+    status: d.varchar({ length: 20 }).default("active"), // 'active', 'unmatched', 'blocked'
+
+    createdAt: d
+      .timestamp({ withTimezone: true })
+      .default(sql`CURRENT_TIMESTAMP`)
+      .notNull(),
+    updatedAt: d
+      .timestamp({ withTimezone: true })
+      .default(sql`CURRENT_TIMESTAMP`)
+      .notNull(),
+  }),
+  (table) => ({
+    user1Idx: index("match_user1_idx").on(table.user1Id),
+    user2Idx: index("match_user2_idx").on(table.user2Id),
+    statusIdx: index("match_status_idx").on(table.status),
+    uniqueMatch: uniqueIndex("unique_match").on(table.user1Id, table.user2Id),
+  }),
+);
+
 // ============================================================================
 // RELATIONS
 // ============================================================================
@@ -584,21 +704,6 @@ export const groupGenresRelations = relations(groupGenres, ({ one }) => ({
   }),
 }));
 
-// Matches relations
-export const matchesRelations = relations(matches, ({ one, many }) => ({
-  initiator: one(users, {
-    fields: [matches.initiatorId],
-    references: [users.id],
-    relationName: "initiator",
-  }),
-  target: one(users, {
-    fields: [matches.targetId],
-    references: [users.id],
-    relationName: "target",
-  }),
-  conversations: many(conversations),
-}));
-
 // Conversations relations
 export const conversationsRelations = relations(
   conversations,
@@ -698,3 +803,43 @@ export const mediaSampleGenresRelations = relations(
     }),
   }),
 );
+
+// Relations
+export const userMatchProfilesRelations = relations(
+  userMatchProfiles,
+  ({ one }) => ({
+    user: one(users, {
+      fields: [userMatchProfiles.userId],
+      references: [users.id],
+    }),
+  }),
+);
+
+export const userInteractionsRelations = relations(
+  userInteractions,
+  ({ one }) => ({
+    fromUser: one(users, {
+      fields: [userInteractions.fromUserId],
+      references: [users.id],
+      relationName: "fromUserInteractions",
+    }),
+    toUser: one(users, {
+      fields: [userInteractions.toUserId],
+      references: [users.id],
+      relationName: "toUserInteractions",
+    }),
+  }),
+);
+
+export const matchesRelations = relations(matches, ({ one }) => ({
+  user1: one(users, {
+    fields: [matches.user1Id],
+    references: [users.id],
+    relationName: "user1Matches",
+  }),
+  user2: one(users, {
+    fields: [matches.user2Id],
+    references: [users.id],
+    relationName: "user2Matches",
+  }),
+}));
