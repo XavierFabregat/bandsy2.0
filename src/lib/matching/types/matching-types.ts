@@ -1,3 +1,5 @@
+import type { Sample } from "@/types/api";
+
 export interface Location {
   latitude: number;
   longitude: number;
@@ -80,6 +82,7 @@ export interface MatchCandidate {
     profileImageUrl: string | null;
     bio: string | null;
     age: number | null;
+    samples?: Sample[];
   };
   profile: UserMatchProfile;
   score: MatchScore;

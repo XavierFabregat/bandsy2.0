@@ -7,21 +7,9 @@ import {
   genres,
   userMatchProfiles,
   userInteractions,
+  mediaSamples,
 } from "@/server/db/schema";
-import {
-  eq,
-  ne,
-  and,
-  or,
-  desc,
-  asc,
-  sql,
-  count,
-  isNull,
-  lt,
-  gt,
-  not,
-} from "drizzle-orm";
+import { eq, ne, and, desc, sql, isNull, lt, gt, not } from "drizzle-orm";
 import { auth } from "@clerk/nextjs/server";
 import type {
   UserMatchProfile,
@@ -34,6 +22,7 @@ import type {
 } from "@/lib/matching/types/matching-types";
 import { CompositeScorer } from "@/lib/matching/algorithms/composite-scorer";
 import { LocationScorer } from "@/lib/matching/algorithms/location-scorer";
+import type { Sample } from "@/types/api";
 
 export interface DiscoveryResult {
   candidates: MatchCandidate[];
@@ -417,8 +406,8 @@ export async function getDiscoveryCandidates(
       lookingFor: userMatchProfiles.lookingFor,
       isActive: userMatchProfiles.isActive,
       lastActive: userMatchProfiles.lastActive,
-      // Aggregated instruments and genres
-      instruments: sql<string>`COALESCE(
+      // Aggregated instruments, genres, and samples
+      instruments: sql<InstrumentSkill[]>`COALESCE(
         json_agg(
           DISTINCT CASE 
             WHEN ${instruments.id} IS NOT NULL 
@@ -435,7 +424,7 @@ export async function getDiscoveryCandidates(
         ) FILTER (WHERE ${instruments.id} IS NOT NULL),
         '[]'::json
       )`.as("instruments"),
-      genres: sql<string>`COALESCE(
+      genres: sql<GenrePreference[]>`COALESCE(
         json_agg(
           DISTINCT CASE 
             WHEN ${genres.id} IS NOT NULL 
@@ -450,6 +439,27 @@ export async function getDiscoveryCandidates(
         ) FILTER (WHERE ${genres.id} IS NOT NULL),
         '[]'::json
       )`.as("genres"),
+      samples: sql<Sample[]>`COALESCE(
+        json_agg(
+          DISTINCT CASE 
+            WHEN ${mediaSamples.id} IS NOT NULL 
+            AND ${mediaSamples.isPublic} IS TRUE
+            THEN jsonb_build_object(
+              'id', ${mediaSamples.id},
+              'fileUrl', ${mediaSamples.fileUrl},
+              'fileType', ${mediaSamples.fileType},
+              'title', ${mediaSamples.title},
+              'description', ${mediaSamples.description},
+              'duration', ${mediaSamples.duration},
+              'createdAt', ${mediaSamples.createdAt},
+              'metadata', ${mediaSamples.metadata},
+              'isPublic', ${mediaSamples.isPublic}
+            )
+            ELSE NULL
+          END
+        ) FILTER (WHERE ${mediaSamples.id} IS NOT NULL AND ${mediaSamples.isPublic} IS TRUE),
+        '[]'::json
+      )`.as("samples"),
     })
     .from(users)
     .leftJoin(userMatchProfiles, eq(users.id, userMatchProfiles.userId))
@@ -457,6 +467,7 @@ export async function getDiscoveryCandidates(
     .leftJoin(instruments, eq(userInstruments.instrumentId, instruments.id))
     .leftJoin(userGenres, eq(users.id, userGenres.userId))
     .leftJoin(genres, eq(userGenres.genreId, genres.id))
+    .leftJoin(mediaSamples, eq(users.id, mediaSamples.userId))
     .where(and(...whereConditions))
     .groupBy(
       users.id,
@@ -486,9 +497,7 @@ export async function getDiscoveryCandidates(
       let candidateGenres: GenrePreference[] = [];
 
       try {
-        const instrumentsParsed = JSON.parse(
-          candidate.instruments,
-        ) as InstrumentSkill[];
+        const instrumentsParsed = candidate.instruments;
         candidateInstruments = Array.isArray(instrumentsParsed)
           ? instrumentsParsed
           : [];
@@ -497,7 +506,7 @@ export async function getDiscoveryCandidates(
       }
 
       try {
-        const genresParsed = JSON.parse(candidate.genres) as GenrePreference[];
+        const genresParsed = candidate.genres;
         candidateGenres = Array.isArray(genresParsed) ? genresParsed : [];
       } catch {
         candidateGenres = [];
@@ -583,14 +592,13 @@ export async function getDiscoveryCandidates(
         candidateProfile,
       );
 
-      // TODO: Uncomment this after running tests
-      // // Apply filters based on score
-      // if (matchScore.overall < 30) {
-      //   console.log(
-      //     `Filtering out ${candidate.displayName}: match score ${matchScore.overall} < 30`,
-      //   );
-      //   continue;
-      // }
+      // Apply filters based on score
+      if (matchScore.overall < 30) {
+        console.log(
+          `Filtering out ${candidate.displayName}: match score ${matchScore.overall} < 30`,
+        );
+        continue;
+      }
 
       console.log(
         `Including ${candidate.displayName}: ${Math.round(locationResult.distance)}km, score ${matchScore.overall}`,
@@ -604,6 +612,7 @@ export async function getDiscoveryCandidates(
           profileImageUrl: candidate.profileImageUrl,
           bio: candidate.bio,
           age: candidate.age,
+          samples: candidate.samples,
         },
         profile: candidateProfile,
         score: matchScore,
