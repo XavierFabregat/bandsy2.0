@@ -10,7 +10,14 @@ import {
   NavigationMenuTrigger,
 } from "./ui/navigation-menu";
 import { SignedIn } from "@clerk/nextjs";
-import { UserIcon, UserPen, Music, Upload } from "lucide-react";
+import {
+  UserIcon,
+  UserPen,
+  Music,
+  Upload,
+  Search,
+  Compass,
+} from "lucide-react";
 
 export function TopNav() {
   return (
@@ -34,9 +41,31 @@ export function TopNav() {
                       </NavigationMenuLink>
                     </NavigationMenuItem>
                     <NavigationMenuItem>
-                      <NavigationMenuLink asChild>
-                        <Link href="/browse">Browse</Link>
-                      </NavigationMenuLink>
+                      <NavigationMenuTrigger>Browse</NavigationMenuTrigger>
+                      <NavigationMenuContent>
+                        <ul className="grid w-[200px] gap-4">
+                          <li>
+                            <NavigationMenuLink asChild>
+                              <Link
+                                href="/browse"
+                                className="flex-row items-center gap-2"
+                              >
+                                <Search />
+                                Search Musicians
+                              </Link>
+                            </NavigationMenuLink>
+                            <NavigationMenuLink asChild>
+                              <Link
+                                href="/discover"
+                                className="flex-row items-center gap-2"
+                              >
+                                <Compass />
+                                Discover
+                              </Link>
+                            </NavigationMenuLink>
+                          </li>
+                        </ul>
+                      </NavigationMenuContent>
                     </NavigationMenuItem>
                     <NavigationMenuItem>
                       <NavigationMenuTrigger>Profile</NavigationMenuTrigger>
