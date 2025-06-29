@@ -169,6 +169,7 @@ export class InstrumentCompatibilityScorer {
       ["lead guitar", "rhythm guitar"],
       ["vocals", "backing vocals"],
       ["keyboard", "piano"], // when used for different purposes
+      ["drums", "bass"], // when used for different purposes
     ];
 
     return complementarySameRole.some(
