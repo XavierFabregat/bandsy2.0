@@ -356,6 +356,22 @@ export async function getDiscoveryCandidates(
   filters: DiscoveryFilters = {},
   pagination: PaginationOptions = { page: 1, limit: 20 },
 ): Promise<DiscoveryResult> {
+  // Start profiling
+  const profileStart = performance.now();
+  const profileData = {
+    totalUsers: 0,
+    processedUsers: 0,
+    filteredOutUsers: 0,
+    dbQueryTime: 0,
+    processingTime: 0,
+    scoringTime: 0,
+    filteringTime: 0,
+  };
+
+  console.log(`🔍 [PROFILING] Starting discovery for user ${clerkId}`);
+  console.log(`🔍 [PROFILING] Filters:`, JSON.stringify(filters, null, 2));
+  console.log(`🔍 [PROFILING] Pagination:`, pagination);
+
   const currentUserProfile = await getUserMatchProfile(clerkId);
   if (!currentUserProfile) {
     throw new Error("User profile not found");
@@ -485,12 +501,29 @@ export async function getDiscoveryCandidates(
     .limit(limit * 3) // Get more candidates for better filtering
     .offset(offset);
 
+  // Execute query and measure time
+  const dbQueryStart = performance.now();
   const candidateResults = await candidatesQuery;
+  profileData.dbQueryTime = performance.now() - dbQueryStart;
+  profileData.totalUsers = candidateResults.length;
+
+  console.log(
+    `🔍 [PROFILING] DB Query completed in ${profileData.dbQueryTime.toFixed(2)}ms`,
+  );
+  console.log(
+    `🔍 [PROFILING] Retrieved ${profileData.totalUsers} candidate users`,
+  );
 
   // Process and score candidates
+  const processingStart = performance.now();
   const scoredCandidates: MatchCandidate[] = [];
 
+  // Track individual user processing times
+  const userProcessingTimes: number[] = [];
+
   for (const candidate of candidateResults) {
+    const userStart = performance.now();
+
     try {
       // Parse instruments and genres
       let candidateInstruments: InstrumentSkill[] = [];
@@ -571,34 +604,40 @@ export async function getDiscoveryCandidates(
         25, // decayDistance
       );
 
-      console.log("maxDistance ==>", maxDistance);
-      console.log(
-        "currentUserProfile.searchRadius ==>",
-        currentUserProfile.searchRadius,
-      );
-      console.log("filters.maxDistance ==>", filters.maxDistance);
-
       // Filter by distance first
+      const filteringStart = performance.now();
       if (locationResult.distance > maxDistance) {
         console.log(
           `Filtering out ${candidate.displayName}: ${Math.round(locationResult.distance)}km > ${maxDistance}km`,
         );
+        profileData.filteredOutUsers++;
+        const userTime = performance.now() - userStart;
+        userProcessingTimes.push(userTime);
+        profileData.filteringTime += performance.now() - filteringStart;
         continue;
       }
 
       // Calculate match score
+      const scoringStart = performance.now();
       const matchScore = CompositeScorer.calculate(
         currentUserProfile,
         candidateProfile,
       );
+      profileData.scoringTime += performance.now() - scoringStart;
 
       // Apply filters based on score
       if (matchScore.overall < 30) {
         console.log(
           `Filtering out ${candidate.displayName}: match score ${matchScore.overall} < 30`,
         );
+        profileData.filteredOutUsers++;
+        const userTime = performance.now() - userStart;
+        userProcessingTimes.push(userTime);
+        profileData.filteringTime += performance.now() - filteringStart;
         continue;
       }
+
+      profileData.filteringTime += performance.now() - filteringStart;
 
       console.log(
         `Including ${candidate.displayName}: ${Math.round(locationResult.distance)}km, score ${matchScore.overall}`,
@@ -619,17 +658,125 @@ export async function getDiscoveryCandidates(
         distance: locationResult.distance,
         lastActive: candidateProfile.lastActive,
       });
+
+      profileData.processedUsers++;
+      const userTime = performance.now() - userStart;
+      userProcessingTimes.push(userTime);
     } catch (error) {
       console.error("Error processing candidate:", error);
+      const userTime = performance.now() - userStart;
+      userProcessingTimes.push(userTime);
       continue;
     }
   }
 
+  profileData.processingTime = performance.now() - processingStart;
+
   // Sort by match score (highest first)
+  const sortingStart = performance.now();
   scoredCandidates.sort((a, b) => b.score.overall - a.score.overall);
+  const sortingTime = performance.now() - sortingStart;
 
   // Apply final pagination
   const finalCandidates = scoredCandidates.slice(0, limit);
+
+  // Calculate final metrics
+  const totalTime = performance.now() - profileStart;
+  const avgTimePerUser =
+    userProcessingTimes.length > 0
+      ? userProcessingTimes.reduce((sum, time) => sum + time, 0) /
+        userProcessingTimes.length
+      : 0;
+
+  // Log comprehensive profiling results
+  console.log(`\n🎯 [PROFILING RESULTS] Discovery Function Performance`);
+  console.log(`┌─────────────────────────────────────────────────────────┐`);
+  console.log(`│ TIMING BREAKDOWN                                        │`);
+  console.log(`├─────────────────────────────────────────────────────────┤`);
+  console.log(
+    `│ Total Function Time:     ${totalTime.toFixed(2).padStart(8)}ms          │`,
+  );
+  console.log(
+    `│ DB Query Time:           ${profileData.dbQueryTime.toFixed(2).padStart(8)}ms (${((profileData.dbQueryTime / totalTime) * 100).toFixed(1)}%)    │`,
+  );
+  console.log(
+    `│ Processing Time:         ${profileData.processingTime.toFixed(2).padStart(8)}ms (${((profileData.processingTime / totalTime) * 100).toFixed(1)}%)    │`,
+  );
+  console.log(
+    `│ Scoring Time:            ${profileData.scoringTime.toFixed(2).padStart(8)}ms (${((profileData.scoringTime / totalTime) * 100).toFixed(1)}%)    │`,
+  );
+  console.log(
+    `│ Filtering Time:          ${profileData.filteringTime.toFixed(2).padStart(8)}ms (${((profileData.filteringTime / totalTime) * 100).toFixed(1)}%)    │`,
+  );
+  console.log(
+    `│ Sorting Time:            ${sortingTime.toFixed(2).padStart(8)}ms (${((sortingTime / totalTime) * 100).toFixed(1)}%)    │`,
+  );
+  console.log(`├─────────────────────────────────────────────────────────┤`);
+  console.log(`│ USER PROCESSING STATS                                   │`);
+  console.log(`├─────────────────────────────────────────────────────────┤`);
+  console.log(
+    `│ Total Users Retrieved:   ${profileData.totalUsers.toString().padStart(8)}              │`,
+  );
+  console.log(
+    `│ Users Processed:         ${profileData.processedUsers.toString().padStart(8)}              │`,
+  );
+  console.log(
+    `│ Users Filtered Out:      ${profileData.filteredOutUsers.toString().padStart(8)}              │`,
+  );
+  console.log(
+    `│ Final Candidates:        ${finalCandidates.length.toString().padStart(8)}              │`,
+  );
+  console.log(
+    `│ Processing Success Rate: ${profileData.totalUsers > 0 ? ((profileData.processedUsers / profileData.totalUsers) * 100).toFixed(1) : "0.0"}%             │`,
+  );
+  console.log(`├─────────────────────────────────────────────────────────┤`);
+  console.log(`│ PERFORMANCE METRICS                                     │`);
+  console.log(`├─────────────────────────────────────────────────────────┤`);
+  console.log(
+    `│ Avg Time Per User:       ${avgTimePerUser.toFixed(2).padStart(8)}ms          │`,
+  );
+  console.log(
+    `│ Users Per Second:        ${profileData.totalUsers > 0 ? (profileData.totalUsers / (totalTime / 1000)).toFixed(0) : "0"}              │`,
+  );
+  console.log(
+    `│ Scoring Rate:            ${profileData.processedUsers > 0 ? (profileData.processedUsers / (profileData.scoringTime / 1000)).toFixed(0) : "0"} scores/sec     │`,
+  );
+  console.log(`└─────────────────────────────────────────────────────────┘`);
+
+  // Log individual user processing times (top 5 slowest)
+  if (userProcessingTimes.length > 0) {
+    const sortedTimes = [...userProcessingTimes].sort((a, b) => b - a);
+    console.log(`\n📊 [PROFILING] Individual User Processing Times:`);
+    console.log(
+      `   • Fastest: ${Math.min(...userProcessingTimes).toFixed(2)}ms`,
+    );
+    console.log(
+      `   • Slowest: ${Math.max(...userProcessingTimes).toFixed(2)}ms`,
+    );
+    console.log(
+      `   • Median:  ${sortedTimes[Math.floor(sortedTimes.length / 2)]?.toFixed(2) ?? "0"}ms`,
+    );
+    console.log(
+      `   • 95th percentile: ${sortedTimes[Math.floor(sortedTimes.length * 0.05)]?.toFixed(2) ?? "0"}ms`,
+    );
+  }
+
+  // Performance warnings
+  if (totalTime > 5000) {
+    console.warn(
+      `⚠️  [PROFILING WARNING] Function took ${totalTime.toFixed(0)}ms - consider optimization`,
+    );
+  }
+  if (avgTimePerUser > 50) {
+    console.warn(
+      `⚠️  [PROFILING WARNING] High per-user processing time: ${avgTimePerUser.toFixed(2)}ms`,
+    );
+  }
+  if (profileData.dbQueryTime > totalTime * 0.5) {
+    console.warn(
+      `⚠️  [PROFILING WARNING] DB query is ${((profileData.dbQueryTime / totalTime) * 100).toFixed(1)}% of total time`,
+    );
+  }
 
   return {
     candidates: finalCandidates,
