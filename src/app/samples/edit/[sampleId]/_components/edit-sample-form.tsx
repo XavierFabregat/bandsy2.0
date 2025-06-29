@@ -64,8 +64,8 @@ export function EditSampleForm({
     return `${minutes}:${remainingSeconds.toString().padStart(2, "0")}`;
   };
 
-  const formatFileSize = (url: string) => {
-    // This is a placeholder - in a real app you'd get this from metadata
+  const formatFileSize = (_url: string) => {
+    // TODO: get file size from metadata
     return "~2.5 MB";
   };
 

@@ -1,4 +1,4 @@
-import { describe, it, expect, vi } from "vitest";
+import { describe, it, expect } from "vitest";
 import { InstrumentCompatibilityScorer } from "@/lib/matching/algorithms/instrument-complementarity";
 import type { InstrumentSkill } from "@/lib/matching/types/matching-types";
 
