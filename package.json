@@ -21,7 +21,8 @@
     "test:matching": "tsx tests/matching/run-tests.ts",
     "test:matching:perf": "tsx tests/matching/performance-test.ts",
     "test:matching:all": "./test-matching.sh",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "test-db:push": "NODE_ENV=test drizzle-kit push"
   },
   "dependencies": {
     "@clerk/nextjs": "^6.23.0",
