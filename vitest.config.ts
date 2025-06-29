@@ -13,6 +13,8 @@ export default defineConfig({
     exclude: ["node_modules", "dist", ".next"],
     coverage: {
       provider: "v8",
+      reportsDirectory: "./coverage",
+      include: ["src/**/*.{ts,tsx}"],
       reporter: ["text", "json", "html"],
       exclude: [
         "node_modules/",
@@ -24,7 +26,12 @@ export default defineConfig({
         ".next/**",
       ],
     },
+    reporters: [
+      // "verbose", // More detailed output
+      "dot", // Minimal dot output
+    ],
   },
+
   resolve: {
     alias: {
       "@": resolve(__dirname, "./src"),
