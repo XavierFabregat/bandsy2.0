@@ -20,7 +20,7 @@ export default function Gallery({ samples, user }: GalleryProps) {
   const [viewMode, setViewMode] = useState<ViewMode>("grid");
   const [filterBy, setFilterBy] = useState<FilterBy>("all");
   const [selectedFilter, setSelectedFilter] = useState<string>("all");
-  const [currentPlaying, setCurrentPlaying] = useState<string | null>(null);
+  // const [currentPlaying, setCurrentPlaying] = useState<string | null>(null);
 
   const isMobile = useMediaQuery("(max-width: 768px)");
 

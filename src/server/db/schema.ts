@@ -6,7 +6,6 @@ import {
   index,
   pgTableCreator,
   pgEnum,
-  unique,
   uniqueIndex,
 } from "drizzle-orm/pg-core";
 

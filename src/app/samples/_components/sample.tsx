@@ -2,7 +2,6 @@
 
 import { Edit, Trash2, Music, Eye, EyeOff } from "lucide-react";
 import AudioPlayer from "./audio-player";
-import type { Genre, Instrument } from "@/types/api";
 import {
   AlertDialog,
   AlertDialogAction,

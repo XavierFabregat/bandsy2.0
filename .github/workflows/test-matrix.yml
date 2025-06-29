@@ -1,0 +1,59 @@
+name: Test Matrix
+
+on:
+  pull_request:
+    branches: [main, dev]
+  push:
+    branches: [main, dev]
+
+jobs:
+  test:
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [ubuntu-latest]
+        node-version: [18, 20]
+
+    services:
+      postgres:
+        image: postgres:15
+        env:
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_USER: postgres
+          POSTGRES_DB: test_bandsy
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 5432:5432
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Use Node.js ${{ matrix.node-version }}
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node-version }}
+          cache: "npm"
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Setup test database
+        env:
+          DATABASE_URL: postgresql://postgres:postgres@localhost:5432/test_bandsy
+        run: |
+          npm run db:push
+          npm run db:seed
+
+      - name: Run tests
+        env:
+          DATABASE_URL: postgresql://postgres:postgres@localhost:5432/test_bandsy
+          TEST_DATABASE_URL: postgresql://postgres:postgres@localhost:5432/test_bandsy
+          CLERK_SECRET_KEY: test_secret_key
+          NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY: test_publishable_key
+          UPLOADTHING_SECRET: test_secret
+          UPLOADTHING_APP_ID: test_app_id
+        run: npm run ci:test

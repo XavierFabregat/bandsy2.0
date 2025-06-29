@@ -45,7 +45,7 @@ export function DiscoveryInterface() {
   // Only load candidates on initial mount
   useEffect(() => {
     void loadCandidates();
-  }, []); // Empty dependency array - only runs once
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Manual refresh function
   const handleRefresh = () => {
