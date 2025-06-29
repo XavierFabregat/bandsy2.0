@@ -402,8 +402,6 @@ export default async function EditProfilePage({
           </CardContent>
         </Card>
 
-        {/* TODO: Select Media */}
-
         {/* Submit Buttons */}
         <div className="flex justify-between">
           <Button variant="outline" asChild>
