@@ -16,6 +16,40 @@ export interface UserProfile {
   genres: UserGenre[];
 }
 
+export interface Sample {
+  id: string;
+  title: string;
+  description: string | null;
+  fileUrl: string;
+  fileType: string;
+  duration: number | null;
+  instrument?: Instrument | null;
+  genres?: Genre[] | null;
+  createdAt: Date;
+  metadata: unknown;
+  isPublic: boolean;
+}
+
+export interface Instrument {
+  id: string;
+  name: string;
+  category: string | null;
+}
+
+export interface Genre {
+  id: string;
+  name: string;
+  parentGenreId: string | null;
+  subGenres?: Genre[] | null;
+  parentGenre?: Genre | null;
+}
+
+export interface UserGenre {
+  id: string;
+  name: string;
+  preference: number;
+}
+
 export interface UserInstrument {
   id: string;
   name: string;
@@ -23,12 +57,6 @@ export interface UserInstrument {
   skillLevel: "beginner" | "intermediate" | "advanced" | "professional";
   yearsOfExperience: number;
   isPrimary: boolean;
-}
-
-export interface UserGenre {
-  id: string;
-  name: string;
-  preference: number;
 }
 
 // API Response Types

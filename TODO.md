@@ -39,12 +39,12 @@
 
 - [ ] **Complete Clerk integration**
   - [x] Test sign up/sign in flow
-  - [ ] Add user profile creation after signup
-  - [ ] Implement user session management
-- [ ] **Create user profile system**
-  - [ ] Build profile creation form
-  - [ ] Add profile editing functionality
-  - [ ] Implement profile image upload
+  - [x] Add user profile creation after signup
+  - [ ] Implement user session management (low priority)
+- [x] **Create user profile system**
+  - [x] Build profile creation form
+  - [x] Add profile editing functionality
+  - [x] Implement profile image upload
 
 ---
 
@@ -52,22 +52,22 @@
 
 ### User Profile System
 
-- [ ] **Profile creation flow**
-  - [ ] Create profile setup wizard
-  - [ ] Add instrument selection with skill levels
-  - [ ] Add genre preferences with rating system
-  - [ ] Add location input (city/region)
-  - [ ] Add age and visibility settings
+- [x] **Profile creation flow**
+  - [x] Add instrument selection with skill levels
+  - [x] Add genre preferences with rating system
+  - [x] Add location input (city/region)
+  - [x] Add age and visibility settings
 - [ ] **Media upload system**
-  - [ ] Create audio/video upload component
-  - [ ] Add file validation (size, format)
-  - [ ] Implement media player for samples
-  - [ ] Add media management (delete, reorder)
-- [ ] **Profile display**
-  - [ ] Create profile view component
-  - [ ] Add media gallery
-  - [ ] Show instruments and skill levels
-  - [ ] Display genre preferences
+  - [x] Create audio upload component
+  - [ ] Create video upload component (low priority)
+  - [x] Add file validation (size, format)
+  - [x] Implement media player for samples
+  - [x] Add media management (delete, reorder)
+- [x] **Profile display**
+  - [x] Create profile view component
+  - [x] Add media gallery
+  - [x] Show instruments and skill levels
+  - [x] Display genre preferences
 
 ### Matching System
 

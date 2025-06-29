@@ -5,9 +5,18 @@ import {
   userGenres,
   instruments,
   genres,
+  mediaSamples,
 } from "@/server/db/schema";
 import { eq, ne, and, or, desc, asc, sql, count } from "drizzle-orm";
-import type { BrowseFilters } from "@/types/api";
+import type {
+  BrowseFilters,
+  Genre,
+  Sample,
+  UserGenre,
+  UserInstrument,
+  UserProfile,
+} from "@/types/api";
+import { auth } from "@clerk/nextjs/server";
 
 export interface BrowseUsersResult {
   data: Array<{
@@ -51,6 +60,11 @@ export async function browseUsers(
   currentUserId: string,
   filters: BrowseFilters = {},
 ): Promise<BrowseUsersResult> {
+  const { userId } = await auth();
+
+  if (!userId) {
+    throw new Error("Unauthorized");
+  }
   const {
     page = 1,
     limit = 20,
@@ -284,4 +298,228 @@ export async function getInstruments() {
 
 export async function getGenres() {
   return db.select().from(genres).orderBy(genres.name);
+}
+
+export async function getUserInstruments(clerkId: string) {
+  const result = await db
+    .select({
+      instrumentId: userInstruments.instrumentId,
+      skillLevel: userInstruments.skillLevel,
+      yearsOfExperience: userInstruments.yearsOfExperience,
+      isPrimary: userInstruments.isPrimary,
+    })
+    .from(userInstruments)
+    .innerJoin(users, eq(userInstruments.userId, users.id))
+    .where(eq(users.clerkId, clerkId))
+    .orderBy(userInstruments.isPrimary, userInstruments.createdAt);
+
+  return result;
+}
+
+export async function getUserGenres(clerkId: string) {
+  const result = await db
+    .select({
+      genreId: userGenres.genreId,
+      preference: userGenres.preference,
+    })
+    .from(userGenres)
+    .innerJoin(users, eq(userGenres.userId, users.id))
+    .where(eq(users.clerkId, clerkId))
+    .orderBy(userGenres.preference, userGenres.createdAt);
+
+  return result;
+}
+
+export async function getCurrentUserProfile(clerkId: string) {
+  const result = await db
+    .select({
+      id: users.id,
+      username: users.username,
+      displayName: users.displayName,
+      bio: users.bio,
+      age: users.age,
+      showAge: users.showAge,
+      city: users.city,
+      region: users.region,
+      country: users.country,
+      profileImageUrl: users.profileImageUrl,
+      createdAt: users.createdAt,
+      updatedAt: users.updatedAt,
+      // Aggregate instruments and genres
+      instruments: sql<UserInstrument[]>`COALESCE(
+        json_agg(
+          DISTINCT CASE 
+            WHEN ${instruments.id} IS NOT NULL 
+            THEN jsonb_build_object(
+              'id', ${instruments.id},
+              'name', ${instruments.name},
+              'category', ${instruments.category},
+              'skillLevel', ${userInstruments.skillLevel},
+              'yearsOfExperience', ${userInstruments.yearsOfExperience},
+              'isPrimary', ${userInstruments.isPrimary}
+            )
+            ELSE NULL
+          END
+        ) FILTER (WHERE ${instruments.id} IS NOT NULL),
+        '[]'::json
+      )`.as("instruments"),
+      genres: sql<UserGenre[]>`COALESCE(
+        json_agg(
+          DISTINCT CASE 
+            WHEN ${genres.id} IS NOT NULL 
+            THEN jsonb_build_object(
+              'id', ${genres.id},
+              'name', ${genres.name},
+              'preference', ${userGenres.preference}
+            )
+            ELSE NULL
+          END
+        ) FILTER (WHERE ${genres.id} IS NOT NULL),
+        '[]'::json
+      )`.as("genres"),
+    })
+    .from(users)
+    .leftJoin(userInstruments, eq(users.id, userInstruments.userId))
+    .leftJoin(instruments, eq(userInstruments.instrumentId, instruments.id))
+    .leftJoin(userGenres, eq(users.id, userGenres.userId))
+    .leftJoin(genres, eq(userGenres.genreId, genres.id))
+    .where(eq(users.clerkId, clerkId))
+    .groupBy(users.id)
+    .limit(1);
+
+  if (!result.length) return null;
+
+  const user = result[0]!;
+
+  return user;
+}
+
+export async function getUserByUsername(username: string) {
+  const result = await db
+    .select({
+      id: users.id,
+      username: users.username,
+      displayName: users.displayName,
+      bio: users.bio,
+      age: users.age,
+      showAge: users.showAge,
+      city: users.city,
+      region: users.region,
+      country: users.country,
+      profileImageUrl: users.profileImageUrl,
+      createdAt: users.createdAt,
+      updatedAt: users.updatedAt,
+      // Aggregate instruments and genres
+      instruments: sql<UserInstrument[]>`COALESCE(
+        json_agg(
+          DISTINCT CASE 
+            WHEN ${instruments.id} IS NOT NULL 
+            THEN jsonb_build_object(
+              'id', ${instruments.id},
+              'name', ${instruments.name},
+              'category', ${instruments.category},
+              'skillLevel', ${userInstruments.skillLevel},
+              'yearsOfExperience', ${userInstruments.yearsOfExperience},
+              'isPrimary', ${userInstruments.isPrimary}
+            )
+            ELSE NULL
+          END
+        ) FILTER (WHERE ${instruments.id} IS NOT NULL),
+        '[]'::json
+      )`.as("instruments"),
+      genres: sql<UserGenre[]>`COALESCE(
+        json_agg(
+          DISTINCT CASE 
+            WHEN ${genres.id} IS NOT NULL 
+            THEN jsonb_build_object(
+              'id', ${genres.id},
+              'name', ${genres.name},
+              'preference', ${userGenres.preference}
+            )
+            ELSE NULL
+          END
+        ) FILTER (WHERE ${genres.id} IS NOT NULL),
+        '[]'::json
+      )`.as("genres"),
+    })
+    .from(users)
+    .leftJoin(userInstruments, eq(users.id, userInstruments.userId))
+    .leftJoin(instruments, eq(userInstruments.instrumentId, instruments.id))
+    .leftJoin(userGenres, eq(users.id, userGenres.userId))
+    .leftJoin(genres, eq(userGenres.genreId, genres.id))
+    .where(eq(users.username, username))
+    .groupBy(users.id)
+    .limit(1);
+
+  if (!result.length) return null;
+
+  const user = result[0]!;
+
+  return user as UserProfile;
+}
+
+export async function getUserSamples(userId: string) {
+  const user = await db.select().from(users).where(eq(users.id, userId));
+
+  if (!user.length) {
+    throw new Error("User not found");
+  }
+
+  const { userId: currentUserClerkId } = await auth();
+
+  const isOwnUser = user[0]?.clerkId === currentUserClerkId;
+
+  let result = await db.query.mediaSamples.findMany({
+    where: eq(mediaSamples.userId, userId),
+    with: {
+      instrument: true,
+      mediaSampleGenres: {
+        with: {
+          genre: true,
+        },
+      },
+    },
+    orderBy: desc(mediaSamples.createdAt),
+  });
+
+  if (!isOwnUser) {
+    // filter out private samples
+    result = result.filter((sample) => sample.isPublic);
+  }
+
+  // Transform the result to flatten genres
+  const samples = result.map((sample) => ({
+    ...sample,
+    genres: sample.mediaSampleGenres.map(
+      (msg) => (msg.genre as Genre) ?? ({} as Genre),
+    ),
+    mediaSampleGenres: undefined, // Remove the junction table data
+  }));
+
+  return samples as Sample[];
+}
+
+export async function getSample(userId: string, sampleId: string) {
+  const result = await db.query.mediaSamples.findFirst({
+    where: and(eq(mediaSamples.id, sampleId), eq(mediaSamples.userId, userId)),
+    with: {
+      instrument: true,
+      mediaSampleGenres: {
+        with: {
+          genre: true,
+        },
+      },
+    },
+  });
+
+  if (!result) return null;
+
+  // Transform the result to flatten genres
+  return {
+    ...result,
+    genres: result.mediaSampleGenres.map(
+      (msg) => (msg.genre as Genre) ?? ({} as Genre),
+    ),
+    mediaSampleGenres: undefined, // Remove the junction table data
+  } as Sample;
 }
