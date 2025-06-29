@@ -16,6 +16,13 @@ export default defineConfig({
       reportsDirectory: "./coverage",
       include: ["src/**/*.{ts,tsx}"],
       reporter: ["text", "json", "html"],
+      // TODO: Add thresholds when we have more tests
+      // thresholds: {
+      //   statements: 80,
+      //   branches: 80,
+      //   functions: 80,
+      //   lines: 80,
+      // },
       exclude: [
         "node_modules/",
         "src/__tests__/",
@@ -26,10 +33,8 @@ export default defineConfig({
         ".next/**",
       ],
     },
-    reporters: [
-      // "verbose", // More detailed output
-      "dot", // Minimal dot output
-    ],
+    reporters: ["json", "verbose"],
+    outputFile: "./test-results.json",
   },
 
   resolve: {

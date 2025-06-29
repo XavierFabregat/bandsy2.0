@@ -18,12 +18,16 @@
     "lint:fix": "next lint --fix",
     "preview": "next build && next start",
     "start": "next start",
-    "test:matching": "tsx tests/matching/run-tests.ts",
-    "test:matching:perf": "tsx tests/matching/performance-test.ts",
-    "test:matching:all": "./test-matching.sh",
+    "test": "vitest",
+    "test:run": "vitest run",
+    "test:watch": "vitest --watch",
+    "test:ui": "vitest --ui",
+    "test:coverage": "vitest run --coverage",
+    "test:coverage:open": "vitest run --coverage && open coverage/index.html",
+    "test:db:setup": "NODE_ENV=test npm run db:push && NODE_ENV=test npm run db:seed",
     "typecheck": "tsc --noEmit",
-    "test-db:push": "NODE_ENV=test drizzle-kit push",
-    "test": "NODE_ENV=test vitest"
+    "ci:test": "npm run typecheck && npm run lint && npm run test:run",
+    "ci:coverage": "npm run ci:test && npm run test:coverage"
   },
   "dependencies": {
     "@clerk/nextjs": "^6.23.0",
