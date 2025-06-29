@@ -39,7 +39,7 @@ jobs:
 
       - name: Setup test database
         env:
-          DATABASE_URL: postgresql://postgres:postgres@localhost:5432/test_bandsy
+          DATABASE_URL: ${{ secrets.TEST_DATABASE_URL }}
         run: |
           npm run db:push
           npm run db:seed
