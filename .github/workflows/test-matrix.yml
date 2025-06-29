@@ -43,6 +43,7 @@ jobs:
 
       - name: Setup test database
         env:
+          SKIP_ENV_VALIDATION: true
           DATABASE_URL: ${{ secrets.TEST_DATABASE_URL }}
           TEST_DATABASE_URL: ${{ secrets.TEST_DATABASE_URL }}
           CLERK_SECRET_KEY: test_secret_key
@@ -56,6 +57,7 @@ jobs:
 
       - name: Run tests
         env:
+          SKIP_ENV_VALIDATION: true
           DATABASE_URL: ${{ secrets.TEST_DATABASE_URL }}
           TEST_DATABASE_URL: ${{ secrets.TEST_DATABASE_URL }}
           CLERK_SECRET_KEY: test_secret_key
