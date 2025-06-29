@@ -4,7 +4,7 @@ import { useState } from "react";
 import { updateMedia } from "../_actions/media";
 
 export function MediaForm() {
-  const [isUploading, setIsUploading] = useState(false);
+  const [isUploading] = useState(false);
 
   return (
     <div className="space-y-6">
