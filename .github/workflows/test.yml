@@ -39,8 +39,9 @@ jobs:
 
       - name: Setup test database
         env:
+          NODE_ENV: test
           SKIP_ENV_VALIDATION: true
-          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          DATABASE_URL: ${{ secrets.TEST_DATABASE_URL }}
           TEST_DATABASE_URL: ${{ secrets.TEST_DATABASE_URL }}
           CLERK_SECRET_KEY: ${{ secrets.CLERK_SECRET_KEY }}
           CLERK_WEBHOOK_SIGNING_SECRET: ${{ secrets.CLERK_WEBHOOK_SIGNING_SECRET }}
@@ -52,6 +53,7 @@ jobs:
 
       - name: Run type checking
         env:
+          NODE_ENV: test
           SKIP_ENV_VALIDATION: true
           DATABASE_URL: ${{ secrets.TEST_DATABASE_URL }}
           TEST_DATABASE_URL: ${{ secrets.TEST_DATABASE_URL }}
@@ -62,10 +64,20 @@ jobs:
         run: npm run typecheck
 
       - name: Run linting
+        env:
+          NODE_ENV: test
+          SKIP_ENV_VALIDATION: true
+          DATABASE_URL: ${{ secrets.TEST_DATABASE_URL }}
+          TEST_DATABASE_URL: ${{ secrets.TEST_DATABASE_URL }}
+          CLERK_SECRET_KEY: ${{ secrets.CLERK_SECRET_KEY }}
+          CLERK_WEBHOOK_SIGNING_SECRET: ${{ secrets.CLERK_WEBHOOK_SIGNING_SECRET }}
+          NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY: ${{ secrets.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY }}
+          UPLOADTHING_TOKEN: ${{ secrets.UPLOADTHING_TOKEN }}
         run: npm run lint
 
       - name: Run tests
         env:
+          NODE_ENV: test
           SKIP_ENV_VALIDATION: true
           DATABASE_URL: ${{ secrets.TEST_DATABASE_URL }}
           TEST_DATABASE_URL: ${{ secrets.TEST_DATABASE_URL }}
@@ -77,6 +89,7 @@ jobs:
 
       - name: Run test coverage
         env:
+          NODE_ENV: test
           SKIP_ENV_VALIDATION: true
           DATABASE_URL: ${{ secrets.TEST_DATABASE_URL }}
           TEST_DATABASE_URL: ${{ secrets.TEST_DATABASE_URL }}
