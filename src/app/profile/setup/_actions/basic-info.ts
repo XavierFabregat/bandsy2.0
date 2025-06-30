@@ -18,7 +18,7 @@ export async function updateBasicInfo(formData: FormData) {
   const { userId } = await auth();
 
   if (!userId) {
-    redirect("/sign-in");
+    redirect("/");
   }
 
   // Extract form data

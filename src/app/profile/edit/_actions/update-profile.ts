@@ -36,14 +36,14 @@ export async function updateProfile(formData: FormData) {
   const { userId } = await auth();
 
   if (!userId) {
-    redirect("/sign-in");
+    redirect("/");
   }
 
   // Get the user's internal database ID
   const user = await getUserByClerkId(userId);
 
   if (!user) {
-    redirect("/sign-in");
+    redirect("/");
   }
 
   const internalUserId = user.id;

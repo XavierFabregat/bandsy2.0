@@ -8,7 +8,7 @@ export default async function BasicInfoPage() {
   const { userId } = await auth();
 
   if (!userId) {
-    redirect("/sign-in");
+    redirect("/");
   }
 
   // Check if profile is already complete

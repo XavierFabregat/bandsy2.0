@@ -22,8 +22,8 @@ export function ProfileGuardClient() {
       return;
     }
 
-    // Skip check if already on profile setup page
-    if (pathname.startsWith("/profile/setup")) {
+    // Skip check if on profile setup routes, auth routes, or landing page
+    if (pathname.startsWith("/profile/setup") || pathname === "/") {
       setIsChecking(false);
       return;
     }
@@ -36,8 +36,9 @@ export function ProfileGuardClient() {
           const profileStatus =
             (await response.json()) as ProfileCompletionStatus;
 
+          console.log("profileStatus", profileStatus);
           if (!profileStatus.isComplete) {
-            void router.push("/profile/setup");
+            router.push("/profile/setup");
             return;
           }
         }
@@ -50,6 +51,16 @@ export function ProfileGuardClient() {
 
     void checkProfile();
   }, [userId, pathname, router]);
+
+  // Don't show loading on excluded routes
+  if (
+    !userId ||
+    pathname.startsWith("/profile/setup") ||
+    pathname.startsWith("/sign-") ||
+    pathname === "/"
+  ) {
+    return null;
+  }
 
   // Show loading state while checking
   if (isChecking) {

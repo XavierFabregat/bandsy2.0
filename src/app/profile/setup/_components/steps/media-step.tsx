@@ -6,7 +6,7 @@ export default async function MediaStep() {
   const { userId } = await auth();
 
   if (!userId) {
-    redirect("/sign-in");
+    redirect("/");
   }
 
   return <MediaForm />;

@@ -23,12 +23,16 @@ export default async function ProfilePage() {
   const { userId } = await auth();
 
   if (!userId) {
-    redirect("/sign-in");
+    redirect("/");
   }
 
+  console.log("userId", userId);
+
   const user = await getCurrentUserProfile(userId);
+  console.log("user", user);
 
   if (!user) {
+    console.log("No user found");
     redirect("/profile/setup");
   }
 

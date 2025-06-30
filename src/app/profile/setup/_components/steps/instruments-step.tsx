@@ -7,7 +7,7 @@ export default async function InstrumentsStep() {
   const { userId } = await auth();
 
   if (!userId) {
-    redirect("/sign-in");
+    redirect("/");
   }
 
   // Fetch instruments and user instruments in parallel

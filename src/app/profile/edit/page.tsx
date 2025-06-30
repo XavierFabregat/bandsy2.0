@@ -34,7 +34,7 @@ export default async function EditProfilePage({
   const { userId } = await auth();
 
   if (!userId) {
-    redirect("/sign-in");
+    redirect("/");
   }
 
   const params = await searchParams;

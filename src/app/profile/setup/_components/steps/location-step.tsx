@@ -9,7 +9,7 @@ export default async function LocationStep() {
   const { userId } = await auth();
 
   if (!userId) {
-    redirect("/sign-in");
+    redirect("/");
   }
 
   // Fetch user location data

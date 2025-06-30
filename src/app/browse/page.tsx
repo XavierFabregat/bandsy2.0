@@ -26,7 +26,7 @@ export default async function BrowsePage({ searchParams }: BrowsePageProps) {
   // Get authenticated user
   const { userId } = await auth();
   if (!userId) {
-    redirect("/sign-in");
+    redirect("/");
   }
 
   // Await searchParams (Next.js 15 change)
