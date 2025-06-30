@@ -1,3 +1,4 @@
+import { cache } from "react";
 import type {
   BrowseUsersResponse,
   BrowseFilters,
@@ -109,15 +110,16 @@ export async function recordInteraction(
   }
 }
 
-export async function getInstruments(): Promise<Instrument[]> {
+// Cached version - will deduplicate requests during the same request lifecycle
+export const getInstruments = cache(async (): Promise<Instrument[]> => {
   const response = await fetch(`${API_BASE_URL}/api/instruments`);
   return response.json() as Promise<Instrument[]>;
-}
+});
 
-export async function getGenres(): Promise<Genre[]> {
+export const getGenres = cache(async (): Promise<Genre[]> => {
   const response = await fetch(`${API_BASE_URL}/api/genres`);
   return response.json() as Promise<Genre[]>;
-}
+});
 
 // Helper function to build filter URL
 export function buildBrowseUrl(filters: BrowseFilters = {}): string {

@@ -11,7 +11,7 @@ export async function updateLocation(formData: FormData) {
   const { userId } = await auth();
 
   if (!userId) {
-    redirect("/sign-in");
+    redirect("/");
   }
 
   const city = formData.get("city") as string;

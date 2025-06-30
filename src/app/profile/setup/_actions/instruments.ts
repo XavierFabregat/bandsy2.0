@@ -18,7 +18,7 @@ export async function updateInstruments(formData: FormData) {
   const { userId } = await auth();
 
   if (!userId) {
-    redirect("/sign-in");
+    redirect("/");
   }
 
   // Get the user's internal database ID
@@ -29,7 +29,7 @@ export async function updateInstruments(formData: FormData) {
     .limit(1);
 
   if (!user.length) {
-    redirect("/sign-in");
+    redirect("/");
   }
 
   const internalUserId = user[0]!.id;

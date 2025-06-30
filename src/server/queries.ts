@@ -387,6 +387,9 @@ export async function getCurrentUserProfile(clerkId: string) {
     .groupBy(users.id)
     .limit(1);
 
+  console.log("result", result);
+  console.log("DB URL", process.env.DATABASE_URL);
+
   if (!result.length) return null;
 
   const user = result[0]!;

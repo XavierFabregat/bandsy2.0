@@ -22,7 +22,7 @@ export function LocationForm({ userLocation }: LocationFormProps) {
     longitude: userLocation.longitude ?? "",
   });
 
-  const [isLoading, setIsLoading] = useState(false);
+  const [isLoading] = useState(false);
 
   return (
     <div className="space-y-6">

@@ -18,12 +18,12 @@ export default async function EditSamplePage({
   const { sampleId } = await params;
 
   if (!userId) {
-    redirect("/sign-in");
+    redirect("/");
   }
 
   const user = await getUserByClerkId(userId);
   if (!user) {
-    redirect("/sign-in");
+    redirect("/");
   }
 
   const [sample, instruments, genres] = await Promise.all([

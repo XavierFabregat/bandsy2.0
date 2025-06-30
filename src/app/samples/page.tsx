@@ -9,12 +9,12 @@ export default async function SamplesPage() {
   const { userId } = await auth();
 
   if (!userId) {
-    redirect("/sign-in");
+    redirect("/");
   }
   const user = await getUserByClerkId(userId);
 
   if (!user) {
-    redirect("/sign-in");
+    redirect("/");
   }
 
   const samples = await getUserSamples(user.id);

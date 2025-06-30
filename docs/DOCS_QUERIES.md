@@ -187,7 +187,7 @@ const result = await browseUsers(userId, {
 // src/app/browse/page.tsx
 export default async function BrowsePage({ searchParams }: BrowsePageProps) {
   const { userId } = await auth();
-  if (!userId) redirect("/sign-in");
+  if (!userId) redirect("/");
 
   const filters: BrowseFilters = {
     page: searchParams.page ? parseInt(searchParams.page) : 1,

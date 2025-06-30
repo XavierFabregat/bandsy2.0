@@ -4,12 +4,11 @@ on:
   pull_request:
     branches: [main, dev]
   push:
-    branches: [main, dev]
 
 jobs:
   test:
     runs-on: ubuntu-latest
-
+    environment: test
     services:
       postgres:
         image: postgres:15
@@ -40,35 +39,70 @@ jobs:
 
       - name: Setup test database
         env:
+          NODE_ENV: test
+          SKIP_ENV_VALIDATION: true
           DATABASE_URL: postgresql://postgres:postgres@localhost:5432/test_bandsy
+          TEST_DATABASE_URL: postgresql://postgres:postgres@localhost:5432/test_bandsy
+          CLERK_SECRET_KEY: ${{ secrets.CLERK_SECRET_KEY }}
+          CLERK_WEBHOOK_SIGNING_SECRET: ${{ secrets.CLERK_WEBHOOK_SIGNING_SECRET }}
+          NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY: ${{ secrets.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY }}
+          UPLOADTHING_TOKEN: ${{ secrets.UPLOADTHING_TOKEN }}
         run: |
+          echo "DATABASE_URL: $DATABASE_URL"
+          echo "TEST_DATABASE_URL: $TEST_DATABASE_URL"
+          echo "CLERK_SECRET_KEY: ${{ secrets.CLERK_SECRET_KEY }}"
+          echo "CLERK_WEBHOOK_SIGNING_SECRET: ${{ secrets.CLERK_WEBHOOK_SIGNING_SECRET }}"
+          echo "NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY: ${{ secrets.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY }}"
+          echo "UPLOADTHING_TOKEN: ${{ secrets.UPLOADTHING_TOKEN }}"
           npm run db:push
           npm run db:seed
 
       - name: Run type checking
+        env:
+          NODE_ENV: test
+          SKIP_ENV_VALIDATION: true
+          DATABASE_URL: postgresql://postgres:postgres@localhost:5432/test_bandsy
+          TEST_DATABASE_URL: postgresql://postgres:postgres@localhost:5432/test_bandsy
+          CLERK_SECRET_KEY: ${{ secrets.CLERK_SECRET_KEY }}
+          CLERK_WEBHOOK_SIGNING_SECRET: ${{ secrets.CLERK_WEBHOOK_SIGNING_SECRET }}
+          NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY: ${{ secrets.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY }}
+          UPLOADTHING_TOKEN: ${{ secrets.UPLOADTHING_TOKEN }}
         run: npm run typecheck
 
       - name: Run linting
+        env:
+          NODE_ENV: test
+          SKIP_ENV_VALIDATION: true
+          DATABASE_URL: postgresql://postgres:postgres@localhost:5432/test_bandsy
+          TEST_DATABASE_URL: postgresql://postgres:postgres@localhost:5432/test_bandsy
+          CLERK_SECRET_KEY: ${{ secrets.CLERK_SECRET_KEY }}
+          CLERK_WEBHOOK_SIGNING_SECRET: ${{ secrets.CLERK_WEBHOOK_SIGNING_SECRET }}
+          NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY: ${{ secrets.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY }}
+          UPLOADTHING_TOKEN: ${{ secrets.UPLOADTHING_TOKEN }}
         run: npm run lint
 
       - name: Run tests
         env:
-          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          NODE_ENV: test
+          SKIP_ENV_VALIDATION: true
+          DATABASE_URL: ${{ secrets.TEST_DATABASE_URL }}
           TEST_DATABASE_URL: ${{ secrets.TEST_DATABASE_URL }}
           CLERK_SECRET_KEY: ${{ secrets.CLERK_SECRET_KEY }}
+          CLERK_WEBHOOK_SIGNING_SECRET: ${{ secrets.CLERK_WEBHOOK_SIGNING_SECRET }}
           NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY: ${{ secrets.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY }}
-          UPLOADTHING_SECRET: ${{ secrets.UPLOADTHING_SECRET }}
-          UPLOADTHING_APP_ID: ${{ secrets.UPLOADTHING_APP_ID }}
+          UPLOADTHING_TOKEN: ${{ secrets.UPLOADTHING_TOKEN }}
         run: npm run test:run
 
       - name: Run test coverage
         env:
-          DATABASE_URL: ${{ secrets.DATABASE_URL }}
-          TEST_DATABASE_URL: ${{ secrets.TEST_DATABASE_URL }}
+          NODE_ENV: test
+          SKIP_ENV_VALIDATION: true
+          DATABASE_URL: postgresql://postgres:postgres@localhost:5432/test_bandsy
+          TEST_DATABASE_URL: postgresql://postgres:postgres@localhost:5432/test_bandsy
           CLERK_SECRET_KEY: ${{ secrets.CLERK_SECRET_KEY }}
+          CLERK_WEBHOOK_SIGNING_SECRET: ${{ secrets.CLERK_WEBHOOK_SIGNING_SECRET }}
           NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY: ${{ secrets.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY }}
-          UPLOADTHING_SECRET: ${{ secrets.UPLOADTHING_SECRET }}
-          UPLOADTHING_APP_ID: ${{ secrets.UPLOADTHING_APP_ID }}
+          UPLOADTHING_TOKEN: ${{ secrets.UPLOADTHING_TOKEN }}
         run: npm run test:coverage
 
       - name: Upload coverage reports

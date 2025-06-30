@@ -9,7 +9,7 @@ export default async function LocationPage() {
   const { userId } = await auth();
 
   if (!userId) {
-    redirect("/sign-in");
+    redirect("/");
   }
 
   return (

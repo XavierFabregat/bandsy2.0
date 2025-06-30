@@ -7,14 +7,14 @@ export default async function BasicInfoStep() {
   const { userId } = await auth();
 
   if (!userId) {
-    redirect("/sign-in");
+    redirect("/");
   }
 
   // Get current user data to pre-populate the form
   const user = await getUserByClerkId(userId);
 
   if (!user) {
-    redirect("/sign-in");
+    redirect("/");
   }
 
   return (
