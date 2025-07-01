@@ -71,11 +71,11 @@
 
 ### Matching System
 
-- [ ] **Discovery algorithm**
-  - [ ] Create user discovery query
-  - [ ] Implement location-based filtering
-  - [ ] Add genre compatibility scoring
-  - [ ] Add instrument complementarity logic
+- [x] **Discovery algorithm**
+  - [x] Create user discovery query
+  - [x] Implement location-based filtering
+  - [x] Add genre compatibility scoring
+  - [x] Add instrument complementarity logic
 - [ ] **Swipe interface**
   - [ ] Create card-based swipe UI
   - [ ] Add like/pass functionality

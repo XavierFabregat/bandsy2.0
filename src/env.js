@@ -15,6 +15,7 @@ export const env = createEnv({
     CLERK_WEBHOOK_SIGNING_SECRET: z.string(),
     UPLOADTHING_TOKEN: z.string(),
     TEST_DATABASE_URL: z.string().url(),
+    GEOCODING_API_KEY: z.string(),
   },
 
   /**
@@ -40,6 +41,7 @@ export const env = createEnv({
     NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY:
       process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY,
     TEST_DATABASE_URL: process.env.TEST_DATABASE_URL,
+    GEOCODING_API_KEY: process.env.GEOCODING_API_KEY,
     // NEXT_PUBLIC_CLIENTVAR: process.env.NEXT_PUBLIC_CLIENTVAR,
   },
   /**
