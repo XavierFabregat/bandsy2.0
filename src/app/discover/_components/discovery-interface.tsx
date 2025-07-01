@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useCallback } from "react";
 import { Button } from "@/components/ui/button";
 import { RefreshCw } from "lucide-react";
 import { discoverUsers, recordInteraction } from "@/lib/api";
@@ -11,10 +11,15 @@ import type {
 import { DiscoveryFilters as FilterComponent } from "./discovery-filters";
 import { CandidateCard } from "./candidate-card";
 
-export function DiscoveryInterface() {
-  const [candidates, setCandidates] = useState<MatchCandidate[]>([]);
+export function DiscoveryInterface({
+  initialCandidates,
+}: {
+  initialCandidates: MatchCandidate[];
+}) {
+  const [candidates, setCandidates] =
+    useState<MatchCandidate[]>(initialCandidates);
   const [currentIndex, setCurrentIndex] = useState(0);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false);
   const [filters, setFilters] = useState<DiscoveryFilters>({
     maxDistance: 50,
     isActive: true,
@@ -41,11 +46,6 @@ export function DiscoveryInterface() {
     },
     [filters],
   );
-
-  // Only load candidates on initial mount
-  useEffect(() => {
-    void loadCandidates();
-  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Manual refresh function
   const handleRefresh = () => {

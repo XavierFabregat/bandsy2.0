@@ -78,9 +78,9 @@
   - [x] Add instrument complementarity logic
 - [ ] **Swipe interface**
   - [ ] Create card-based swipe UI
-  - [ ] Add like/pass functionality
+  - [x] Add like/pass functionality
   - [ ] Implement swipe history tracking
-  - [ ] Add "super like" feature
+  - [x] Add "super like" feature
 - [ ] **Match logic**
   - [ ] Create match detection system
   - [ ] Add match notifications

@@ -58,7 +58,6 @@ export function CandidateCard({
 
   const formatLastActive = (date: Date) => {
     date = new Date(date);
-    console.log("date ==>", date);
     const now = new Date();
     const diffInHours = Math.floor(
       (now.getTime() - date.getTime()) / (1000 * 60 * 60),
@@ -70,8 +69,6 @@ export function CandidateCard({
     if (diffInDays < 7) return `Active ${diffInDays}d ago`;
     return "Active recently";
   };
-
-  console.log("candidate ==>", candidate);
 
   return (
     <Card className="overflow-hidden border-0 bg-gradient-to-br from-white via-white to-gray-50/30 shadow-xl dark:from-gray-950 dark:via-gray-950 dark:to-gray-900/50">
