@@ -1,3 +1,4 @@
+import GeocodingService from "@/lib/services/geocoding";
 import { db } from "./db";
 import {
   mediaSampleGenres,
@@ -43,6 +44,24 @@ export async function updateUserProfile(
   userId: string,
   data: UpdateUserProfileData,
 ) {
+  const geocodingService = GeocodingService.getInstance();
+  const coordinatesResult = await geocodingService.getCoordinates(data.city);
+
+  // Handle geocoding result
+  let latitude: number | null = null;
+  let longitude: number | null = null;
+
+  if (!GeocodingService.isError(coordinatesResult)) {
+    latitude = coordinatesResult.latitude;
+    longitude = coordinatesResult.longitude;
+  } else {
+    // Log the error but don't fail the entire update
+    console.warn(
+      `Geocoding failed for city "${data.city}":`,
+      coordinatesResult.error,
+    );
+  }
+
   await db
     .update(users)
     .set({
@@ -53,6 +72,8 @@ export async function updateUserProfile(
       city: data.city,
       region: data.region,
       country: data.country,
+      latitude: latitude?.toString(),
+      longitude: longitude?.toString(),
       updatedAt: data.updatedAt ?? new Date(),
     })
     .where(eq(users.id, userId));

@@ -32,4 +32,5 @@ jobs:
           CLERK_WEBHOOK_SIGNING_SECRET: ${{ secrets.CLERK_WEBHOOK_SIGNING_SECRET }}
           NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY: ${{ secrets.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY }}
           UPLOADTHING_TOKEN: ${{ secrets.UPLOADTHING_TOKEN }}
+          GEOCODING_API_KEY: ${{ secrets.GEOCODING_API_KEY }}
         run: npm run lint
