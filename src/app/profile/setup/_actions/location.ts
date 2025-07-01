@@ -6,6 +6,7 @@ import { db } from "@/server/db";
 import { users } from "@/server/db/schema";
 import { eq } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
+import GeocodingService from "@/lib/services/geocoding";
 
 export async function updateLocation(formData: FormData) {
   const { userId } = await auth();
@@ -17,8 +18,19 @@ export async function updateLocation(formData: FormData) {
   const city = formData.get("city") as string;
   const region = formData.get("region") as string;
   const country = formData.get("country") as string;
-  const latitude = formData.get("latitude") as string;
-  const longitude = formData.get("longitude") as string;
+
+  const geocodingService = GeocodingService.getInstance();
+  const coordinatesResult = await geocodingService.getCoordinates(city);
+
+  let latitude: number | null = null;
+  let longitude: number | null = null;
+
+  if (!GeocodingService.isError(coordinatesResult)) {
+    latitude = coordinatesResult.latitude;
+    longitude = coordinatesResult.longitude;
+  } else {
+    console.error("Geocoding failed:", coordinatesResult.error);
+  }
 
   // Validation
   const errors: Record<string, string> = {};
@@ -53,8 +65,8 @@ export async function updateLocation(formData: FormData) {
         city: city.trim(),
         region: region.trim(),
         country: country.trim(),
-        latitude: latitude,
-        longitude: longitude,
+        latitude: latitude?.toString() ?? null,
+        longitude: longitude?.toString() ?? null,
       })
       .where(eq(users.clerkId, userId));
 

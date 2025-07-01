@@ -54,6 +54,10 @@ export async function updateUserProfile(
   if (!GeocodingService.isError(coordinatesResult)) {
     latitude = coordinatesResult.latitude;
     longitude = coordinatesResult.longitude;
+    console.log(`Geocoding successful for city "${data.city}":`, {
+      latitude,
+      longitude,
+    });
   } else {
     // Log the error but don't fail the entire update
     console.warn(
