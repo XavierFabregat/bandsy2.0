@@ -1,4 +1,8 @@
 import nextEnv from "@next/env";
 
 const projectDir = process.cwd();
-nextEnv.loadEnvConfig(projectDir);
+
+// Only load env config if available (prevents build-time errors)
+if (nextEnv?.loadEnvConfig) {
+  nextEnv.loadEnvConfig(projectDir);
+}

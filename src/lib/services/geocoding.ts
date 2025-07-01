@@ -1,5 +1,3 @@
-import "@/envConfig";
-
 interface GeocodingResponse {
   lat: string;
   lon: string;
