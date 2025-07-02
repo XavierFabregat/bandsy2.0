@@ -76,10 +76,10 @@
   - [x] Implement location-based filtering
   - [x] Add genre compatibility scoring
   - [x] Add instrument complementarity logic
-- [ ] **Swipe interface**
-  - [ ] Create card-based swipe UI
+- [x] **Swipe interface**
+  - [x] Create card-based swipe UI (not swipe for now, but maybe implement later)
   - [x] Add like/pass functionality
-  - [ ] Implement swipe history tracking
+  - [x] Implement swipe history tracking
   - [x] Add "super like" feature
 - [ ] **Match logic**
   - [ ] Create match detection system
@@ -288,6 +288,10 @@
 - **Testing**: Add unit and integration tests as features are built
 
 ---
+
+## 🧠 **Ideas**
+
+-
 
 _Last updated: [Current Date]_
 _Priority levels: High (immediate), Medium (next sprint), Low (future)_

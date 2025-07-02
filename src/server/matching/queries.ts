@@ -22,6 +22,7 @@ import {
   exists,
   or,
 } from "drizzle-orm";
+import { alias } from "drizzle-orm/pg-core";
 import { auth } from "@clerk/nextjs/server";
 import type {
   UserMatchProfile,
@@ -32,6 +33,7 @@ import type {
   GenrePreference,
   InstrumentSkill,
   DiscoveryResult,
+  DiscoveryHistory,
 } from "@/lib/matching/types/matching-types";
 import { CompositeScorer } from "@/lib/matching/algorithms/composite-scorer";
 import { LocationScorer } from "@/lib/matching/algorithms/location-scorer";
@@ -481,4 +483,57 @@ export async function getDiscoveryCandidates(
     },
     filters,
   };
+}
+
+export async function getDiscoveryHistory(
+  clerkId: string,
+): Promise<DiscoveryHistory[]> {
+  const { userId } = await auth();
+  if (!userId) throw new Error("Unauthorized");
+
+  const [currentUser] = await db
+    .select({ id: users.id })
+    .from(users)
+    .where(eq(users.clerkId, clerkId))
+    .limit(1);
+
+  if (!currentUser) throw new Error("User not found");
+
+  // Create aliases for the users table
+  const fromUsers = alias(users, "fromUsers");
+  const toUsers = alias(users, "toUsers");
+
+  const interactions = await db
+    .select({
+      id: userInteractions.id,
+      type: userInteractions.type,
+      context: userInteractions.context,
+      createdAt: userInteractions.createdAt,
+      fromUser: {
+        id: fromUsers.id,
+        username: fromUsers.username,
+        displayName: fromUsers.displayName,
+        profileImageUrl: fromUsers.profileImageUrl,
+      },
+      toUser: {
+        id: toUsers.id,
+        username: toUsers.username,
+        displayName: toUsers.displayName,
+        profileImageUrl: toUsers.profileImageUrl,
+      },
+    })
+    .from(userInteractions)
+    .leftJoin(fromUsers, eq(userInteractions.fromUserId, fromUsers.id))
+    .leftJoin(toUsers, eq(userInteractions.toUserId, toUsers.id))
+    .where(eq(userInteractions.fromUserId, currentUser.id))
+    .orderBy(desc(userInteractions.createdAt));
+
+  return interactions.map((interaction) => ({
+    id: interaction.id,
+    type: interaction.type,
+    context: interaction.context,
+    createdAt: interaction.createdAt,
+    fromUser: interaction.fromUser!,
+    toUser: interaction.toUser!,
+  }));
 }

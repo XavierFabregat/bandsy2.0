@@ -116,3 +116,21 @@ export interface PaginationOptions {
   limit: number;
   cursor?: string;
 }
+
+export interface DiscoveryHistory {
+  id: string;
+  type: "like" | "super_like" | "block" | "pass";
+  createdAt: Date;
+  fromUser: {
+    id: string;
+    username: string;
+    displayName: string;
+    profileImageUrl: string | null;
+  };
+  toUser: {
+    id: string;
+    username: string;
+    displayName: string;
+    profileImageUrl: string | null;
+  };
+}
