@@ -1,7 +1,5 @@
 import { describe, it, expect, beforeEach, vi, afterEach } from "vitest";
-import GeocodingService, {
-  type GeocodeServiceResult,
-} from "@/lib/services/geocoding";
+import GeocodingService from "@/lib/services/geocoding";
 
 // Mock the environment config
 vi.mock("@/envConfig", () => ({}));
