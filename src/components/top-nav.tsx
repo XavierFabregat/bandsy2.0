@@ -9,7 +9,7 @@ import {
   NavigationMenuList,
   NavigationMenuTrigger,
 } from "./ui/navigation-menu";
-import { SignedIn } from "@clerk/nextjs";
+import { SignedIn, SignedOut, SignInButton } from "@clerk/nextjs";
 import {
   UserIcon,
   UserPen,
@@ -156,7 +156,16 @@ export function TopNav() {
             </SignedIn>
 
             {/* User menu */}
-            <UserButton />
+            <SignedIn>
+              <UserButton />
+            </SignedIn>
+            <SignedOut>
+              <SignInButton mode="modal">
+                <button className="bg-primary text-primary-foreground hover:bg-primary/90 rounded-md px-3 py-2 text-sm font-medium">
+                  Sign In
+                </button>
+              </SignInButton>
+            </SignedOut>
           </div>
         </div>
       </div>

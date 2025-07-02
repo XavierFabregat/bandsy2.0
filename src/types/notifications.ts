@@ -5,12 +5,14 @@ export interface NotificationData {
     fromUserName: string;
     fromUserImage?: string;
     interactionId: string;
+    fromUserDisplayName: string;
   };
   super_like_received?: {
     fromUserId: string;
     fromUserName: string;
     fromUserImage?: string;
     interactionId: string;
+    fromUserDisplayName: string;
   };
   // Match notifications
   match_created?: {
@@ -19,6 +21,7 @@ export interface NotificationData {
     otherUserName: string;
     otherUserImage?: string;
     matchScore?: number;
+    otherUserDisplayName: string;
   };
   // Message notifications
   message_received?: {
@@ -26,12 +29,14 @@ export interface NotificationData {
     senderId: string;
     senderName: string;
     messagePreview: string;
+    senderDisplayName: string;
   };
   // Profile notifications
   profile_viewed?: {
     viewerId: string;
     viewerName: string;
     viewerImage?: string;
+    viewerDisplayName: string;
   };
   // Group notifications
   group_invitation?: {
@@ -39,6 +44,7 @@ export interface NotificationData {
     groupName: string;
     inviterId: string;
     inviterName: string;
+    inviterDisplayName: string;
   };
   // Event notifications
   event_reminder?: {

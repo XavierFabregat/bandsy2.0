@@ -4,7 +4,7 @@ import { getUserByClerkId } from "@/server/queries";
 import { NotificationSSEService } from "@/lib/notifications/sse-service";
 import { createNotification } from "@/server/notifications/mutations";
 
-export async function GET(request: NextRequest) {
+export async function GET(_request: NextRequest) {
   console.log("Debug notification route");
   const { userId } = await auth();
   if (!userId) {

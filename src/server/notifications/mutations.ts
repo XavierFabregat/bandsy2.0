@@ -1,6 +1,6 @@
 import { db } from "../db";
 import { notifications, users } from "../db/schema";
-import { eq, and, desc, isNull, or, sql } from "drizzle-orm";
+import { eq, and } from "drizzle-orm";
 import type {
   CreateNotificationParams,
   Notification,
@@ -17,6 +17,9 @@ export async function createNotification<T extends NotificationType>(
   params: CreateNotificationParams<T>,
 ): Promise<string> {
   const template = getNotificationTemplate(params.type, params.data);
+
+  console.log("template", template);
+  console.log("actionUrl", template.actionUrl);
 
   const [result] = await db
     .insert(notifications)
@@ -127,6 +130,7 @@ export async function createLikeNotification(
     .select({
       displayName: users.displayName,
       profileImageUrl: users.profileImageUrl,
+      username: users.username,
     })
     .from(users)
     .where(eq(users.id, fromUserId))
@@ -145,6 +149,7 @@ export async function createLikeNotification(
       fromUserName: fromUser.displayName,
       fromUserImage: fromUser.profileImageUrl ?? undefined,
       interactionId: "", // You might want to pass this
+      fromUserDisplayName: fromUser.username,
     },
     expiresAt: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000), // 30 days
   });

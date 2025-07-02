@@ -33,11 +33,6 @@ export function NotificationBell() {
     setHasPermission(granted);
   };
 
-  console.log("notifications ", notifications);
-  console.log("unreadCount ", unreadCount);
-  console.log("isConnected ", isConnected);
-  console.log("error ", error);
-
   return (
     <DropdownMenu open={isOpen} onOpenChange={setIsOpen}>
       <DropdownMenuTrigger asChild>

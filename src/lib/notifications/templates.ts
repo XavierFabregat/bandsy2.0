@@ -14,7 +14,7 @@ export function getNotificationTemplate<T extends NotificationType>(
       return {
         title: "Someone liked you!",
         message: `${likeData?.fromUserName} liked your profile`,
-        actionUrl: `/u/${likeData?.fromUserName}`,
+        actionUrl: `/u/${likeData?.fromUserDisplayName}`,
         actionType: "navigate",
       };
 
@@ -23,7 +23,7 @@ export function getNotificationTemplate<T extends NotificationType>(
       return {
         title: "Someone super liked you! ⭐",
         message: `${superLikeData?.fromUserName} super liked your profile`,
-        actionUrl: `/u/${superLikeData?.fromUserName}`,
+        actionUrl: `/u/${superLikeData?.fromUserDisplayName}`,
         actionType: "navigate",
       };
 
@@ -50,7 +50,7 @@ export function getNotificationTemplate<T extends NotificationType>(
       return {
         title: "Profile View",
         message: `${viewData?.viewerName} viewed your profile`,
-        actionUrl: `/u/${viewData?.viewerName}`,
+        actionUrl: `/u/${viewData?.viewerDisplayName}`,
         actionType: "navigate",
       };
 
