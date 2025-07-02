@@ -1,5 +1,4 @@
 import Link from "next/link";
-import { UserButton } from "@clerk/nextjs";
 import { ModeToggle } from "@/app/_components/mode-toggle";
 import {
   NavigationMenu,
@@ -9,7 +8,7 @@ import {
   NavigationMenuList,
   NavigationMenuTrigger,
 } from "./ui/navigation-menu";
-import { SignedIn, SignedOut, SignInButton } from "@clerk/nextjs";
+import { SignedIn } from "@clerk/nextjs";
 import {
   UserIcon,
   UserPen,
@@ -18,7 +17,7 @@ import {
   Search,
   Compass,
 } from "lucide-react";
-import { NotificationBell } from "./notifications/notification-bell";
+import { AuthSection } from "./auth-section";
 
 export function TopNav() {
   return (
@@ -130,7 +129,7 @@ export function TopNav() {
 
           {/* Right side actions */}
           <div className="flex items-center gap-4">
-            {/* Mobile menu button (we'll implement this later) */}
+            {/* Mobile menu button */}
             <button className="md:hidden">
               <svg
                 className="h-6 w-6"
@@ -150,22 +149,8 @@ export function TopNav() {
             {/* Theme toggle */}
             <ModeToggle />
 
-            {/* Notifications */}
-            <SignedIn>
-              <NotificationBell />
-            </SignedIn>
-
-            {/* User menu */}
-            <SignedIn>
-              <UserButton />
-            </SignedIn>
-            <SignedOut>
-              <SignInButton mode="modal">
-                <button className="bg-primary text-primary-foreground hover:bg-primary/90 rounded-md px-3 py-2 text-sm font-medium">
-                  Sign In
-                </button>
-              </SignInButton>
-            </SignedOut>
+            {/* Auth Section - Client Only */}
+            <AuthSection />
           </div>
         </div>
       </div>
