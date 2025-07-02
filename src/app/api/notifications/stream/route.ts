@@ -15,8 +15,6 @@ export async function GET(request: NextRequest) {
     return new Response("User not found", { status: 404 });
   }
 
-  console.log(`SSE: New connection request for user ${user.id}`);
-
   // Create a readable stream that stays open
   const stream = new ReadableStream({
     start(controller) {
@@ -56,23 +54,8 @@ export async function GET(request: NextRequest) {
       // Store connection in the service
       NotificationSSEService.addConnection(user.id, writer);
 
-      // Send a heartbeat every 30 seconds to keep connection alive
-      const heartbeatInterval = setInterval(() => {
-        const success = sendMessage({
-          type: "heartbeat",
-          timestamp: new Date().toISOString(),
-        });
-
-        if (!success) {
-          clearInterval(heartbeatInterval);
-          cleanup();
-        }
-      }, 30000);
-
       // Cleanup function
       const cleanup = () => {
-        console.log(`SSE: Cleaning up connection for user ${user.id}`);
-        clearInterval(heartbeatInterval);
         NotificationSSEService.removeConnection(user.id);
 
         try {
@@ -84,7 +67,6 @@ export async function GET(request: NextRequest) {
 
       // Handle client disconnect
       request.signal.addEventListener("abort", () => {
-        console.log(`SSE: Client disconnected for user ${user.id}`);
         cleanup();
       });
 
@@ -94,7 +76,6 @@ export async function GET(request: NextRequest) {
 
     // Handle stream cancellation
     cancel() {
-      console.log(`SSE: Stream cancelled for user ${user.id}`);
       NotificationSSEService.removeConnection(user.id);
     },
   });
@@ -116,7 +97,6 @@ export function sendNotificationToUser(
   userId: string,
   notification: Notification,
 ) {
-  console.log("We are in sendNotificationToUser");
   const connection = NotificationSSEService.getConnection(userId);
   if (connection) {
     const data = `data: ${JSON.stringify({
@@ -126,9 +106,7 @@ export function sendNotificationToUser(
     })}\n\n`;
 
     try {
-      console.log("Writing notification to user ", userId);
       void connection.write(new TextEncoder().encode(data));
-      console.log("Notification written to user ", userId);
     } catch (error) {
       console.error("Failed to send notification:", error);
       NotificationSSEService.removeConnection(userId);
@@ -138,7 +116,6 @@ export function sendNotificationToUser(
 
 // Function to broadcast unread count update
 export function sendUnreadCountUpdate(userId: string, count: number) {
-  console.log("We are in sendUnreadCountUpdate");
   const connection = NotificationSSEService.getConnection(userId);
   if (connection) {
     const data = `data: ${JSON.stringify({

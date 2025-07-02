@@ -23,44 +23,38 @@ export function useNotificationSSE() {
 
   const connect = useCallback(() => {
     if (eventSourceRef.current?.readyState === EventSource.OPEN) {
-      console.log("SSE: Already connected");
+      // Already connected
       return;
     }
 
-    console.log("SSE: Attempting to connect...");
-
+    // Attempt to connect
     try {
       const eventSource = new EventSource("/api/notifications/stream");
       eventSourceRef.current = eventSource;
 
       eventSource.onopen = () => {
-        console.log("SSE: Connected successfully");
+        // Connection established
         setIsConnected(true);
         setError(null);
         reconnectAttempts.current = 0;
       };
 
       eventSource.onmessage = (event) => {
-        console.log("SSE: Received message:", event.data);
+        // Receive message from server
 
         try {
           const data: SSEEvent = JSON.parse(event.data as string) as SSEEvent;
-          console.log("SSE: Parsed data:", data);
 
           switch (data.type) {
             case "connected":
-              console.log("SSE: Connection confirmed");
-              break;
-
-            case "heartbeat":
-              console.log("SSE: Heartbeat received");
+              // Connection confirmed
               break;
 
             case "notification":
-              console.log("SSE: New notification received:", data.notification);
+              // New notification received
               if (data.notification) {
                 setNotifications((prev) => {
-                  console.log("SSE: Adding notification to state");
+                  // Add notification to state
                   return [data.notification!, ...prev.slice(0, 9)];
                 });
                 setUnreadCount((prev) => prev + 1);
@@ -83,7 +77,7 @@ export function useNotificationSSE() {
               break;
 
             case "unread_count":
-              console.log("SSE: Unread count update:", data.count);
+              // Unread count update
               if (typeof data.count === "number") {
                 setUnreadCount(data.count);
               }
@@ -139,12 +133,9 @@ export function useNotificationSSE() {
 
   const requestNotificationPermission = useCallback(async () => {
     if ("Notification" in window) {
-      console.log("Current permission:", Notification.permission);
-
       if (Notification.permission === "default") {
-        console.log("Requesting notification permission from user gesture...");
+        // Request permission from user gesture
         const permission = await Notification.requestPermission();
-        console.log("Permission result:", permission);
         return permission === "granted";
       }
       return Notification.permission === "granted";
