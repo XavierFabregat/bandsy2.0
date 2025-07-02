@@ -9,7 +9,7 @@ import type {
   DiscoveryFilters,
   PaginationOptions,
 } from "@/lib/matching/types/matching-types";
-import type { DiscoveryResult } from "@/server/matching-queries";
+import type { DiscoveryResult } from "@/lib/matching/types/matching-types";
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL ?? "";
 

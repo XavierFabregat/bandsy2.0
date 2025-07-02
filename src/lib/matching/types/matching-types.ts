@@ -1,5 +1,16 @@
 import type { Sample } from "@/types/api";
 
+export interface DiscoveryResult {
+  candidates: MatchCandidate[];
+  pagination: {
+    page: number;
+    limit: number;
+    total: number;
+    hasMore: boolean;
+  };
+  filters: DiscoveryFilters;
+}
+
 export interface Location {
   latitude: number;
   longitude: number;

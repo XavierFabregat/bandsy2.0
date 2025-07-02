@@ -9,7 +9,19 @@ import {
   userInteractions,
   mediaSamples,
 } from "@/server/db/schema";
-import { eq, ne, and, desc, sql, isNull, lt, gt, not } from "drizzle-orm";
+import {
+  eq,
+  ne,
+  and,
+  desc,
+  sql,
+  isNull,
+  lt,
+  gt,
+  not,
+  exists,
+  or,
+} from "drizzle-orm";
 import { auth } from "@clerk/nextjs/server";
 import type {
   UserMatchProfile,
@@ -19,205 +31,17 @@ import type {
   Location,
   GenrePreference,
   InstrumentSkill,
+  DiscoveryResult,
 } from "@/lib/matching/types/matching-types";
 import { CompositeScorer } from "@/lib/matching/algorithms/composite-scorer";
 import { LocationScorer } from "@/lib/matching/algorithms/location-scorer";
 import type { Sample } from "@/types/api";
-import { createLikeNotification } from "./notifications/mutations";
-
-export interface DiscoveryResult {
-  candidates: MatchCandidate[];
-  pagination: {
-    page: number;
-    limit: number;
-    total: number;
-    hasMore: boolean;
-  };
-  filters: DiscoveryFilters;
-}
-
-/**
- * Convert skill level string to numeric value for calculations
- */
-function skillLevelToNumber(skillLevel: string): number {
-  switch (skillLevel) {
-    case "beginner":
-      return 1;
-    case "intermediate":
-      return 2;
-    case "advanced":
-      return 3;
-    case "expert":
-    case "professional":
-      return 4;
-    default:
-      return 2;
-  }
-}
-
-/**
- * Calculate average skill level from instruments
- */
-function calculateSkillLevelAverage(instruments: InstrumentSkill[]): number {
-  if (instruments.length === 0) return 2;
-
-  const total = instruments.reduce((sum, instrument) => {
-    return sum + skillLevelToNumber(instrument.skillLevel);
-  }, 0);
-
-  return total / instruments.length;
-}
-
-/**
- * Calculate activity score based on last activity
- */
-function calculateActivityScore(lastActive: Date): number {
-  const daysSinceActive = Math.floor(
-    (Date.now() - lastActive.getTime()) / (1000 * 60 * 60 * 24),
-  );
-
-  if (daysSinceActive <= 1) return 100;
-  if (daysSinceActive <= 7) return 80;
-  if (daysSinceActive <= 30) return 60;
-  if (daysSinceActive <= 90) return 40;
-  return 20;
-}
-
-/**
- * Get varied default location for testing (based on user ID)
- */
-function getTestLocation(userId: string): Location {
-  const hash = userId.split("").reduce((a, b) => {
-    a = (a << 5) - a + b.charCodeAt(0);
-    return a & a;
-  }, 0);
-
-  const locations = [
-    { lat: 37.7749, lng: -122.4194, city: "San Francisco", region: "CA" },
-    { lat: 37.8044, lng: -122.2712, city: "Oakland", region: "CA" },
-    { lat: 40.7128, lng: -74.006, city: "New York", region: "NY" },
-    { lat: 34.0522, lng: -118.2437, city: "Los Angeles", region: "CA" },
-    { lat: 41.8781, lng: -87.6298, city: "Chicago", region: "IL" },
-    { lat: 47.6062, lng: -122.3321, city: "Seattle", region: "WA" },
-  ];
-
-  const index = Math.abs(hash) % locations.length;
-  const loc = locations[index]!;
-
-  return {
-    latitude: loc.lat,
-    longitude: loc.lng,
-    city: loc.city,
-    region: loc.region,
-    country: "United States",
-  };
-}
-
-/**
- * Create or update user match profile
- */
-export async function createOrUpdateUserMatchProfile(
-  clerkId: string,
-  profileData?: Partial<UserMatchProfile>,
-): Promise<void> {
-  const user = await db
-    .select()
-    .from(users)
-    .where(eq(users.clerkId, clerkId))
-    .limit(1);
-  if (!user.length) throw new Error("User not found");
-
-  const userId = user[0]!.id;
-
-  // Check if profile exists
-  const existingProfile = await db
-    .select()
-    .from(userMatchProfiles)
-    .where(eq(userMatchProfiles.userId, userId))
-    .limit(1);
-
-  // Get user's instruments for computed values
-  const instrumentsResult = await db
-    .select({
-      skillLevel: userInstruments.skillLevel,
-      yearsOfExperience: userInstruments.yearsOfExperience,
-      isPrimary: userInstruments.isPrimary,
-      instrumentId: instruments.id,
-      instrumentName: instruments.name,
-      instrumentCategory: instruments.category,
-    })
-    .from(userInstruments)
-    .leftJoin(instruments, eq(userInstruments.instrumentId, instruments.id))
-    .where(eq(userInstruments.userId, userId));
-
-  const mockInstruments: InstrumentSkill[] = instrumentsResult.map((i) => ({
-    id: i.instrumentId!,
-    name: i.instrumentName!,
-    category: i.instrumentCategory!,
-    skillLevel: i.skillLevel as
-      | "beginner"
-      | "intermediate"
-      | "advanced"
-      | "expert",
-    yearsOfExperience: i.yearsOfExperience!,
-    isPrimary: i.isPrimary!,
-  }));
-
-  const skillLevelAverage = calculateSkillLevelAverage(mockInstruments);
-
-  // Use provided location or fall back to user's location or test location
-  const location =
-    profileData?.location ??
-    (user[0]!.latitude && user[0]!.longitude
-      ? {
-          latitude: parseFloat(user[0]!.latitude),
-          longitude: parseFloat(user[0]!.longitude),
-          city: user[0]!.city ?? undefined,
-          region: user[0]!.region ?? undefined,
-          country: user[0]!.country ?? undefined,
-        }
-      : getTestLocation(userId));
-
-  const profileValues = {
-    userId,
-    locationLat: location.latitude.toString(),
-    locationLng: location.longitude.toString(),
-    city: location.city ?? user[0]!.city,
-    region: location.region ?? user[0]!.region,
-    country: location.country ?? user[0]!.country,
-    searchRadius: profileData?.searchRadius ?? 50,
-    ageRangeMin: profileData?.ageRange?.min ?? 18,
-    ageRangeMax: profileData?.ageRange?.max ?? 65,
-    lookingFor: profileData?.lookingFor ?? "any",
-    skillLevelAverage: skillLevelAverage.toString(),
-    activityScore:
-      profileData?.activityScore ?? calculateActivityScore(new Date()),
-    isActive: profileData?.isActive ?? true,
-    lastActive: new Date(),
-    updatedAt: new Date(),
-  };
-
-  if (existingProfile.length > 0) {
-    // Update existing
-    await db
-      .update(userMatchProfiles)
-      .set(profileValues)
-      .where(eq(userMatchProfiles.userId, userId));
-
-    console.log(`Updated match profile for user ${userId}`);
-  } else {
-    // Create new
-    await db.insert(userMatchProfiles).values({
-      ...profileValues,
-      createdAt: new Date(),
-    });
-
-    console.log(
-      `Created new match profile for user ${userId} at location:`,
-      location,
-    );
-  }
-}
+import { createOrUpdateUserMatchProfile } from "./mutations";
+import {
+  calculateSkillLevelAverage,
+  calculateActivityScore,
+  getTestLocation,
+} from "@/lib/utils";
 
 /**
  * Get or create user match profile with all necessary data
@@ -362,6 +186,18 @@ export async function getDiscoveryCandidates(
     throw new Error("User profile not found");
   }
 
+  const currentUser = await db
+    .select({ id: users.id })
+    .from(users)
+    .where(eq(users.clerkId, clerkId))
+    .limit(1);
+
+  if (!currentUser.length) {
+    throw new Error("Current user not found");
+  }
+
+  const currentUserId = currentUser[0]!.id;
+
   const { page, limit } = pagination;
   const offset = (page - 1) * limit;
 
@@ -369,6 +205,24 @@ export async function getDiscoveryCandidates(
   const whereConditions = [
     ne(users.clerkId, clerkId), // Exclude current user
     eq(users.isActive, true), // Only active users
+    not(
+      exists(
+        db
+          .select()
+          .from(userInteractions)
+          .where(
+            and(
+              eq(userInteractions.fromUserId, currentUserId),
+              eq(userInteractions.toUserId, users.id),
+              or(
+                eq(userInteractions.type, "like"),
+                eq(userInteractions.type, "super_like"),
+                eq(userInteractions.type, "block"),
+              ),
+            ),
+          ),
+      ),
+    ),
   ];
 
   // Age range filter
@@ -627,36 +481,4 @@ export async function getDiscoveryCandidates(
     },
     filters,
   };
-}
-
-/**
- * Record user interaction for algorithm improvement
- */
-export async function recordUserInteraction(
-  clerkId: string,
-  targetUserId: string,
-  action: "like" | "pass" | "super_like" | "block",
-  context: "search" | "discovery",
-): Promise<void> {
-  const { userId } = await auth();
-  if (!userId) throw new Error("Unauthorized");
-
-  const user = await db
-    .select()
-    .from(users)
-    .where(eq(users.clerkId, clerkId))
-    .limit(1);
-  if (!user.length) throw new Error("User not found");
-
-  await db.insert(userInteractions).values({
-    fromUserId: user[0]!.id,
-    toUserId: targetUserId,
-    type: action,
-    createdAt: new Date(),
-    context,
-  });
-
-  if (action === "like" || action === "super_like") {
-    await createLikeNotification(user[0]!.id, targetUserId, action);
-  }
 }

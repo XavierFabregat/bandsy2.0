@@ -2,7 +2,7 @@ import { auth } from "@clerk/nextjs/server";
 import { redirect } from "next/navigation";
 import { DiscoveryInterface } from "./_components/discovery-interface";
 import type { DiscoveryFilters } from "@/lib/matching/types/matching-types";
-import { getDiscoveryCandidates } from "@/server/matching-queries";
+import { getDiscoveryCandidates } from "@/server/matching/queries";
 
 export default async function DiscoverPage() {
   const { userId } = await auth();
