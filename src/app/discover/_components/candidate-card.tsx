@@ -71,7 +71,7 @@ export function CandidateCard({
   };
 
   return (
-    <Card className="overflow-hidden border-0 bg-gradient-to-br from-white via-white to-gray-50/30 shadow-xl dark:from-gray-950 dark:via-gray-950 dark:to-gray-900/50">
+    <Card className="shadow-primary overflow-hidden border-0 bg-gradient-to-br from-white via-white to-gray-50/30 shadow-[0_0_20px] dark:from-gray-950 dark:via-gray-950 dark:to-gray-900/50">
       {/* Header with gradient background */}
       <div className="from-primary/10 via-primary/5 relative border-b border-gray-100 bg-gradient-to-r to-transparent p-6 dark:border-gray-800">
         <div className="flex flex-col items-center justify-between gap-4 sm:flex-row sm:items-center">

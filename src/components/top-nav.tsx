@@ -18,6 +18,7 @@ import {
   Search,
   Compass,
 } from "lucide-react";
+import { NotificationBell } from "./notifications/notification-bell";
 
 export function TopNav() {
   return (
@@ -148,6 +149,11 @@ export function TopNav() {
 
             {/* Theme toggle */}
             <ModeToggle />
+
+            {/* Notifications */}
+            <SignedIn>
+              <NotificationBell />
+            </SignedIn>
 
             {/* User menu */}
             <UserButton />

@@ -1,0 +1,134 @@
+import type { Notification } from "../../types/notifications";
+
+interface SSEConnection {
+  write: (data: Uint8Array) => void;
+  userId: string;
+  connectedAt: Date;
+}
+
+// Use globalThis to persist across module reloads
+const globalForSSE = globalThis as unknown as {
+  sseConnections: Map<string, SSEConnection> | undefined;
+};
+
+// Create or reuse the connections map
+const connections =
+  globalForSSE.sseConnections ?? new Map<string, SSEConnection>();
+globalForSSE.sseConnections = connections;
+
+export interface SSEEvent {
+  type: "notification" | "unread_count";
+  notification?: Notification;
+  count?: number;
+  timestamp: string;
+}
+
+export class NotificationSSEService {
+  static addConnection(
+    userId: string,
+    writer: { write: (data: Uint8Array) => Promise<void> },
+  ) {
+    connections.set(userId, {
+      write: (data: Uint8Array) => {
+        writer.write(data).catch((error) => {
+          console.error(`SSE write error for user ${userId}:`, error);
+          connections.delete(userId);
+        });
+      },
+      userId,
+      connectedAt: new Date(),
+    });
+    console.log(
+      `SSE: Added connection for user ${userId}. Total: ${connections.size}`,
+    );
+  }
+
+  static getConnection(userId: string) {
+    return connections.get(userId);
+  }
+
+  static removeConnection(userId: string) {
+    const removed = connections.delete(userId);
+    console.log(
+      `SSE: Removed connection for user ${userId}. Success: ${removed}. Total: ${connections.size}`,
+    );
+    return removed;
+  }
+
+  static sendToUser(
+    userId: string,
+    data: {
+      type: string;
+      notification?: Notification;
+      count?: number;
+      timestamp: string;
+    },
+  ) {
+    console.log(`SSE: Attempting to send to user ${userId}`, data.type);
+    console.log(`SSE: Current connections count: ${connections.size}`);
+
+    const connection = connections.get(userId);
+    if (!connection) {
+      console.log(`SSE: No connection found for user ${userId}`);
+      console.log(
+        `SSE: Available connections:`,
+        Array.from(connections.keys()),
+      );
+      return false;
+    }
+
+    console.log(`SSE: Connection found for user ${userId}`);
+
+    const message = `data: ${JSON.stringify(data)}\n\n`;
+    const encoder = new TextEncoder();
+
+    try {
+      console.log(`SSE: About to write message...`);
+      connection.write(encoder.encode(message));
+      console.log(
+        `SSE: Successfully sent message to user ${userId}:`,
+        data.type,
+      );
+      return true;
+    } catch (error) {
+      console.error(`SSE: Failed to send to user ${userId}:`, error);
+      connections.delete(userId);
+      return false;
+    }
+  }
+
+  static sendNotification(userId: string, notification: Notification) {
+    console.log(
+      `SSE: Sending notification to user ${userId}:`,
+      notification.title,
+    );
+    return this.sendToUser(userId, {
+      type: "notification",
+      notification,
+      timestamp: new Date().toISOString(),
+    });
+  }
+
+  static sendUnreadCount(userId: string, count: number) {
+    return this.sendToUser(userId, {
+      type: "unread_count",
+      count,
+      timestamp: new Date().toISOString(),
+    });
+  }
+
+  static getConnectionCount() {
+    return connections.size;
+  }
+
+  static hasConnection(userId: string) {
+    return connections.has(userId);
+  }
+
+  static getAllConnections() {
+    return Array.from(connections.entries()).map(([userId, conn]) => ({
+      userId,
+      connectedAt: conn.connectedAt,
+    }));
+  }
+}

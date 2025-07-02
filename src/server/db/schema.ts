@@ -49,6 +49,18 @@ export const interactionContextEnum = pgEnum("interaction_context", [
   "recommendation",
 ]);
 
+// Notification types
+export const notificationTypeEnum = pgEnum("notification_type", [
+  "like_received",
+  "super_like_received",
+  "match_created",
+  "message_received",
+  "profile_viewed",
+  "group_invitation",
+  "event_reminder",
+  "system_update",
+]);
+
 // Users table
 export const users = createTable(
   "user",
@@ -485,17 +497,14 @@ export const userMatchProfiles = createTable(
       .default(sql`CURRENT_TIMESTAMP`)
       .notNull(),
   }),
-  (table) => ({
-    userIdIdx: index("user_match_profile_user_id_idx").on(table.userId),
-    locationIdx: index("user_match_profile_location_idx").on(
+  (table) => [
+    index("user_match_profile_user_id_idx").on(table.userId),
+    index("user_match_profile_location_idx").on(
       table.locationLat,
       table.locationLng,
     ),
-    activeIdx: index("user_match_profile_active_idx").on(
-      table.isActive,
-      table.lastActive,
-    ),
-  }),
+    index("user_match_profile_active_idx").on(table.isActive, table.lastActive),
+  ],
 );
 
 // Track user interactions for better matching
@@ -520,16 +529,16 @@ export const userInteractions = createTable(
       .default(sql`CURRENT_TIMESTAMP`)
       .notNull(),
   }),
-  (table) => ({
-    fromUserIdx: index("user_interaction_from_user_idx").on(table.fromUserId),
-    toUserIdx: index("user_interaction_to_user_idx").on(table.toUserId),
-    typeIdx: index("user_interaction_type_idx").on(table.type),
-    uniqueInteraction: uniqueIndex("unique_user_interaction").on(
+  (table) => [
+    index("user_interaction_from_user_idx").on(table.fromUserId),
+    index("user_interaction_to_user_idx").on(table.toUserId),
+    index("user_interaction_type_idx").on(table.type),
+    uniqueIndex("unique_user_interaction").on(
       table.fromUserId,
       table.toUserId,
       table.type,
     ),
-  }),
+  ],
 );
 
 // Matches when both users like each other
@@ -562,12 +571,59 @@ export const matches = createTable(
       .default(sql`CURRENT_TIMESTAMP`)
       .notNull(),
   }),
-  (table) => ({
-    user1Idx: index("match_user1_idx").on(table.user1Id),
-    user2Idx: index("match_user2_idx").on(table.user2Id),
-    statusIdx: index("match_status_idx").on(table.status),
-    uniqueMatch: uniqueIndex("unique_match").on(table.user1Id, table.user2Id),
+  (table) => [
+    index("match_user1_idx").on(table.user1Id),
+    index("match_user2_idx").on(table.user2Id),
+    index("match_status_idx").on(table.status),
+    uniqueIndex("unique_match").on(table.user1Id, table.user2Id),
+  ],
+);
+
+// Add this table after your matches table (before the RELATIONS section):
+export const notifications = createTable(
+  "notification",
+  (d) => ({
+    id: d.uuid().primaryKey().defaultRandom(),
+
+    // Who receives this notification
+    userId: d
+      .uuid()
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+
+    // Notification metadata
+    type: notificationTypeEnum().notNull(),
+    title: d.varchar({ length: 255 }).notNull(),
+    message: d.text().notNull(),
+
+    // Flexible data for different notification types
+    data: d.json(), // Store type-specific data like { fromUserId, interactionId, etc. }
+
+    // Navigation/action data
+    actionUrl: d.varchar({ length: 500 }), // Where to go when clicked
+    actionType: d.varchar({ length: 50 }), // "navigate", "modal", "external", etc.
+
+    // Status
+    isRead: d.boolean().default(false),
+    isArchived: d.boolean().default(false),
+
+    // Timing
+    scheduledFor: d.timestamp({ withTimezone: true }), // For future notifications
+    expiresAt: d.timestamp({ withTimezone: true }), // Auto-cleanup old notifications
+
+    createdAt: d
+      .timestamp({ withTimezone: true })
+      .default(sql`CURRENT_TIMESTAMP`)
+      .notNull(),
+    readAt: d.timestamp({ withTimezone: true }),
   }),
+  (table) => [
+    index("notifications_user_idx").on(table.userId),
+    index("notifications_type_idx").on(table.type),
+    index("notifications_unread_idx").on(table.userId, table.isRead),
+    index("notifications_scheduled_idx").on(table.scheduledFor),
+    index("notifications_expires_idx").on(table.expiresAt),
+  ],
 );
 
 // ============================================================================
@@ -596,6 +652,9 @@ export const usersRelations = relations(users, ({ one, many }) => ({
   // Swipe history relations
   swipeHistory: many(swipeHistory, { relationName: "swiper" }),
   swipeHistoryTarget: many(swipeHistory, { relationName: "target" }),
+
+  // Notification relations
+  notifications: many(notifications),
 }));
 
 // Instruments relations
@@ -840,5 +899,12 @@ export const matchesRelations = relations(matches, ({ one }) => ({
     fields: [matches.user2Id],
     references: [users.id],
     relationName: "user2Matches",
+  }),
+}));
+
+export const notificationsRelations = relations(notifications, ({ one }) => ({
+  user: one(users, {
+    fields: [notifications.userId],
+    references: [users.id],
   }),
 }));
