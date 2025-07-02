@@ -121,6 +121,23 @@ export default async function EditProfilePage({
                   required
                 />
               </div>
+              <div>
+                <label
+                  htmlFor="displayName"
+                  className="text-foreground mb-2 block text-sm font-medium"
+                >
+                  Username *
+                </label>
+                <input
+                  type="text"
+                  id="username"
+                  name="username"
+                  defaultValue={user.username}
+                  className="border-border text-foreground bg-background focus:border-primary focus:ring-primary w-full rounded-lg border px-3 py-2 focus:ring-1 focus:outline-none"
+                  placeholder="Enter your username"
+                  required
+                />
+              </div>
 
               <div>
                 <label

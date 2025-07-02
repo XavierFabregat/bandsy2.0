@@ -50,6 +50,7 @@ export async function updateProfile(formData: FormData) {
 
   // Extract basic info
   const displayName = formData.get("displayName") as string;
+  const username = formData.get("username") as string;
   const bio = formData.get("bio") as string;
   const age = formData.get("age") as string;
   const showAge = formData.get("showAge") === "true";
@@ -114,6 +115,10 @@ export async function updateProfile(formData: FormData) {
     errors.displayName = "Display name is required";
   }
 
+  if (!username?.trim()) {
+    errors.username = "Username is required";
+  }
+
   if (!bio?.trim()) {
     errors.bio = "Bio is required";
   } else if (bio.length < 10) {
@@ -155,6 +160,7 @@ export async function updateProfile(formData: FormData) {
     // Update basic user info
     await updateUserProfile(internalUserId, {
       displayName: displayName.trim(),
+      username: username.trim(),
       bio: bio.trim(),
       age: ageNumber,
       showAge,
