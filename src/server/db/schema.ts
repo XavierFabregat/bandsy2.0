@@ -36,11 +36,15 @@ export const messageTypeEnum = pgEnum("message_type", [
   "image",
 ]);
 
+// User interaction tracking
 export const interactionTypeEnum = pgEnum("interaction_type", [
   "like",
   "pass",
   "super_like",
   "block",
+  "invite_sent", // New: collaboration invite sent
+  "invite_accepted", // New: collaboration invite accepted
+  "invite_declined", // New: collaboration invite declined
 ]);
 
 export const interactionContextEnum = pgEnum("interaction_context", [
@@ -59,6 +63,8 @@ export const notificationTypeEnum = pgEnum("notification_type", [
   "group_invitation",
   "event_reminder",
   "system_update",
+  "collaboration_invite", // New: collaboration invite received
+  "invite_accepted", // New: collaboration invite accepted
 ]);
 
 // Users table
@@ -523,7 +529,7 @@ export const userInteractions = createTable(
 
     type: interactionTypeEnum().notNull(),
     context: interactionContextEnum().notNull(),
-
+    completed: d.boolean().default(false), // track if the interaction is ongoing or not
     createdAt: d
       .timestamp({ withTimezone: true })
       .default(sql`CURRENT_TIMESTAMP`)

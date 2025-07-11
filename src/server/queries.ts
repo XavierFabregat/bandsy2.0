@@ -6,8 +6,12 @@ import {
   instruments,
   genres,
   mediaSamples,
+  matches,
+  conversations,
+  messages,
 } from "@/server/db/schema";
 import { eq, ne, and, or, desc, asc, sql, count } from "drizzle-orm";
+import { alias } from "drizzle-orm/pg-core";
 import type {
   BrowseFilters,
   Genre,
@@ -17,6 +21,7 @@ import type {
   UserProfile,
 } from "@/types/api";
 import { auth } from "@clerk/nextjs/server";
+import type { MatchScore } from "../lib/matching/types/matching-types";
 
 export interface BrowseUsersResult {
   data: Array<{
@@ -525,4 +530,210 @@ export async function getSample(userId: string, sampleId: string) {
     ),
     mediaSampleGenres: undefined, // Remove the junction table data
   } as Sample;
+}
+
+export async function getMatchDetails(
+  matchId: string,
+  currentUserClerkId: string,
+) {
+  // First verify the current user is part of this match
+  const { userId } = await auth();
+  if (!userId || userId !== currentUserClerkId) {
+    throw new Error("Unauthorized");
+  }
+
+  // Get current user's database ID
+  const currentUserResult = await db
+    .select({ id: users.id })
+    .from(users)
+    .where(eq(users.clerkId, currentUserClerkId))
+    .limit(1);
+
+  if (!currentUserResult.length) {
+    throw new Error("User not found");
+  }
+
+  const currentUserId = currentUserResult[0]!.id;
+
+  // Create aliases for the two users in the match
+  const user1 = alias(users, "user1");
+  const user2 = alias(users, "user2");
+
+  // Get match details with both users
+  const matchResult = await db
+    .select({
+      id: matches.id,
+      user1Id: matches.user1Id,
+      user2Id: matches.user2Id,
+      matchScore: matches.matchScore,
+      matchFactors: matches.matchFactors,
+      status: matches.status,
+      createdAt: matches.createdAt,
+      updatedAt: matches.updatedAt,
+      // User 1 details
+      user1Username: user1.username,
+      user1DisplayName: user1.displayName,
+      user1Bio: user1.bio,
+      user1Age: user1.age,
+      user1ShowAge: user1.showAge,
+      user1City: user1.city,
+      user1Region: user1.region,
+      user1Country: user1.country,
+      user1ProfileImage: user1.profileImageUrl,
+      user1CreatedAt: user1.createdAt,
+      user1UpdatedAt: user1.updatedAt,
+      // User 2 details
+      user2Username: user2.username,
+      user2DisplayName: user2.displayName,
+      user2Bio: user2.bio,
+      user2Age: user2.age,
+      user2ShowAge: user2.showAge,
+      user2City: user2.city,
+      user2Region: user2.region,
+      user2Country: user2.country,
+      user2ProfileImage: user2.profileImageUrl,
+      user2CreatedAt: user2.createdAt,
+      user2UpdatedAt: user2.updatedAt,
+      // Conversation info
+      conversationId: conversations.id,
+    })
+    .from(matches)
+    .innerJoin(user1, eq(matches.user1Id, user1.id))
+    .innerJoin(user2, eq(matches.user2Id, user2.id))
+    .leftJoin(conversations, eq(matches.id, conversations.matchId))
+    .where(
+      and(
+        eq(matches.id, matchId),
+        or(
+          eq(matches.user1Id, currentUserId),
+          eq(matches.user2Id, currentUserId),
+        ),
+      ),
+    )
+    .limit(1);
+
+  if (!matchResult.length) {
+    return null;
+  }
+
+  const match = matchResult[0]!;
+
+  // Verify current user is part of the match
+  if (match.user1Id !== currentUserId && match.user2Id !== currentUserId) {
+    throw new Error("Access denied");
+  }
+
+  // Helper function to get instruments by user ID
+  async function getUserInstrumentsByUserId(userId: string) {
+    const result = await db
+      .select({
+        id: instruments.id,
+        name: instruments.name,
+        category: instruments.category,
+        skillLevel: userInstruments.skillLevel,
+        yearsOfExperience: userInstruments.yearsOfExperience,
+        isPrimary: userInstruments.isPrimary,
+      })
+      .from(userInstruments)
+      .innerJoin(instruments, eq(userInstruments.instrumentId, instruments.id))
+      .where(eq(userInstruments.userId, userId));
+
+    return result;
+  }
+
+  // Helper function to get genres by user ID
+  async function getUserGenresByUserId(userId: string) {
+    const result = await db
+      .select({
+        id: genres.id,
+        name: genres.name,
+        preference: userGenres.preference,
+      })
+      .from(userGenres)
+      .innerJoin(genres, eq(userGenres.genreId, genres.id))
+      .where(eq(userGenres.userId, userId));
+
+    return result;
+  }
+
+  // Get the actual instruments and genres
+  const [
+    user1InstrumentsList,
+    user2InstrumentsList,
+    user1GenresList,
+    user2GenresList,
+  ] = await Promise.all([
+    getUserInstrumentsByUserId(match.user1Id),
+    getUserInstrumentsByUserId(match.user2Id),
+    getUserGenresByUserId(match.user1Id),
+    getUserGenresByUserId(match.user2Id),
+  ]);
+
+  // Build user profiles
+  const user1Profile: UserProfile = {
+    id: match.user1Id,
+    username: match.user1Username,
+    displayName: match.user1DisplayName,
+    bio: match.user1Bio,
+    age: match.user1Age,
+    showAge: match.user1ShowAge,
+    city: match.user1City,
+    region: match.user1Region,
+    country: match.user1Country,
+    profileImageUrl: match.user1ProfileImage,
+    createdAt: match.user1CreatedAt,
+    updatedAt: match.user1UpdatedAt,
+    instruments: user1InstrumentsList as UserInstrument[],
+    genres: user1GenresList as UserGenre[],
+  };
+
+  const user2Profile: UserProfile = {
+    id: match.user2Id,
+    username: match.user2Username,
+    displayName: match.user2DisplayName,
+    bio: match.user2Bio,
+    age: match.user2Age,
+    showAge: match.user2ShowAge,
+    city: match.user2City,
+    region: match.user2Region,
+    country: match.user2Country,
+    profileImageUrl: match.user2ProfileImage,
+    createdAt: match.user2CreatedAt,
+    updatedAt: match.user2UpdatedAt,
+    instruments: user2InstrumentsList as UserInstrument[],
+    genres: user2GenresList as UserGenre[],
+  };
+
+  // Check for conversation and messages
+  let conversation = null;
+  if (match.conversationId) {
+    const messageCount = await db
+      .select({ count: count() })
+      .from(messages)
+      .where(eq(messages.conversationId, match.conversationId));
+
+    const hasMessages = messageCount[0]?.count && messageCount[0].count > 0;
+
+    conversation = {
+      id: match.conversationId,
+      hasMessages: Boolean(hasMessages),
+    };
+  }
+
+  // Determine which user is the current user and return appropriately structured data
+  const isUser1Current = match.user1Id === currentUserId;
+
+  return {
+    id: match.id,
+    user1: user1Profile,
+    user2: user2Profile,
+    currentUser: isUser1Current ? user1Profile : user2Profile,
+    otherUser: isUser1Current ? user2Profile : user1Profile,
+    matchScore: match.matchScore ? parseFloat(match.matchScore) : null,
+    matchFactors: match.matchFactors as MatchScore["factors"],
+    status: match.status as "active" | "unmatched" | "blocked",
+    createdAt: match.createdAt,
+    updatedAt: match.updatedAt,
+    conversation,
+  };
 }

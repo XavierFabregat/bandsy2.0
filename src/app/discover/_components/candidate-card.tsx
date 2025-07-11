@@ -18,6 +18,7 @@ import {
   TrendingUp,
   Users,
   Clock,
+  Send,
 } from "lucide-react";
 import type { MatchCandidate } from "@/lib/matching/types/matching-types";
 import Link from "next/link";
@@ -25,7 +26,7 @@ import AudioPlayer from "../../samples/_components/audio-player";
 
 interface CandidateCardProps {
   candidate: MatchCandidate;
-  onInteraction: (action: "like" | "pass" | "super_like") => void;
+  onInteraction: (action: "pass" | "invite") => void;
 }
 
 export function CandidateCard({
@@ -342,18 +343,9 @@ export function CandidateCard({
             variant="outline"
             size="lg"
             className="h-16 w-16 rounded-full border-2 p-0 transition-all duration-200 hover:scale-110 hover:border-amber-300 hover:bg-amber-50 dark:hover:bg-amber-950/30"
-            onClick={() => onInteraction("super_like")}
+            onClick={() => onInteraction("invite")}
           >
-            <Star className="h-6 w-6 text-amber-500" />
-          </Button>
-
-          <Button
-            variant="outline"
-            size="lg"
-            className="h-16 w-16 rounded-full border-2 p-0 transition-all duration-200 hover:scale-110 hover:border-green-300 hover:bg-green-50 dark:hover:bg-green-950/30"
-            onClick={() => onInteraction("like")}
-          >
-            <Heart className="h-6 w-6 text-green-500" />
+            <Send className="h-6 w-6 text-amber-500" />
           </Button>
         </div>
 

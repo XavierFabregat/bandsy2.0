@@ -92,7 +92,7 @@ export async function recordInteraction(
   targetUserId: string,
   action: "like" | "pass" | "super_like" | "block",
   context: "search" | "discovery",
-): Promise<void> {
+): Promise<{ matchCreated?: boolean; matchId?: string }> {
   const response = await fetch(`${API_BASE_URL}/api/discovery/interact`, {
     method: "POST",
     headers: {
@@ -108,6 +108,12 @@ export async function recordInteraction(
   if (!response.ok) {
     throw new Error(`Failed to record interaction: ${response.statusText}`);
   }
+
+  return response.json() as Promise<{
+    success: boolean;
+    matchCreated?: boolean;
+    matchId?: string;
+  }>;
 }
 
 // Cached version - will deduplicate requests during the same request lifecycle

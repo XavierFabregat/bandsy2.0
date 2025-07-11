@@ -1,15 +1,13 @@
 "use client";
 
-import { useState, useCallback } from "react";
+import React, { useState } from "react";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { RefreshCw } from "lucide-react";
-import { discoverUsers, recordInteraction } from "@/lib/api";
-import type {
-  MatchCandidate,
-  DiscoveryFilters,
-} from "@/lib/matching/types/matching-types";
-import { DiscoveryFilters as FilterComponent } from "./discovery-filters";
+import { Textarea } from "@/components/ui/textarea";
+import { X, Music, Send, MessageCircle } from "lucide-react";
+import { toast } from "sonner";
 import { CandidateCard } from "./candidate-card";
+import type { MatchCandidate } from "@/lib/matching/types/matching-types";
 
 export function DiscoveryInterface({
   initialCandidates,
@@ -20,53 +18,107 @@ export function DiscoveryInterface({
     useState<MatchCandidate[]>(initialCandidates);
   const [currentIndex, setCurrentIndex] = useState(0);
   const [loading, setLoading] = useState(false);
-  const [filters, setFilters] = useState<DiscoveryFilters>({
-    maxDistance: 50,
-    isActive: true,
-  });
-  const [showFilters, setShowFilters] = useState(false);
+  const [isProcessing, setIsProcessing] = useState(false);
+  const [showInviteModal, setShowInviteModal] = useState(false);
+  const [inviteMessage, setInviteMessage] = useState("");
 
   const currentCandidate = candidates[currentIndex];
 
-  const loadCandidates = useCallback(
-    async (filtersToUse?: DiscoveryFilters) => {
-      try {
-        setLoading(true);
-        const result = await discoverUsers(filtersToUse ?? filters, {
-          page: 1,
-          limit: 20,
-        });
-        setCandidates(result.candidates);
-        setCurrentIndex(0);
-      } catch (error) {
-        console.error("Failed to load candidates:", error);
-      } finally {
-        setLoading(false);
-      }
-    },
-    [filters],
-  );
+  // Load more candidates when needed
+  const loadCandidates = async () => {
+    if (loading) return;
 
-  // Manual refresh function
-  const handleRefresh = () => {
-    void loadCandidates(filters);
-  };
-
-  const handleInteraction = async (action: "like" | "pass" | "super_like") => {
-    if (!currentCandidate) return;
-
+    setLoading(true);
     try {
-      await recordInteraction(currentCandidate.user.id, action, "discovery");
+      const response = await fetch("/api/discovery?page=1&limit=10");
+      const data = (await response.json()) as { candidates?: MatchCandidate[] };
 
-      // Move to next candidate
-      if (currentIndex < candidates.length - 1) {
-        setCurrentIndex(currentIndex + 1);
+      if (data.candidates && data.candidates.length > 0) {
+        setCandidates(data.candidates);
+        setCurrentIndex(0);
       } else {
-        // Load more candidates when running low
-        void loadCandidates();
+        toast.info("No more candidates available. Check back later!");
       }
     } catch (error) {
-      console.error("Failed to record interaction:", error);
+      console.error("Failed to load candidates:", error);
+      toast.error("Failed to load candidates");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleSendInvite = async () => {
+    if (!currentCandidate || isProcessing) return;
+
+    setIsProcessing(true);
+    try {
+      const response = await fetch("/api/discovery/interact", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          targetUserId: currentCandidate.user.id,
+          action: "invite",
+          context: "discovery",
+          message: inviteMessage.trim() || undefined,
+        }),
+      });
+
+      if (response.ok) {
+        toast.success(
+          <div className="flex items-center gap-2">
+            <Send className="h-4 w-4" />
+            <span>Collaboration invite sent!</span>
+          </div>,
+        );
+        setShowInviteModal(false);
+        setInviteMessage("");
+        handleNext();
+      } else {
+        const error = (await response.json()) as { error?: string };
+        toast.error(error.error ?? "Failed to send invite");
+      }
+    } catch (error) {
+      console.error("Failed to send invite:", error);
+      toast.error("Failed to send collaboration invite");
+    } finally {
+      setIsProcessing(false);
+    }
+  };
+
+  const handleAction = async (action: "pass" | "invite") => {
+    if (!currentCandidate || isProcessing) return;
+
+    setIsProcessing(true);
+    try {
+      const response = await fetch("/api/discovery/interact", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          targetUserId: currentCandidate.user.id,
+          action,
+          context: "discovery",
+        }),
+      });
+
+      if (response.ok) {
+        handleNext();
+      } else {
+        const error = (await response.json()) as { error?: string };
+        toast.error(error.error ?? "Failed to record action");
+      }
+    } catch (error) {
+      console.error("Failed to record action:", error);
+      toast.error("Failed to record action");
+    } finally {
+      setIsProcessing(false);
+    }
+  };
+
+  const handleNext = () => {
+    if (currentIndex < candidates.length - 1) {
+      setCurrentIndex(currentIndex + 1);
+    } else {
+      void loadCandidates();
     }
   };
 
@@ -76,7 +128,7 @@ export function DiscoveryInterface({
         <div className="text-center">
           <div className="border-primary mx-auto mb-4 h-12 w-12 animate-spin rounded-full border-b-2"></div>
           <p className="text-muted-foreground">
-            Finding your perfect matches...
+            Finding your perfect collaborators...
           </p>
         </div>
       </div>
@@ -85,75 +137,120 @@ export function DiscoveryInterface({
 
   if (!currentCandidate) {
     return (
-      <div className="py-12 text-center">
-        {/* Filters Toggle */}
-        <div className="mb-6 flex items-center justify-between">
-          <Button
-            variant="outline"
-            onClick={() => setShowFilters(!showFilters)}
-          >
-            {showFilters ? "Hide" : "Show"} Filters
-          </Button>
+      <div className="flex h-64 items-center justify-center">
+        <div className="text-center">
+          <Music className="text-muted-foreground mx-auto mb-4 h-12 w-12" />
+          <h3 className="text-lg font-semibold">No more candidates</h3>
+          <p className="text-muted-foreground mb-4">
+            You&apos;ve seen all available musicians. Check back later for more!
+          </p>
+          <Button onClick={() => window.location.reload()}>Refresh</Button>
         </div>
-        {/* Filters */}
-        {showFilters && (
-          <div className="mb-6">
-            <FilterComponent
-              filters={filters}
-              onFiltersChange={setFilters}
-              onApplyFilters={handleRefresh}
-            />
-          </div>
-        )}
-        <h3 className="mb-2 text-xl font-semibold">No more profiles!</h3>
-        <p className="text-muted-foreground mb-4">
-          You&apos;ve seen all available matches. Try adjusting your filters or
-          check back later.
-        </p>
-        <Button onClick={handleRefresh}>Refresh</Button>
       </div>
     );
   }
 
   return (
-    <div className="mx-auto max-w-2xl">
-      {/* Filters Toggle */}
-      <div className="mb-6 flex items-center justify-between">
-        <div className="text-muted-foreground text-sm">
-          {currentIndex + 1} of {candidates.length} profiles
-        </div>
-        <div className="flex gap-2">
-          <Button variant="outline" onClick={handleRefresh} disabled={loading}>
-            <RefreshCw
-              className={`mr-2 h-4 w-4 ${loading ? "animate-spin" : ""}`}
-            />
-            Refresh
-          </Button>
-          <Button
-            variant="outline"
-            onClick={() => setShowFilters(!showFilters)}
-          >
-            {showFilters ? "Hide" : "Show"} Filters
-          </Button>
-        </div>
-      </div>
-
-      {/* Filters */}
-      {showFilters && (
-        <div className="mb-6">
-          <FilterComponent
-            filters={filters}
-            onFiltersChange={setFilters}
-            onApplyFilters={handleRefresh}
-          />
-        </div>
-      )}
-
-      {/* Main Card */}
+    <div className="mx-auto max-w-md">
       <CandidateCard
         candidate={currentCandidate}
-        onInteraction={handleInteraction}
+        onInteraction={handleAction}
       />
+
+      {/* Action Buttons */}
+      <div className="mt-6 flex justify-center gap-4">
+        <Button
+          variant="outline"
+          size="lg"
+          onClick={() => handleAction("pass")}
+          disabled={isProcessing}
+          className="flex-1"
+        >
+          <X className="mr-2 h-5 w-5" />
+          Pass
+        </Button>
+
+        <Button
+          size="lg"
+          onClick={() => setShowInviteModal(true)}
+          disabled={isProcessing}
+          className="flex-1"
+        >
+          <Send className="mr-2 h-5 w-5" />
+          Send Invite
+        </Button>
+      </div>
+
+      {/* Invite Modal */}
+      {showInviteModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
+          <Card className="w-full max-w-md">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <MessageCircle className="h-5 w-5" />
+                Send Collaboration Invite
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="text-muted-foreground text-sm">
+                Send a collaboration invite to{" "}
+                <span className="font-medium">
+                  {currentCandidate.user.displayName}
+                </span>
+              </div>
+
+              <div>
+                <label className="mb-2 block text-sm font-medium">
+                  Message (optional)
+                </label>
+                <Textarea
+                  placeholder="Hi! I'd love to collaborate with you on some music..."
+                  value={inviteMessage}
+                  onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) =>
+                    setInviteMessage(e.target.value)
+                  }
+                  maxLength={500}
+                  className="min-h-[100px]"
+                />
+                <div className="text-muted-foreground mt-1 text-xs">
+                  {inviteMessage.length}/500 characters
+                </div>
+              </div>
+
+              <div className="flex gap-2">
+                <Button
+                  variant="outline"
+                  onClick={() => {
+                    setShowInviteModal(false);
+                    setInviteMessage("");
+                  }}
+                  disabled={isProcessing}
+                  className="flex-1"
+                >
+                  Cancel
+                </Button>
+                <Button
+                  onClick={handleSendInvite}
+                  disabled={isProcessing}
+                  className="flex-1"
+                >
+                  {isProcessing ? (
+                    <>
+                      <div className="mr-2 h-4 w-4 animate-spin rounded-full border-b-2 border-white"></div>
+                      Sending...
+                    </>
+                  ) : (
+                    <>
+                      <Send className="mr-2 h-4 w-4" />
+                      Send Invite
+                    </>
+                  )}
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      )}
     </div>
   );
 }

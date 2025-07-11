@@ -16,6 +16,7 @@ import {
   Upload,
   Search,
   Compass,
+  Send,
 } from "lucide-react";
 import { AuthSection } from "./auth-section";
 
@@ -66,6 +67,16 @@ export function TopNav() {
                           </li>
                         </ul>
                       </NavigationMenuContent>
+                    </NavigationMenuItem>
+                    <NavigationMenuItem>
+                      <NavigationMenuLink asChild>
+                        <Link
+                          href="/invites"
+                          className="flex items-center gap-2"
+                        >
+                          Invites
+                        </Link>
+                      </NavigationMenuLink>
                     </NavigationMenuItem>
                     <NavigationMenuItem>
                       <NavigationMenuTrigger>Profile</NavigationMenuTrigger>

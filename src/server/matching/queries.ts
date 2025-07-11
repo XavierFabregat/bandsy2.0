@@ -8,6 +8,7 @@ import {
   userMatchProfiles,
   userInteractions,
   mediaSamples,
+  matches,
 } from "@/server/db/schema";
 import {
   eq,
@@ -34,10 +35,11 @@ import type {
   InstrumentSkill,
   DiscoveryResult,
   DiscoveryHistory,
+  MatchScore,
 } from "@/lib/matching/types/matching-types";
 import { CompositeScorer } from "@/lib/matching/algorithms/composite-scorer";
 import { LocationScorer } from "@/lib/matching/algorithms/location-scorer";
-import type { Sample } from "@/types/api";
+import type { Sample, UserProfile } from "@/types/api";
 import { createOrUpdateUserMatchProfile } from "./mutations";
 import {
   calculateSkillLevelAverage,
@@ -535,5 +537,110 @@ export async function getDiscoveryHistory(
     createdAt: interaction.createdAt,
     fromUser: interaction.fromUser!,
     toUser: interaction.toUser!,
+  }));
+}
+
+export interface Match {
+  id: string;
+  user1: Omit<UserProfile, "instruments" | "genres">;
+  user2: Omit<UserProfile, "instruments" | "genres">;
+  createdAt: Date;
+  updatedAt: Date;
+  matchScore: number;
+  matchFactors: MatchScore["factors"];
+}
+
+export async function getMatch(matchId: string): Promise<Match | null> {
+  const { userId } = await auth();
+  if (!userId) throw new Error("Unauthorized");
+
+  const [match] = await db
+    .select()
+    .from(matches)
+    .where(eq(matches.id, matchId))
+    .limit(1);
+
+  if (!match) return null;
+
+  const [[user1], [user2]] = await Promise.all([
+    db.select().from(users).where(eq(users.id, match.user1Id)).limit(1),
+    db.select().from(users).where(eq(users.id, match.user2Id)).limit(1),
+  ]);
+
+  if (!user1 || !user2) return null;
+
+  const user1Profile = await getUserMatchProfile(user1.clerkId);
+  const user2Profile = await getUserMatchProfile(user2.clerkId);
+
+  if (!user1Profile || !user2Profile) return null;
+
+  return {
+    id: match.id,
+    user1: user1,
+    user2: user2,
+    createdAt: match.createdAt,
+    updatedAt: match.updatedAt,
+    matchScore: Number(match.matchScore),
+    matchFactors: match.matchFactors as MatchScore["factors"],
+  };
+}
+
+/**
+ * Get pending collaboration invites for a user
+ */
+export async function getPendingInvites(clerkId: string): Promise<
+  Array<{
+    id: string;
+    fromUser: {
+      id: string;
+      displayName: string;
+      username: string;
+      profileImageUrl: string | null;
+    };
+    createdAt: Date;
+  }>
+> {
+  const { userId } = await auth();
+  if (!userId) throw new Error("Unauthorized");
+
+  const user = await db
+    .select()
+    .from(users)
+    .where(eq(users.clerkId, clerkId))
+    .limit(1);
+  if (!user.length) throw new Error("User not found");
+
+  const currentUserId = user[0]!.id;
+
+  // Get pending invites (sent to current user, not yet completed)
+  const invites = await db
+    .select({
+      id: userInteractions.id,
+      fromUserId: userInteractions.fromUserId,
+      createdAt: userInteractions.createdAt,
+      fromUserDisplayName: users.displayName,
+      fromUserUsername: users.username,
+      fromUserProfileImage: users.profileImageUrl,
+    })
+    .from(userInteractions)
+    .innerJoin(users, eq(userInteractions.fromUserId, users.id))
+    .where(
+      and(
+        eq(userInteractions.toUserId, currentUserId),
+        eq(userInteractions.type, "invite_sent"),
+        eq(userInteractions.completed, false), // Only get uncompleted invites
+      ),
+    )
+    .orderBy(desc(userInteractions.createdAt));
+
+  return invites.map((invite) => ({
+    id: invite.id,
+    fromUser: {
+      id: invite.fromUserId,
+      displayName: invite.fromUserDisplayName,
+      username: invite.fromUserUsername,
+      profileImageUrl: invite.fromUserProfileImage,
+    },
+    createdAt: invite.createdAt,
   }));
 }

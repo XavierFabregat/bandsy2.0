@@ -291,7 +291,17 @@
 
 ## 🧠 **Ideas**
 
--
+- Fonts d'ingressos:
+- Usuaris normals fent boosting de videos.
+- Empreses pagant per vacancies (10euros/anunci o 50euros perfil premium ilimitat)
+- Usuaris videos illimitats i histories (permenents/exclusives) (usuaris premium)
+- Anuncis (fase 1 ==> google/facebook automatitzats, fase 2 ==> per demanda)
+
+- Perfil empresa:
+- Ha de poder buscar gent
+- poder pujar anauncis pagant
+- Pot pujar videos
+- pot fer boosting (??)
 
 _Last updated: [Current Date]_
 _Priority levels: High (immediate), Medium (next sprint), Low (future)_

@@ -81,6 +81,24 @@ export function getNotificationTemplate<T extends NotificationType>(
         actionType: "navigate",
       };
 
+    case "collaboration_invite":
+      const inviteData = data as NotificationData["collaboration_invite"];
+      return {
+        title: "Collaboration Invite",
+        message: `${inviteData?.fromUserName} wants to collaborate with you${inviteData?.message ? `: "${inviteData.message}"` : ""}`,
+        actionUrl: `/invites`,
+        actionType: "navigate",
+      };
+
+    case "invite_accepted":
+      const acceptData = data as NotificationData["invite_accepted"];
+      return {
+        title: "Invite Accepted! 🎉",
+        message: `${acceptData?.fromUserName} accepted your collaboration invite`,
+        actionUrl: `/u/${acceptData?.fromUserUsername}`,
+        actionType: "navigate",
+      };
+
     default:
       return {
         title: "Notification",

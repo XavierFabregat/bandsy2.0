@@ -58,6 +58,21 @@ export interface NotificationData {
     version?: string;
     features?: string[];
   };
+  // Collaboration invite notifications
+  collaboration_invite?: {
+    fromUserId: string;
+    fromUserName: string;
+    fromUserImage?: string;
+    fromUserUsername: string;
+    message?: string;
+  };
+  // Invite accepted notifications
+  invite_accepted?: {
+    fromUserId: string;
+    fromUserName: string;
+    fromUserImage?: string;
+    fromUserUsername: string;
+  };
 }
 
 export type NotificationType = keyof NotificationData;

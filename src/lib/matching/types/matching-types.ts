@@ -119,7 +119,14 @@ export interface PaginationOptions {
 
 export interface DiscoveryHistory {
   id: string;
-  type: "like" | "super_like" | "block" | "pass";
+  type:
+    | "like"
+    | "super_like"
+    | "block"
+    | "pass"
+    | "invite_sent"
+    | "invite_accepted"
+    | "invite_declined";
   createdAt: Date;
   fromUser: {
     id: string;
