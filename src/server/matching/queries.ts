@@ -585,6 +585,84 @@ export async function getMatch(matchId: string): Promise<Match | null> {
   };
 }
 
+export async function getMatches(clerkId: string): Promise<Match[]> {
+  const { userId } = await auth();
+  if (!userId) throw new Error("Unauthorized");
+
+  const user = await db
+    .select()
+    .from(users)
+    .where(and(eq(users.clerkId, clerkId), eq(users.isActive, true)))
+    .limit(1);
+  if (!user.length) throw new Error("User not found");
+
+  // Create aliases for the users table to get both user1 and user2 data
+  const user1 = alias(users, "user1");
+  const user2 = alias(users, "user2");
+
+  const myMatches = await db
+    .select({
+      // Match data
+      id: matches.id,
+      createdAt: matches.createdAt,
+      updatedAt: matches.updatedAt,
+      matchScore: matches.matchScore,
+      matchFactors: matches.matchFactors,
+      // User1 data
+      user1: {
+        id: user1.id,
+        username: user1.username,
+        displayName: user1.displayName,
+        bio: user1.bio,
+        age: user1.age,
+        showAge: user1.showAge,
+        city: user1.city,
+        region: user1.region,
+        country: user1.country,
+        profileImageUrl: user1.profileImageUrl,
+        createdAt: user1.createdAt,
+        updatedAt: user1.updatedAt,
+      },
+      // User2 data
+      user2: {
+        id: user2.id,
+        username: user2.username,
+        displayName: user2.displayName,
+        bio: user2.bio,
+        age: user2.age,
+        showAge: user2.showAge,
+        city: user2.city,
+        region: user2.region,
+        country: user2.country,
+        profileImageUrl: user2.profileImageUrl,
+        createdAt: user2.createdAt,
+        updatedAt: user2.updatedAt,
+      },
+    })
+    .from(matches)
+    .innerJoin(user1, eq(matches.user1Id, user1.id))
+    .innerJoin(user2, eq(matches.user2Id, user2.id))
+    .where(
+      or(eq(matches.user1Id, user[0]!.id), eq(matches.user2Id, user[0]!.id)),
+    )
+    .orderBy(desc(matches.createdAt));
+
+  return myMatches.map((match) => ({
+    id: match.id,
+    user1: {
+      ...match.user1,
+      showAge: true,
+    },
+    user2: {
+      ...match.user2,
+    },
+    createdAt: match.createdAt,
+    updatedAt: match.updatedAt,
+    matchScore: Number(match.matchScore),
+    matchFactors: match.matchFactors as MatchScore["factors"],
+  }));
+}
+
 /**
  * Get pending collaboration invites for a user
  */

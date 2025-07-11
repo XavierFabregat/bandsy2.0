@@ -79,6 +79,16 @@ export function TopNav() {
                       </NavigationMenuLink>
                     </NavigationMenuItem>
                     <NavigationMenuItem>
+                      <NavigationMenuLink asChild>
+                        <Link
+                          href="/matches"
+                          className="flex items-center gap-2"
+                        >
+                          Matches
+                        </Link>
+                      </NavigationMenuLink>
+                    </NavigationMenuItem>
+                    <NavigationMenuItem>
                       <NavigationMenuTrigger>Profile</NavigationMenuTrigger>
                       <NavigationMenuContent>
                         <ul className="grid w-[200px] gap-4">
