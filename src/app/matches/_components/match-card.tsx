@@ -45,7 +45,7 @@ export default function MatchCard({ match }: { match: Match }) {
   };
 
   return (
-    <Card className="group hover:border-primary/20 w-1/4 border-2 transition-all duration-300 hover:shadow-lg">
+    <Card className="group hover:border-primary/20 border-2 transition-all duration-300 hover:shadow-lg md:w-1/4">
       <CardContent className="p-6">
         {/* Header with match score */}
         <div className="mb-6 flex items-center justify-between">
