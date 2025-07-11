@@ -76,11 +76,11 @@
   - [x] Implement location-based filtering
   - [x] Add genre compatibility scoring
   - [x] Add instrument complementarity logic
-- [ ] **Swipe interface**
-  - [ ] Create card-based swipe UI
-  - [ ] Add like/pass functionality
-  - [ ] Implement swipe history tracking
-  - [ ] Add "super like" feature
+- [x] **Swipe interface**
+  - [x] Create card-based swipe UI (not swipe for now, but maybe implement later)
+  - [x] Add like/pass functionality
+  - [x] Implement swipe history tracking
+  - [x] Add "super like" feature
 - [ ] **Match logic**
   - [ ] Create match detection system
   - [ ] Add match notifications
@@ -288,6 +288,20 @@
 - **Testing**: Add unit and integration tests as features are built
 
 ---
+
+## 🧠 **Ideas**
+
+- Fonts d'ingressos:
+- Usuaris normals fent boosting de videos.
+- Empreses pagant per vacancies (10euros/anunci o 50euros perfil premium ilimitat)
+- Usuaris videos illimitats i histories (permenents/exclusives) (usuaris premium)
+- Anuncis (fase 1 ==> google/facebook automatitzats, fase 2 ==> per demanda)
+
+- Perfil empresa:
+- Ha de poder buscar gent
+- poder pujar anauncis pagant
+- Pot pujar videos
+- pot fer boosting (??)
 
 _Last updated: [Current Date]_
 _Priority levels: High (immediate), Medium (next sprint), Low (future)_

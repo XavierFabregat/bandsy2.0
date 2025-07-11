@@ -1,6 +1,6 @@
 import { type NextRequest, NextResponse } from "next/server";
 import { auth } from "@clerk/nextjs/server";
-import { getDiscoveryCandidates } from "@/server/matching-queries";
+import { getDiscoveryCandidates } from "@/server/matching/queries";
 import type {
   DiscoveryFilters,
   PaginationOptions,

@@ -4,7 +4,7 @@ import { Geist, Geist_Mono } from "next/font/google";
 import "@/styles/globals.css";
 import { ThemeProvider } from "@/providers/theme-provider";
 // import { ModeToggle } from "./_components/mode-toggle";
-import { ProfileGuardClient } from "@/components/profile-guard-client";
+import { ProfileGuardClient } from "@/components/profile-guard-dynamic";
 import { TopNav } from "@/components/top-nav";
 import { extractRouterConfig } from "uploadthing/server";
 import { ourFileRouter } from "./api/uploadthing/core";

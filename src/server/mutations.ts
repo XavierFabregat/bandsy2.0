@@ -12,6 +12,7 @@ import { UTApi } from "uploadthing/server";
 
 export interface UpdateUserProfileData {
   displayName: string;
+  username: string;
   bio: string;
   age: number | null;
   showAge: boolean;
@@ -70,6 +71,7 @@ export async function updateUserProfile(
     .update(users)
     .set({
       displayName: data.displayName,
+      username: data.username,
       bio: data.bio,
       age: data.age,
       showAge: data.showAge,

@@ -1,6 +1,6 @@
 import { type NextRequest, NextResponse } from "next/server";
 import { auth } from "@clerk/nextjs/server";
-import { recordUserInteraction } from "@/server/matching-queries";
+import { sendCollaborationInvite } from "@/server/matching/mutations";
 
 export async function POST(request: NextRequest) {
   try {
@@ -13,10 +13,11 @@ export async function POST(request: NextRequest) {
     // Parse request body
     const body = (await request.json()) as {
       targetUserId: string;
-      action: "like" | "pass" | "super_like" | "block";
+      action: "invite" | "pass" | "block";
       context: "search" | "discovery";
+      message?: string;
     };
-    const { targetUserId, action, context } = body;
+    const { targetUserId, action, context, message } = body;
 
     if (!targetUserId || !action) {
       return NextResponse.json(
@@ -25,12 +26,38 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    if (!["like", "pass", "super_like", "block"].includes(action)) {
+    if (!["invite", "pass", "block"].includes(action)) {
       return NextResponse.json({ error: "Invalid action" }, { status: 400 });
     }
 
-    // Record the interaction
-    await recordUserInteraction(userId, targetUserId, action, context);
+    if (action === "invite") {
+      // Send collaboration invite
+      const result = await sendCollaborationInvite(
+        userId,
+        targetUserId,
+        message,
+        context,
+      );
+
+      return NextResponse.json({
+        success: true,
+        inviteId: result.inviteId,
+        message: "Collaboration invite sent successfully",
+      });
+    } else if (action === "pass") {
+      // Just record the pass - no notification needed
+      // We can still track this for analytics
+      return NextResponse.json({
+        success: true,
+        message: "Passed",
+      });
+    } else if (action === "block") {
+      // Handle blocking logic here if needed
+      return NextResponse.json({
+        success: true,
+        message: "User blocked",
+      });
+    }
 
     return NextResponse.json({ success: true });
   } catch (error) {

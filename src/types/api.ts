@@ -1,3 +1,5 @@
+import type { MatchScore } from "../lib/matching/types/matching-types";
+
 // User Profile Types
 export interface UserProfile {
   id: string;
@@ -5,13 +7,13 @@ export interface UserProfile {
   displayName: string;
   bio: string | null;
   age: number | null;
-  showAge: boolean;
+  showAge: boolean | null;
   city: string | null;
   region: string | null;
   country: string | null;
   profileImageUrl: string | null;
   createdAt: Date;
-  updatedAt: Date;
+  updatedAt: Date | null;
   instruments: UserInstrument[];
   genres: UserGenre[];
 }
@@ -97,4 +99,44 @@ export interface BrowseFilters {
   sortOrder?: "asc" | "desc";
   page?: number;
   limit?: number;
+}
+
+// Match Types
+export interface MatchDetails {
+  id: string;
+  user1: UserProfile;
+  user2: UserProfile;
+  matchScore: number | null;
+  matchFactors: MatchScore["factors"];
+  status: "active" | "unmatched" | "blocked";
+  createdAt: Date;
+  updatedAt: Date;
+  conversation?: {
+    id: string;
+    hasMessages: boolean;
+    // lastMessageAt?: Date;
+  };
+}
+
+export interface Message {
+  id: string;
+  content: string | null;
+  fileUrl: string | null;
+  type: "text" | "audio" | "image";
+  senderId: string;
+  senderName: string;
+  senderImage: string | null;
+  createdAt: Date;
+  isRead: boolean;
+}
+
+export interface MatchConversation {
+  id: string;
+  matchId: string;
+  messages: Message[];
+  participants: {
+    id: string;
+    displayName: string;
+    profileImageUrl: string | null;
+  }[];
 }

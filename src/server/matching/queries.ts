@@ -8,8 +8,22 @@ import {
   userMatchProfiles,
   userInteractions,
   mediaSamples,
+  matches,
 } from "@/server/db/schema";
-import { eq, ne, and, desc, sql, isNull, lt, gt, not } from "drizzle-orm";
+import {
+  eq,
+  ne,
+  and,
+  desc,
+  sql,
+  isNull,
+  lt,
+  gt,
+  not,
+  exists,
+  or,
+} from "drizzle-orm";
+import { alias } from "drizzle-orm/pg-core";
 import { auth } from "@clerk/nextjs/server";
 import type {
   UserMatchProfile,
@@ -19,204 +33,19 @@ import type {
   Location,
   GenrePreference,
   InstrumentSkill,
+  DiscoveryResult,
+  DiscoveryHistory,
+  MatchScore,
 } from "@/lib/matching/types/matching-types";
 import { CompositeScorer } from "@/lib/matching/algorithms/composite-scorer";
 import { LocationScorer } from "@/lib/matching/algorithms/location-scorer";
-import type { Sample } from "@/types/api";
-
-export interface DiscoveryResult {
-  candidates: MatchCandidate[];
-  pagination: {
-    page: number;
-    limit: number;
-    total: number;
-    hasMore: boolean;
-  };
-  filters: DiscoveryFilters;
-}
-
-/**
- * Convert skill level string to numeric value for calculations
- */
-function skillLevelToNumber(skillLevel: string): number {
-  switch (skillLevel) {
-    case "beginner":
-      return 1;
-    case "intermediate":
-      return 2;
-    case "advanced":
-      return 3;
-    case "expert":
-    case "professional":
-      return 4;
-    default:
-      return 2;
-  }
-}
-
-/**
- * Calculate average skill level from instruments
- */
-function calculateSkillLevelAverage(instruments: InstrumentSkill[]): number {
-  if (instruments.length === 0) return 2;
-
-  const total = instruments.reduce((sum, instrument) => {
-    return sum + skillLevelToNumber(instrument.skillLevel);
-  }, 0);
-
-  return total / instruments.length;
-}
-
-/**
- * Calculate activity score based on last activity
- */
-function calculateActivityScore(lastActive: Date): number {
-  const daysSinceActive = Math.floor(
-    (Date.now() - lastActive.getTime()) / (1000 * 60 * 60 * 24),
-  );
-
-  if (daysSinceActive <= 1) return 100;
-  if (daysSinceActive <= 7) return 80;
-  if (daysSinceActive <= 30) return 60;
-  if (daysSinceActive <= 90) return 40;
-  return 20;
-}
-
-/**
- * Get varied default location for testing (based on user ID)
- */
-function getTestLocation(userId: string): Location {
-  const hash = userId.split("").reduce((a, b) => {
-    a = (a << 5) - a + b.charCodeAt(0);
-    return a & a;
-  }, 0);
-
-  const locations = [
-    { lat: 37.7749, lng: -122.4194, city: "San Francisco", region: "CA" },
-    { lat: 37.8044, lng: -122.2712, city: "Oakland", region: "CA" },
-    { lat: 40.7128, lng: -74.006, city: "New York", region: "NY" },
-    { lat: 34.0522, lng: -118.2437, city: "Los Angeles", region: "CA" },
-    { lat: 41.8781, lng: -87.6298, city: "Chicago", region: "IL" },
-    { lat: 47.6062, lng: -122.3321, city: "Seattle", region: "WA" },
-  ];
-
-  const index = Math.abs(hash) % locations.length;
-  const loc = locations[index]!;
-
-  return {
-    latitude: loc.lat,
-    longitude: loc.lng,
-    city: loc.city,
-    region: loc.region,
-    country: "United States",
-  };
-}
-
-/**
- * Create or update user match profile
- */
-export async function createOrUpdateUserMatchProfile(
-  clerkId: string,
-  profileData?: Partial<UserMatchProfile>,
-): Promise<void> {
-  const user = await db
-    .select()
-    .from(users)
-    .where(eq(users.clerkId, clerkId))
-    .limit(1);
-  if (!user.length) throw new Error("User not found");
-
-  const userId = user[0]!.id;
-
-  // Check if profile exists
-  const existingProfile = await db
-    .select()
-    .from(userMatchProfiles)
-    .where(eq(userMatchProfiles.userId, userId))
-    .limit(1);
-
-  // Get user's instruments for computed values
-  const instrumentsResult = await db
-    .select({
-      skillLevel: userInstruments.skillLevel,
-      yearsOfExperience: userInstruments.yearsOfExperience,
-      isPrimary: userInstruments.isPrimary,
-      instrumentId: instruments.id,
-      instrumentName: instruments.name,
-      instrumentCategory: instruments.category,
-    })
-    .from(userInstruments)
-    .leftJoin(instruments, eq(userInstruments.instrumentId, instruments.id))
-    .where(eq(userInstruments.userId, userId));
-
-  const mockInstruments: InstrumentSkill[] = instrumentsResult.map((i) => ({
-    id: i.instrumentId!,
-    name: i.instrumentName!,
-    category: i.instrumentCategory!,
-    skillLevel: i.skillLevel as
-      | "beginner"
-      | "intermediate"
-      | "advanced"
-      | "expert",
-    yearsOfExperience: i.yearsOfExperience!,
-    isPrimary: i.isPrimary!,
-  }));
-
-  const skillLevelAverage = calculateSkillLevelAverage(mockInstruments);
-
-  // Use provided location or fall back to user's location or test location
-  const location =
-    profileData?.location ??
-    (user[0]!.latitude && user[0]!.longitude
-      ? {
-          latitude: parseFloat(user[0]!.latitude),
-          longitude: parseFloat(user[0]!.longitude),
-          city: user[0]!.city ?? undefined,
-          region: user[0]!.region ?? undefined,
-          country: user[0]!.country ?? undefined,
-        }
-      : getTestLocation(userId));
-
-  const profileValues = {
-    userId,
-    locationLat: location.latitude.toString(),
-    locationLng: location.longitude.toString(),
-    city: location.city ?? user[0]!.city,
-    region: location.region ?? user[0]!.region,
-    country: location.country ?? user[0]!.country,
-    searchRadius: profileData?.searchRadius ?? 50,
-    ageRangeMin: profileData?.ageRange?.min ?? 18,
-    ageRangeMax: profileData?.ageRange?.max ?? 65,
-    lookingFor: profileData?.lookingFor ?? "any",
-    skillLevelAverage: skillLevelAverage.toString(),
-    activityScore:
-      profileData?.activityScore ?? calculateActivityScore(new Date()),
-    isActive: profileData?.isActive ?? true,
-    lastActive: new Date(),
-    updatedAt: new Date(),
-  };
-
-  if (existingProfile.length > 0) {
-    // Update existing
-    await db
-      .update(userMatchProfiles)
-      .set(profileValues)
-      .where(eq(userMatchProfiles.userId, userId));
-
-    console.log(`Updated match profile for user ${userId}`);
-  } else {
-    // Create new
-    await db.insert(userMatchProfiles).values({
-      ...profileValues,
-      createdAt: new Date(),
-    });
-
-    console.log(
-      `Created new match profile for user ${userId} at location:`,
-      location,
-    );
-  }
-}
+import type { Sample, UserProfile } from "@/types/api";
+import { createOrUpdateUserMatchProfile } from "./mutations";
+import {
+  calculateSkillLevelAverage,
+  calculateActivityScore,
+  getTestLocation,
+} from "@/lib/utils";
 
 /**
  * Get or create user match profile with all necessary data
@@ -356,26 +185,22 @@ export async function getDiscoveryCandidates(
   filters: DiscoveryFilters = {},
   pagination: PaginationOptions = { page: 1, limit: 20 },
 ): Promise<DiscoveryResult> {
-  // Start profiling
-  const profileStart = performance.now();
-  const profileData = {
-    totalUsers: 0,
-    processedUsers: 0,
-    filteredOutUsers: 0,
-    dbQueryTime: 0,
-    processingTime: 0,
-    scoringTime: 0,
-    filteringTime: 0,
-  };
-
-  console.log(`🔍 [PROFILING] Starting discovery for user ${clerkId}`);
-  console.log(`🔍 [PROFILING] Filters:`, JSON.stringify(filters, null, 2));
-  console.log(`🔍 [PROFILING] Pagination:`, pagination);
-
   const currentUserProfile = await getUserMatchProfile(clerkId);
   if (!currentUserProfile) {
     throw new Error("User profile not found");
   }
+
+  const currentUser = await db
+    .select({ id: users.id })
+    .from(users)
+    .where(eq(users.clerkId, clerkId))
+    .limit(1);
+
+  if (!currentUser.length) {
+    throw new Error("Current user not found");
+  }
+
+  const currentUserId = currentUser[0]!.id;
 
   const { page, limit } = pagination;
   const offset = (page - 1) * limit;
@@ -384,6 +209,24 @@ export async function getDiscoveryCandidates(
   const whereConditions = [
     ne(users.clerkId, clerkId), // Exclude current user
     eq(users.isActive, true), // Only active users
+    not(
+      exists(
+        db
+          .select()
+          .from(userInteractions)
+          .where(
+            and(
+              eq(userInteractions.fromUserId, currentUserId),
+              eq(userInteractions.toUserId, users.id),
+              or(
+                eq(userInteractions.type, "like"),
+                eq(userInteractions.type, "super_like"),
+                eq(userInteractions.type, "block"),
+              ),
+            ),
+          ),
+      ),
+    ),
   ];
 
   // Age range filter
@@ -502,28 +345,12 @@ export async function getDiscoveryCandidates(
     .offset(offset);
 
   // Execute query and measure time
-  const dbQueryStart = performance.now();
   const candidateResults = await candidatesQuery;
-  profileData.dbQueryTime = performance.now() - dbQueryStart;
-  profileData.totalUsers = candidateResults.length;
-
-  console.log(
-    `🔍 [PROFILING] DB Query completed in ${profileData.dbQueryTime.toFixed(2)}ms`,
-  );
-  console.log(
-    `🔍 [PROFILING] Retrieved ${profileData.totalUsers} candidate users`,
-  );
 
   // Process and score candidates
-  const processingStart = performance.now();
   const scoredCandidates: MatchCandidate[] = [];
 
-  // Track individual user processing times
-  const userProcessingTimes: number[] = [];
-
   for (const candidate of candidateResults) {
-    const userStart = performance.now();
-
     try {
       // Parse instruments and genres
       let candidateInstruments: InstrumentSkill[] = [];
@@ -605,43 +432,20 @@ export async function getDiscoveryCandidates(
       );
 
       // Filter by distance first
-      const filteringStart = performance.now();
       if (locationResult.distance > maxDistance) {
-        console.log(
-          `Filtering out ${candidate.displayName}: ${Math.round(locationResult.distance)}km > ${maxDistance}km`,
-        );
-        profileData.filteredOutUsers++;
-        const userTime = performance.now() - userStart;
-        userProcessingTimes.push(userTime);
-        profileData.filteringTime += performance.now() - filteringStart;
         continue;
       }
 
       // Calculate match score
-      const scoringStart = performance.now();
       const matchScore = CompositeScorer.calculate(
         currentUserProfile,
         candidateProfile,
       );
-      profileData.scoringTime += performance.now() - scoringStart;
 
       // Apply filters based on score
       if (matchScore.overall < 30) {
-        console.log(
-          `Filtering out ${candidate.displayName}: match score ${matchScore.overall} < 30`,
-        );
-        profileData.filteredOutUsers++;
-        const userTime = performance.now() - userStart;
-        userProcessingTimes.push(userTime);
-        profileData.filteringTime += performance.now() - filteringStart;
         continue;
       }
-
-      profileData.filteringTime += performance.now() - filteringStart;
-
-      console.log(
-        `Including ${candidate.displayName}: ${Math.round(locationResult.distance)}km, score ${matchScore.overall}`,
-      );
 
       scoredCandidates.push({
         user: {
@@ -658,125 +462,18 @@ export async function getDiscoveryCandidates(
         distance: locationResult.distance,
         lastActive: candidateProfile.lastActive,
       });
-
-      profileData.processedUsers++;
-      const userTime = performance.now() - userStart;
-      userProcessingTimes.push(userTime);
     } catch (error) {
       console.error("Error processing candidate:", error);
-      const userTime = performance.now() - userStart;
-      userProcessingTimes.push(userTime);
+
       continue;
     }
   }
 
-  profileData.processingTime = performance.now() - processingStart;
-
   // Sort by match score (highest first)
-  const sortingStart = performance.now();
   scoredCandidates.sort((a, b) => b.score.overall - a.score.overall);
-  const sortingTime = performance.now() - sortingStart;
 
   // Apply final pagination
   const finalCandidates = scoredCandidates.slice(0, limit);
-
-  // Calculate final metrics
-  const totalTime = performance.now() - profileStart;
-  const avgTimePerUser =
-    userProcessingTimes.length > 0
-      ? userProcessingTimes.reduce((sum, time) => sum + time, 0) /
-        userProcessingTimes.length
-      : 0;
-
-  // Log comprehensive profiling results
-  console.log(`\n🎯 [PROFILING RESULTS] Discovery Function Performance`);
-  console.log(`┌─────────────────────────────────────────────────────────┐`);
-  console.log(`│ TIMING BREAKDOWN                                        │`);
-  console.log(`├─────────────────────────────────────────────────────────┤`);
-  console.log(
-    `│ Total Function Time:     ${totalTime.toFixed(2).padStart(8)}ms          │`,
-  );
-  console.log(
-    `│ DB Query Time:           ${profileData.dbQueryTime.toFixed(2).padStart(8)}ms (${((profileData.dbQueryTime / totalTime) * 100).toFixed(1)}%)    │`,
-  );
-  console.log(
-    `│ Processing Time:         ${profileData.processingTime.toFixed(2).padStart(8)}ms (${((profileData.processingTime / totalTime) * 100).toFixed(1)}%)    │`,
-  );
-  console.log(
-    `│ Scoring Time:            ${profileData.scoringTime.toFixed(2).padStart(8)}ms (${((profileData.scoringTime / totalTime) * 100).toFixed(1)}%)    │`,
-  );
-  console.log(
-    `│ Filtering Time:          ${profileData.filteringTime.toFixed(2).padStart(8)}ms (${((profileData.filteringTime / totalTime) * 100).toFixed(1)}%)    │`,
-  );
-  console.log(
-    `│ Sorting Time:            ${sortingTime.toFixed(2).padStart(8)}ms (${((sortingTime / totalTime) * 100).toFixed(1)}%)    │`,
-  );
-  console.log(`├─────────────────────────────────────────────────────────┤`);
-  console.log(`│ USER PROCESSING STATS                                   │`);
-  console.log(`├─────────────────────────────────────────────────────────┤`);
-  console.log(
-    `│ Total Users Retrieved:   ${profileData.totalUsers.toString().padStart(8)}              │`,
-  );
-  console.log(
-    `│ Users Processed:         ${profileData.processedUsers.toString().padStart(8)}              │`,
-  );
-  console.log(
-    `│ Users Filtered Out:      ${profileData.filteredOutUsers.toString().padStart(8)}              │`,
-  );
-  console.log(
-    `│ Final Candidates:        ${finalCandidates.length.toString().padStart(8)}              │`,
-  );
-  console.log(
-    `│ Processing Success Rate: ${profileData.totalUsers > 0 ? ((profileData.processedUsers / profileData.totalUsers) * 100).toFixed(1) : "0.0"}%             │`,
-  );
-  console.log(`├─────────────────────────────────────────────────────────┤`);
-  console.log(`│ PERFORMANCE METRICS                                     │`);
-  console.log(`├─────────────────────────────────────────────────────────┤`);
-  console.log(
-    `│ Avg Time Per User:       ${avgTimePerUser.toFixed(2).padStart(8)}ms          │`,
-  );
-  console.log(
-    `│ Users Per Second:        ${profileData.totalUsers > 0 ? (profileData.totalUsers / (totalTime / 1000)).toFixed(0) : "0"}              │`,
-  );
-  console.log(
-    `│ Scoring Rate:            ${profileData.processedUsers > 0 ? (profileData.processedUsers / (profileData.scoringTime / 1000)).toFixed(0) : "0"} scores/sec     │`,
-  );
-  console.log(`└─────────────────────────────────────────────────────────┘`);
-
-  // Log individual user processing times (top 5 slowest)
-  if (userProcessingTimes.length > 0) {
-    const sortedTimes = [...userProcessingTimes].sort((a, b) => b - a);
-    console.log(`\n📊 [PROFILING] Individual User Processing Times:`);
-    console.log(
-      `   • Fastest: ${Math.min(...userProcessingTimes).toFixed(2)}ms`,
-    );
-    console.log(
-      `   • Slowest: ${Math.max(...userProcessingTimes).toFixed(2)}ms`,
-    );
-    console.log(
-      `   • Median:  ${sortedTimes[Math.floor(sortedTimes.length / 2)]?.toFixed(2) ?? "0"}ms`,
-    );
-    console.log(
-      `   • 95th percentile: ${sortedTimes[Math.floor(sortedTimes.length * 0.05)]?.toFixed(2) ?? "0"}ms`,
-    );
-  }
-
-  // Performance warnings
-  if (totalTime > 5000) {
-    console.warn(
-      `⚠️  [PROFILING WARNING] Function took ${totalTime.toFixed(0)}ms - consider optimization`,
-    );
-  }
-  if (avgTimePerUser > 50) {
-    console.warn(
-      `⚠️  [PROFILING WARNING] High per-user processing time: ${avgTimePerUser.toFixed(2)}ms`,
-    );
-  }
-  if (profileData.dbQueryTime > totalTime * 0.5) {
-    console.warn(
-      `⚠️  [PROFILING WARNING] DB query is ${((profileData.dbQueryTime / totalTime) * 100).toFixed(1)}% of total time`,
-    );
-  }
 
   return {
     candidates: finalCandidates,
@@ -790,15 +487,197 @@ export async function getDiscoveryCandidates(
   };
 }
 
-/**
- * Record user interaction for algorithm improvement
- */
-export async function recordUserInteraction(
+export async function getDiscoveryHistory(
   clerkId: string,
-  targetUserId: string,
-  action: "like" | "pass" | "super_like" | "block",
-  context: "search" | "discovery",
-): Promise<void> {
+): Promise<DiscoveryHistory[]> {
+  const { userId } = await auth();
+  if (!userId) throw new Error("Unauthorized");
+
+  const [currentUser] = await db
+    .select({ id: users.id })
+    .from(users)
+    .where(eq(users.clerkId, clerkId))
+    .limit(1);
+
+  if (!currentUser) throw new Error("User not found");
+
+  // Create aliases for the users table
+  const fromUsers = alias(users, "fromUsers");
+  const toUsers = alias(users, "toUsers");
+
+  const interactions = await db
+    .select({
+      id: userInteractions.id,
+      type: userInteractions.type,
+      context: userInteractions.context,
+      createdAt: userInteractions.createdAt,
+      fromUser: {
+        id: fromUsers.id,
+        username: fromUsers.username,
+        displayName: fromUsers.displayName,
+        profileImageUrl: fromUsers.profileImageUrl,
+      },
+      toUser: {
+        id: toUsers.id,
+        username: toUsers.username,
+        displayName: toUsers.displayName,
+        profileImageUrl: toUsers.profileImageUrl,
+      },
+    })
+    .from(userInteractions)
+    .leftJoin(fromUsers, eq(userInteractions.fromUserId, fromUsers.id))
+    .leftJoin(toUsers, eq(userInteractions.toUserId, toUsers.id))
+    .where(eq(userInteractions.fromUserId, currentUser.id))
+    .orderBy(desc(userInteractions.createdAt));
+
+  return interactions.map((interaction) => ({
+    id: interaction.id,
+    type: interaction.type,
+    context: interaction.context,
+    createdAt: interaction.createdAt,
+    fromUser: interaction.fromUser!,
+    toUser: interaction.toUser!,
+  }));
+}
+
+export interface Match {
+  id: string;
+  user1: Omit<UserProfile, "instruments" | "genres">;
+  user2: Omit<UserProfile, "instruments" | "genres">;
+  createdAt: Date;
+  updatedAt: Date;
+  matchScore: number;
+  matchFactors: MatchScore["factors"];
+}
+
+export async function getMatch(matchId: string): Promise<Match | null> {
+  const { userId } = await auth();
+  if (!userId) throw new Error("Unauthorized");
+
+  const [match] = await db
+    .select()
+    .from(matches)
+    .where(eq(matches.id, matchId))
+    .limit(1);
+
+  if (!match) return null;
+
+  const [[user1], [user2]] = await Promise.all([
+    db.select().from(users).where(eq(users.id, match.user1Id)).limit(1),
+    db.select().from(users).where(eq(users.id, match.user2Id)).limit(1),
+  ]);
+
+  if (!user1 || !user2) return null;
+
+  const user1Profile = await getUserMatchProfile(user1.clerkId);
+  const user2Profile = await getUserMatchProfile(user2.clerkId);
+
+  if (!user1Profile || !user2Profile) return null;
+
+  return {
+    id: match.id,
+    user1: user1,
+    user2: user2,
+    createdAt: match.createdAt,
+    updatedAt: match.updatedAt,
+    matchScore: Number(match.matchScore),
+    matchFactors: match.matchFactors as MatchScore["factors"],
+  };
+}
+
+export async function getMatches(clerkId: string): Promise<Match[]> {
+  const { userId } = await auth();
+  if (!userId) throw new Error("Unauthorized");
+
+  const user = await db
+    .select()
+    .from(users)
+    .where(and(eq(users.clerkId, clerkId), eq(users.isActive, true)))
+    .limit(1);
+  if (!user.length) throw new Error("User not found");
+
+  // Create aliases for the users table to get both user1 and user2 data
+  const user1 = alias(users, "user1");
+  const user2 = alias(users, "user2");
+
+  const myMatches = await db
+    .select({
+      // Match data
+      id: matches.id,
+      createdAt: matches.createdAt,
+      updatedAt: matches.updatedAt,
+      matchScore: matches.matchScore,
+      matchFactors: matches.matchFactors,
+      // User1 data
+      user1: {
+        id: user1.id,
+        username: user1.username,
+        displayName: user1.displayName,
+        bio: user1.bio,
+        age: user1.age,
+        showAge: user1.showAge,
+        city: user1.city,
+        region: user1.region,
+        country: user1.country,
+        profileImageUrl: user1.profileImageUrl,
+        createdAt: user1.createdAt,
+        updatedAt: user1.updatedAt,
+      },
+      // User2 data
+      user2: {
+        id: user2.id,
+        username: user2.username,
+        displayName: user2.displayName,
+        bio: user2.bio,
+        age: user2.age,
+        showAge: user2.showAge,
+        city: user2.city,
+        region: user2.region,
+        country: user2.country,
+        profileImageUrl: user2.profileImageUrl,
+        createdAt: user2.createdAt,
+        updatedAt: user2.updatedAt,
+      },
+    })
+    .from(matches)
+    .innerJoin(user1, eq(matches.user1Id, user1.id))
+    .innerJoin(user2, eq(matches.user2Id, user2.id))
+    .where(
+      or(eq(matches.user1Id, user[0]!.id), eq(matches.user2Id, user[0]!.id)),
+    )
+    .orderBy(desc(matches.createdAt));
+
+  return myMatches.map((match) => ({
+    id: match.id,
+    user1: {
+      ...match.user1,
+      showAge: true,
+    },
+    user2: {
+      ...match.user2,
+    },
+    createdAt: match.createdAt,
+    updatedAt: match.updatedAt,
+    matchScore: Number(match.matchScore),
+    matchFactors: match.matchFactors as MatchScore["factors"],
+  }));
+}
+
+/**
+ * Get pending collaboration invites for a user
+ */
+export async function getPendingInvites(clerkId: string): Promise<
+  Array<{
+    id: string;
+    fromUser: {
+      id: string;
+      displayName: string;
+      username: string;
+      profileImageUrl: string | null;
+    };
+    createdAt: Date;
+  }>
+> {
   const { userId } = await auth();
   if (!userId) throw new Error("Unauthorized");
 
@@ -809,11 +688,37 @@ export async function recordUserInteraction(
     .limit(1);
   if (!user.length) throw new Error("User not found");
 
-  await db.insert(userInteractions).values({
-    fromUserId: user[0]!.id,
-    toUserId: targetUserId,
-    type: action,
-    createdAt: new Date(),
-    context,
-  });
+  const currentUserId = user[0]!.id;
+
+  // Get pending invites (sent to current user, not yet completed)
+  const invites = await db
+    .select({
+      id: userInteractions.id,
+      fromUserId: userInteractions.fromUserId,
+      createdAt: userInteractions.createdAt,
+      fromUserDisplayName: users.displayName,
+      fromUserUsername: users.username,
+      fromUserProfileImage: users.profileImageUrl,
+    })
+    .from(userInteractions)
+    .innerJoin(users, eq(userInteractions.fromUserId, users.id))
+    .where(
+      and(
+        eq(userInteractions.toUserId, currentUserId),
+        eq(userInteractions.type, "invite_sent"),
+        eq(userInteractions.completed, false), // Only get uncompleted invites
+      ),
+    )
+    .orderBy(desc(userInteractions.createdAt));
+
+  return invites.map((invite) => ({
+    id: invite.id,
+    fromUser: {
+      id: invite.fromUserId,
+      displayName: invite.fromUserDisplayName,
+      username: invite.fromUserUsername,
+      profileImageUrl: invite.fromUserProfileImage,
+    },
+    createdAt: invite.createdAt,
+  }));
 }

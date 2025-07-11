@@ -1,5 +1,16 @@
 import type { Sample } from "@/types/api";
 
+export interface DiscoveryResult {
+  candidates: MatchCandidate[];
+  pagination: {
+    page: number;
+    limit: number;
+    total: number;
+    hasMore: boolean;
+  };
+  filters: DiscoveryFilters;
+}
+
 export interface Location {
   latitude: number;
   longitude: number;
@@ -104,4 +115,29 @@ export interface PaginationOptions {
   page: number;
   limit: number;
   cursor?: string;
+}
+
+export interface DiscoveryHistory {
+  id: string;
+  type:
+    | "like"
+    | "super_like"
+    | "block"
+    | "pass"
+    | "invite_sent"
+    | "invite_accepted"
+    | "invite_declined";
+  createdAt: Date;
+  fromUser: {
+    id: string;
+    username: string;
+    displayName: string;
+    profileImageUrl: string | null;
+  };
+  toUser: {
+    id: string;
+    username: string;
+    displayName: string;
+    profileImageUrl: string | null;
+  };
 }
