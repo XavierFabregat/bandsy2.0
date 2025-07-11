@@ -6,6 +6,11 @@ import {
   userMatchProfiles,
   userInteractions,
   matches,
+  conversations,
+  conversationParticipants,
+  messages,
+  groups,
+  groupMembers,
 } from "@/server/db/schema";
 import { eq, and, or, not, exists, desc } from "drizzle-orm";
 import { auth } from "@clerk/nextjs/server";
@@ -236,6 +241,45 @@ async function createMatch(user1Id: string, user2Id: string): Promise<string> {
   if (!match) {
     throw new Error("Failed to create match");
   }
+
+  // Create conversation for the match
+  const [conversation] = await db
+    .insert(conversations)
+    .values({
+      matchId: match.id,
+      isGroupChat: false,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    })
+    .returning({ id: conversations.id });
+
+  if (!conversation) {
+    throw new Error("Failed to create conversation");
+  }
+
+  // Add both users as participants
+  await db.insert(conversationParticipants).values([
+    {
+      conversationId: conversation.id,
+      userId: orderedUser1Id,
+      joinedAt: new Date(),
+    },
+    {
+      conversationId: conversation.id,
+      userId: orderedUser2Id,
+      joinedAt: new Date(),
+    },
+  ]);
+
+  // Send initial system message
+  await db.insert(messages).values({
+    conversationId: conversation.id,
+    senderId: orderedUser1Id,
+    type: "text",
+    content: `🎵 You matched! Start the conversation and discuss your collaboration ideas.`,
+    isRead: false,
+    createdAt: new Date(),
+  });
 
   // Send notifications to both users
   await Promise.all([

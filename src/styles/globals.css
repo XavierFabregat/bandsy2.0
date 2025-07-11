@@ -130,7 +130,18 @@ body {
   }
 }
 
-@import "tailwindcss";
+@utility no-scrollbar {
+  /* Hide scrollbar for WebKit browsers (Chrome, Safari, Edge) */
+  &::-webkit-scrollbar {
+    display: none;
+  }
+
+  /* Hide scrollbar for Firefox */
+  scrollbar-width: none;
+
+  /* For IE (legacy support) */
+  -ms-overflow-style: none;
+}
 
 @import "uploadthing/tw/v4";
 @source "../node_modules/@uploadthing/react/dist"; /** <-- depends on your project structure */

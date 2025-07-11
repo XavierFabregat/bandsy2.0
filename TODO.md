@@ -81,10 +81,10 @@
   - [x] Add like/pass functionality
   - [x] Implement swipe history tracking
   - [x] Add "super like" feature
-- [ ] **Match logic**
-  - [ ] Create match detection system
-  - [ ] Add match notifications
-  - [ ] Implement match status tracking
+- [x] **Match logic**
+  - [x] Create match detection system
+  - [x] Add match notifications
+  - [x] Implement match status tracking
 
 ### Messaging System
 
@@ -302,6 +302,8 @@
 - poder pujar anauncis pagant
 - Pot pujar videos
 - pot fer boosting (??)
+
+- Star system (a bit like github, were users can leave stars and that gives us a bit of a popularity rank/viral system)
 
 _Last updated: [Current Date]_
 _Priority levels: High (immediate), Medium (next sprint), Low (future)_
