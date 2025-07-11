@@ -145,3 +145,30 @@ body {
 
 @import "uploadthing/tw/v4";
 @source "../node_modules/@uploadthing/react/dist"; /** <-- depends on your project structure */
+
+/* Mobile viewport height fix */
+.h-screen-mobile {
+  height: 100vh;
+  height: 100dvh; /* Dynamic viewport height */
+}
+
+/* Mobile safe area padding */
+.pb-safe {
+  padding-bottom: env(safe-area-inset-bottom);
+}
+
+.mobile-input-fixed {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  z-index: 50;
+  padding-bottom: max(2rem, env(safe-area-inset-bottom, 2rem));
+  background: white;
+  border-top: 1px solid hsl(var(--border));
+}
+
+.dark .mobile-input-fixed {
+  background: hsl(var(--background));
+  border-top-color: hsl(var(--border));
+}

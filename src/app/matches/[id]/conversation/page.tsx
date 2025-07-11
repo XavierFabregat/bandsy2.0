@@ -371,9 +371,9 @@ export default function MatchConversationPage() {
     : false;
 
   return (
-    <div className="no-scrollbar relative flex h-screen flex-col bg-gray-50 dark:bg-gray-900">
-      {/* WhatsApp-style Header - Fixed */}
-      <div className="sticky top-0 z-10 flex items-center gap-3 border-b bg-white px-4 py-3 shadow-sm dark:border-gray-700 dark:bg-gray-800">
+    <div className="no-scrollbar relative flex h-[100dvh] flex-col bg-gray-50 dark:bg-gray-900">
+      {/* Header */}
+      <div className="sticky top-0 right-0 z-20 flex w-full items-center gap-3 border-b bg-white px-4 py-3 shadow-sm dark:border-gray-700 dark:bg-gray-800">
         <Link href="/matches">
           <Button variant="ghost" size="icon" className="h-9 w-9">
             <ArrowLeft className="h-5 w-5" />
@@ -387,10 +387,22 @@ export default function MatchConversationPage() {
           </AvatarFallback>
         </Avatar>
 
-        <div className="min-w-0 flex-1">
+        <div className="flex min-w-0 flex-1 flex-col">
           <h1 className="truncate font-semibold">
             {otherParticipant?.displayName}
           </h1>
+          {/* Typing Indicator */}
+          <div className="mt-[-5px] flex h-2 flex-col">
+            {Object.values(typing).map((typingUser) => {
+              return (
+                <div key={typingUser.userId}>
+                  <span className="text-xs text-gray-500">
+                    Typing <span className="animate-pulse">...</span>
+                  </span>
+                </div>
+              );
+            })}
+          </div>
         </div>
 
         <div className="flex items-center gap-1">
@@ -499,8 +511,8 @@ export default function MatchConversationPage() {
         </div>
       </div>
 
-      {/* Messages Area - Scrollable */}
-      <div className="no-scrollbar flex-1 flex-col space-y-4 overflow-y-auto p-4 pb-20">
+      {/* Messages Area - Much more padding */}
+      <div className="no-scrollbar flex-1 flex-col space-y-4 overflow-y-auto p-4 pt-20 pb-20">
         {/* Welcome message */}
         <div className="flex justify-center">
           <div className="max-w-xs rounded-lg bg-yellow-100 px-4 py-2 text-center text-sm dark:bg-yellow-900/30">
@@ -512,56 +524,43 @@ export default function MatchConversationPage() {
         </div>
 
         {/* Messages */}
-        {messages.map((message, index) => {
-          const isOwn = message.senderId === currentUserId;
-          return (
-            <div
-              key={`${message.id}-${index}`}
-              className={`flex ${isOwn ? "justify-end" : "justify-start"}`}
-            >
+        {[...messages, ...messages, ...messages, ...messages, ...messages].map(
+          (message, index) => {
+            const isOwn = message.senderId === currentUserId;
+            return (
               <div
-                className={`max-w-[75%] rounded-2xl px-4 py-2 ${
-                  isOwn
-                    ? "bg-primary text-primary-foreground rounded-br-md"
-                    : "rounded-bl-md bg-white shadow-sm dark:bg-gray-800"
-                }`}
+                key={`${message.id}-${index}`}
+                className={`flex ${isOwn ? "justify-end" : "justify-start"}`}
               >
-                <p className="text-sm leading-relaxed">{message.content}</p>
-                <p
-                  className={`mt-1 text-xs ${
+                <div
+                  className={`max-w-[75%] rounded-2xl px-4 py-2 ${
                     isOwn
-                      ? "text-primary-foreground/70"
-                      : "text-muted-foreground"
+                      ? "bg-primary text-primary-foreground rounded-br-md"
+                      : "rounded-bl-md bg-white shadow-sm dark:bg-gray-800"
                   }`}
                 >
-                  {new Date(message.createdAt).toLocaleTimeString([], {
-                    hour: "2-digit",
-                    minute: "2-digit",
-                  })}
-                </p>
+                  <p className="text-sm leading-relaxed">{message.content}</p>
+                  <p
+                    className={`mt-1 text-xs ${
+                      isOwn
+                        ? "text-primary-foreground/70"
+                        : "text-muted-foreground"
+                    }`}
+                  >
+                    {new Date(message.createdAt).toLocaleTimeString([], {
+                      hour: "2-digit",
+                      minute: "2-digit",
+                    })}
+                  </p>
+                </div>
               </div>
-            </div>
-          );
-        })}
-
-        {/* Typing Indicator */}
-        {Object.values(typing).map((typingUser) => {
-          return (
-            <div key={typingUser.userId} className="flex items-center gap-2">
-              <Avatar className="h-4 w-4">
-                <AvatarImage src={typingUser.userImage} />
-              </Avatar>
-              <span className="text-xs text-gray-500">
-                {typingUser.userName} is typing{" "}
-                <span className="animate-pulse">...</span>
-              </span>
-            </div>
-          );
-        })}
+            );
+          },
+        )}
       </div>
 
-      {/* Input Area - Fixed */}
-      <div className="sticky bottom-0 z-10 border-t bg-white px-4 py-3 dark:border-gray-700 dark:bg-gray-800">
+      {/* Input Area - Fixed positioning */}
+      <div className="fixed right-0 bottom-0 left-0 z-50 w-full border-t bg-white px-4 py-3 dark:border-gray-700 dark:bg-gray-800">
         <div className="flex items-center gap-2">
           <div className="relative flex-1">
             <Input
@@ -570,7 +569,7 @@ export default function MatchConversationPage() {
               onKeyPress={handleKeyPress}
               onBlur={handleInputBlur}
               placeholder="Type a message..."
-              className="focus:border-primary rounded-full border-gray-300 bg-gray-50 pr-12 dark:border-gray-600 dark:bg-gray-700"
+              className="focus:border-primary rounded-full border-gray-300 bg-gray-50 pr-12 text-base dark:border-gray-600 dark:bg-gray-700"
             />
             <Button
               variant="ghost"
