@@ -11,6 +11,8 @@ import {
   Filter,
   Calendar,
   User,
+  type LucideIcon,
+  Mail,
 } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
@@ -23,7 +25,23 @@ interface Props {
   initialHistory: DiscoveryHistory[];
 }
 
-const interactionConfig = {
+const interactionConfig: Record<
+  | "like"
+  | "super_like"
+  | "pass"
+  | "block"
+  | "invite_sent"
+  | "invite_accepted"
+  | "invite_declined",
+  {
+    icon: LucideIcon;
+    label: string;
+    color: string;
+    bgColor: string;
+    borderColor: string;
+    description: string;
+  }
+> = {
   like: {
     icon: Heart,
     label: "Liked",
@@ -55,6 +73,30 @@ const interactionConfig = {
     bgColor: "bg-red-50",
     borderColor: "border-red-200",
     description: "You blocked this musician",
+  },
+  invite_sent: {
+    icon: Mail,
+    label: "Invite Sent",
+    color: "text-blue-600",
+    bgColor: "bg-blue-50",
+    borderColor: "border-blue-200",
+    description: "You sent an invite to this musician",
+  },
+  invite_accepted: {
+    icon: Mail,
+    label: "Invite Accepted",
+    color: "text-green-600",
+    bgColor: "bg-green-50",
+    borderColor: "border-green-200",
+    description: "You accepted an invite from this musician",
+  },
+  invite_declined: {
+    icon: Mail,
+    label: "Invite Declined",
+    color: "text-red-600",
+    bgColor: "bg-red-50",
+    borderColor: "border-red-200",
+    description: "You declined an invite from this musician",
   },
 };
 
