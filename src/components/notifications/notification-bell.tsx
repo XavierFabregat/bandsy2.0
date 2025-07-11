@@ -19,6 +19,7 @@ export function NotificationBell() {
     unreadCount,
     notifications,
     isConnected,
+    unreadNotifications,
     error,
     reconnect,
     requestNotificationPermission,
@@ -74,7 +75,7 @@ export function NotificationBell() {
           </div>
         )}
         <NotificationsList
-          notifications={notifications}
+          notifications={unreadNotifications}
           isConnected={isConnected}
           error={error}
           onReconnect={reconnect}

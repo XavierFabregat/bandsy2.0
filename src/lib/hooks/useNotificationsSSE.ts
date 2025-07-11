@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback, useRef } from "react";
+import { useState, useEffect, useCallback, useRef, useMemo } from "react";
 import type { Notification } from "@/types/notifications";
 import { useConversationStore } from "../stores/conversationStore";
 
@@ -50,6 +50,10 @@ export function useNotificationSSE() {
   const reconnectTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const reconnectAttempts = useRef(0);
   const maxReconnectAttempts = 5;
+
+  const unreadNotifications = useMemo(() => {
+    return notifications.filter((notification) => !notification.isRead);
+  }, [notifications]);
 
   const { addMessage, setTyping, setMessages } = useConversationStore();
 
@@ -223,6 +227,7 @@ export function useNotificationSSE() {
     notifications,
     isConnected,
     error,
+    unreadNotifications,
     reconnect: connect,
     requestNotificationPermission,
   };
