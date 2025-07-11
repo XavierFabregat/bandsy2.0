@@ -85,6 +85,9 @@ vi.mock("@clerk/nextjs", () => ({
   }),
   SignedIn: vi.fn(({ children }: { children: React.ReactNode }) => children),
   SignedOut: vi.fn(({ children }: { children: React.ReactNode }) => children),
+  SignInButton: vi.fn(
+    ({ children }: { children: React.ReactNode }) => children,
+  ),
   UserButton: vi.fn(() => "UserButton"),
   ClerkProvider: vi.fn(
     ({ children }: { children: React.ReactNode }) => children,
@@ -119,6 +122,56 @@ vi.mock("@/env.js", () => ({
     NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY: "test-clerk-publishable",
   },
 }));
+
+// Mock EventSource for SSE functionality
+// @ts-expect-error - EventSource is not defined in the global scope
+global.EventSource = vi.fn().mockImplementation(() => ({
+  addEventListener: vi.fn(),
+  removeEventListener: vi.fn(),
+  close: vi.fn(),
+  readyState: 0,
+  url: "",
+  withCredentials: false,
+  onopen: null,
+  onmessage: null,
+  onerror: null,
+}));
+
+// Add EventSource constants
+Object.assign(global.EventSource, {
+  CONNECTING: 0,
+  OPEN: 1,
+  CLOSED: 2,
+});
+
+// Mock fetch globally to handle relative URLs
+global.fetch = vi.fn().mockImplementation((url: string) => {
+  // Handle notifications API calls
+  if (url.includes("/api/notifications")) {
+    return Promise.resolve({
+      ok: true,
+      json: () =>
+        Promise.resolve({
+          notifications: [],
+          unreadCount: 0,
+        }),
+    });
+  }
+
+  // Default mock for other fetch calls
+  return Promise.resolve({
+    ok: true,
+    json: () => Promise.resolve({}),
+  });
+});
+
+// Mock browser Notification API
+// @ts-expect-error - Notification is not defined in the global scope
+global.Notification = vi.fn().mockImplementation(() => ({}));
+Object.assign(global.Notification, {
+  permission: "default",
+  requestPermission: vi.fn().mockResolvedValue("granted"),
+});
 
 // Global test setup
 beforeAll(() => {

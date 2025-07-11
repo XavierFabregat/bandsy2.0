@@ -21,6 +21,27 @@ global.fetch = mockFetch;
 const originalEnv = process.env.NEXT_PUBLIC_API_URL;
 process.env.NEXT_PUBLIC_API_URL = "https://api.test.com";
 
+// Mock EventSource for SSE functionality
+// @ts-expect-error - EventSource is not defined in the global scope
+global.EventSource = vi.fn().mockImplementation(() => ({
+  addEventListener: vi.fn(),
+  removeEventListener: vi.fn(),
+  close: vi.fn(),
+  readyState: 0,
+  url: "",
+  withCredentials: false,
+  onopen: null,
+  onmessage: null,
+  onerror: null,
+}));
+
+// Add EventSource constants
+Object.assign(global.EventSource, {
+  CONNECTING: 0,
+  OPEN: 1,
+  CLOSED: 2,
+});
+
 describe("api", () => {
   beforeEach(() => {
     vi.clearAllMocks();
@@ -293,6 +314,10 @@ describe("api", () => {
     it("should record like interaction", async () => {
       mockFetch.mockResolvedValueOnce({
         ok: true,
+        json: vi.fn().mockResolvedValue({
+          success: true,
+          matchCreated: false,
+        }),
       });
 
       await recordInteraction("user-123", "like", "discovery");
@@ -313,6 +338,10 @@ describe("api", () => {
     it("should record pass interaction", async () => {
       mockFetch.mockResolvedValueOnce({
         ok: true,
+        json: vi.fn().mockResolvedValue({
+          success: true,
+          matchCreated: false,
+        }),
       });
 
       await recordInteraction("user-456", "pass", "search");
@@ -332,6 +361,11 @@ describe("api", () => {
     it("should record super_like interaction", async () => {
       mockFetch.mockResolvedValueOnce({
         ok: true,
+        json: vi.fn().mockResolvedValue({
+          success: true,
+          matchCreated: true,
+          matchId: "match-123",
+        }),
       });
 
       await recordInteraction("user-789", "super_like", "discovery");
@@ -351,6 +385,10 @@ describe("api", () => {
     it("should record block interaction", async () => {
       mockFetch.mockResolvedValueOnce({
         ok: true,
+        json: vi.fn().mockResolvedValue({
+          success: true,
+          matchCreated: false,
+        }),
       });
 
       await recordInteraction("user-000", "block", "search");
