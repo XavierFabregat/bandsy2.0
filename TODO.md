@@ -88,19 +88,19 @@
 
 ### Messaging System
 
-- [ ] **Conversation management**
-  - [ ] Create conversation list
-  - [ ] Add conversation creation for matches
-  - [ ] Implement conversation participants
-- [ ] **Message functionality**
-  - [ ] Create message input component
-  - [ ] Add text message sending
+- [x] **Conversation management**
+  - [x] Create conversation list
+  - [x] Add conversation creation for matches
+  - [x] Implement conversation participants
+- [x] **Message functionality**
+  - [x] Create message input component
+  - [x] Add text message sending
   - [ ] Implement message history
   - [ ] Add read receipts
-- [ ] **Real-time messaging**
-  - [ ] Set up WebSocket or Server-Sent Events
-  - [ ] Add real-time message delivery
-  - [ ] Implement typing indicators
+- [x] **Real-time messaging**
+  - [x] Set up WebSocket or Server-Sent Events
+  - [x] Add real-time message delivery
+  - [x] Implement typing indicators
 
 ---
 
