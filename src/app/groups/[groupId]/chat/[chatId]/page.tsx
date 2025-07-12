@@ -73,7 +73,7 @@ export default function GroupChatPage() {
 
   // Debounced typing indicator - stops typing after delay of no input
   const {
-    immediate: handleStopTyping,
+    immediate: _,
     debounced: debouncedStopTyping,
     cancel: cancelStopTyping,
   } = useDebounceImmediate(

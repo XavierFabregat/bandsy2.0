@@ -1,19 +1,7 @@
 import type { getGroupById } from "@/server/groups/queries";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
+import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import {
-  MessageCircle,
-  Users,
-  Clock,
-  Plus,
-  Hash,
-  Mic,
-  Calendar,
-  ArrowRight,
-} from "lucide-react";
-import Link from "next/link";
+import { MessageCircle, Plus } from "lucide-react";
 
 import {
   Dialog,
