@@ -88,6 +88,7 @@ export async function getMatchConversation(
       id: messages.id,
       senderId: messages.senderId,
       senderName: users.displayName,
+      senderClerkId: users.clerkId,
       senderImage: users.profileImageUrl,
       content: messages.content,
       type: messages.type,

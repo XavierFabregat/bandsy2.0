@@ -1,5 +1,5 @@
 import { type NextRequest, NextResponse } from "next/server";
-import { getMatch } from "../../../../server/matching/queries";
+import { getMatch } from "@/server/matching/queries";
 import { auth } from "@clerk/nextjs/server";
 
 export async function GET(

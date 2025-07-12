@@ -38,6 +38,7 @@ interface Message {
   matchId?: string;
   groupId?: string;
   senderName: string;
+  senderClerkId: string;
   senderImage: string;
   fileUrl: string;
   type: "text" | "image" | "audio";
@@ -90,8 +91,14 @@ export default function MatchConversationPage() {
   const currentUserId = user?.id;
   const params = useParams();
   const matchId = params.id as string;
-  const { conversations, typingUsers, isLoading, setMessages, setLoading } =
-    useConversationStore();
+  const {
+    conversations,
+    typingUsers,
+    isLoading,
+    setMessages,
+    setLoading,
+    fetchMessages,
+  } = useConversationStore();
   const { startTyping, stopTyping } = useTypingIndicator(
     matchId,
     DEBOUNCE_DELAY,
@@ -108,9 +115,15 @@ export default function MatchConversationPage() {
   );
   const [isCurrentlyTyping, setIsCurrentlyTyping] = useState(false);
 
-  const messages = conversations[matchId] ?? [];
+  const [firstMessage, ...messages] =
+    conversations[conversation?.id ?? ""] ?? [];
   const typing = typingUsers[matchId] ?? {};
   const loading = isLoading[matchId] ?? false;
+
+  useEffect(() => {
+    console.log("Messages", messages);
+    console.log("Conversations", conversations);
+  }, [messages, conversations]);
 
   // Debounced typing indicator - stops typing after 2 seconds of no input
   const {
@@ -163,6 +176,7 @@ export default function MatchConversationPage() {
 
   const fetchConversation = useCallback(async () => {
     setLoading(matchId, true);
+    let conversationId = "";
     try {
       const response = await fetch(`/api/matches/${matchId}/conversation`);
       if (response.ok) {
@@ -171,13 +185,15 @@ export default function MatchConversationPage() {
           messages: Message[];
         };
         setConversation(data.conversation);
-        setMessages(matchId, data.messages);
+        setMessages(data.conversation.id, data.messages);
+        conversationId = data.conversation.id;
       }
     } catch (error) {
       console.error("Error fetching conversation:", error);
     } finally {
       setLoading(matchId, false);
     }
+    return conversationId;
   }, [matchId, setLoading, setMessages]);
 
   const sendMessage = useCallback(async () => {
@@ -191,7 +207,7 @@ export default function MatchConversationPage() {
     }
 
     try {
-      const response = await fetch(`/api/matches/${matchId}/messages`, {
+      const response = await fetch(`/api/matches/${matchId}/conversation`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ content: newMessage }),
@@ -267,26 +283,25 @@ export default function MatchConversationPage() {
   // Load initial messages
   useEffect(() => {
     console.log("Rerendering");
-    void fetchConversation().then(() => {
+    void fetchConversation().then((conversationId) => {
       void fetchUserGroups();
       void fetchMatch();
-    });
-    const fetchMessages = async () => {
-      setLoading(matchId, true);
-      try {
-        const response = await fetch(`/api/matches/${matchId}/messages`);
-        const data = (await response.json()) as { messages: Message[] };
-        setMessages(matchId, data.messages);
-      } catch (error) {
-        console.error("Failed to fetch messages:", error);
-      } finally {
-        setLoading(matchId, false);
+      if (!messages.length) {
+        void fetchMessages(matchId, conversationId);
       }
-    };
-
-    if (!messages.length) {
-      void fetchMessages();
-    }
+    });
+    // const fetchMessages = async () => {
+    //   setLoading(matchId, true);
+    //   try {
+    //     const response = await fetch(`/api/matches/${matchId}/messages`);
+    //     const data = (await response.json()) as { messages: Message[] };
+    //     setMessages(matchId, data.messages);
+    //   } catch (error) {
+    //     console.error("Failed to fetch messages:", error);
+    //   } finally {
+    //     setLoading(matchId, false);
+    //   }
+    // };
   }, [
     matchId,
     messages.length,
@@ -512,7 +527,7 @@ export default function MatchConversationPage() {
       </div>
 
       {/* Messages Area - Much more padding */}
-      <div className="no-scrollbar flex-1 flex-col space-y-4 overflow-y-auto p-4 pt-20 pb-20">
+      <div className="no-scrollbar flex flex-1 flex-col space-y-4 overflow-y-auto p-4 pt-20 pb-20">
         {/* Welcome message */}
         <div className="flex justify-center">
           <div className="max-w-xs rounded-lg bg-yellow-100 px-4 py-2 text-center text-sm dark:bg-yellow-900/30">
@@ -524,39 +539,62 @@ export default function MatchConversationPage() {
         </div>
 
         {/* Messages */}
-        {[...messages, ...messages, ...messages, ...messages, ...messages].map(
-          (message, index) => {
-            const isOwn = message.senderId === currentUserId;
-            return (
+        {messages.map((message, index) => {
+          const isOwn = message.senderClerkId === currentUserId;
+          return (
+            <div
+              key={`${message.id}-${index}`}
+              className={`flex ${isOwn ? "justify-end" : "justify-start"}`}
+            >
               <div
-                key={`${message.id}-${index}`}
-                className={`flex ${isOwn ? "justify-end" : "justify-start"}`}
+                className={`flex max-w-[75%] items-end gap-2 ${isOwn ? "flex-row-reverse" : "flex-row"}`}
               >
-                <div
-                  className={`max-w-[75%] rounded-2xl px-4 py-2 ${
-                    isOwn
-                      ? "bg-primary text-primary-foreground rounded-br-md"
-                      : "rounded-bl-md bg-white shadow-sm dark:bg-gray-800"
-                  }`}
-                >
-                  <p className="text-sm leading-relaxed">{message.content}</p>
-                  <p
-                    className={`mt-1 text-xs ${
+                {/* Avatar - Only show for other person's messages */}
+                {!isOwn && (
+                  <Avatar className="h-6 w-6 flex-shrink-0">
+                    <AvatarImage src={message.senderImage ?? ""} />
+                    <AvatarFallback className="bg-muted text-muted-foreground text-xs">
+                      {message.senderName.charAt(0)}
+                    </AvatarFallback>
+                  </Avatar>
+                )}
+
+                {/* Message Bubble */}
+                <div className="flex flex-col">
+                  {/* Sender Name - Only show for other person's messages */}
+                  {!isOwn && (
+                    <p className="text-muted-foreground mb-1 text-xs font-medium">
+                      {message.senderName}
+                    </p>
+                  )}
+
+                  {/* Message Content */}
+                  <div
+                    className={`rounded-2xl px-4 py-2 ${
                       isOwn
-                        ? "text-primary-foreground/70"
-                        : "text-muted-foreground"
+                        ? "bg-primary text-primary-foreground rounded-br-md"
+                        : "rounded-bl-md bg-white shadow-sm dark:bg-gray-800"
                     }`}
                   >
-                    {new Date(message.createdAt).toLocaleTimeString([], {
-                      hour: "2-digit",
-                      minute: "2-digit",
-                    })}
-                  </p>
+                    <p className="text-sm leading-relaxed">{message.content}</p>
+                    <p
+                      className={`mt-1 text-xs ${
+                        isOwn
+                          ? "text-primary-foreground/70"
+                          : "text-muted-foreground"
+                      }`}
+                    >
+                      {new Date(message.createdAt).toLocaleTimeString([], {
+                        hour: "2-digit",
+                        minute: "2-digit",
+                      })}
+                    </p>
+                  </div>
                 </div>
               </div>
-            );
-          },
-        )}
+            </div>
+          );
+        })}
       </div>
 
       {/* Input Area - Fixed positioning */}

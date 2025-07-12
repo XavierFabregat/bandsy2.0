@@ -10,7 +10,18 @@ import {
 } from "@/server/db/schema";
 import { eq, and } from "drizzle-orm";
 import { auth } from "@clerk/nextjs/server";
+import type { Message } from "../../types/api";
 
+// id: string;
+// senderId: string;
+// content: string;
+// matchId?: string;
+// senderName: string;
+// senderImage: string;
+// fileUrl: string;
+// type: "text" | "image" | "audio";
+// createdAt: Date;
+// isRead: boolean;
 /**
  * Send message in match conversation
  */
@@ -19,7 +30,7 @@ export async function sendMatchMessage(
   conversationId: string,
   content: string,
   type: "text" | "audio" | "image" = "text",
-): Promise<{ messageId: string }> {
+): Promise<Message & { matchId?: string; conversationId: string }> {
   const { userId } = await auth();
   if (!userId) throw new Error("Unauthorized");
 
@@ -57,17 +68,40 @@ export async function sendMatchMessage(
       isRead: false,
       createdAt: new Date(),
     })
-    .returning({ id: messages.id });
+    .returning();
 
   if (!message) throw new Error("Failed to send message");
 
+  const [sender] = await db
+    .select()
+    .from(users)
+    .where(eq(users.id, message.senderId))
+    .limit(1);
+  if (!sender) throw new Error("Sender not found");
+
   // Update conversation updated timestamp
-  await db
+  const [conversation] = await db
     .update(conversations)
     .set({ updatedAt: new Date() })
-    .where(eq(conversations.id, conversationId));
+    .where(eq(conversations.id, conversationId))
+    .returning();
 
-  return { messageId: message.id };
+  if (!conversation) throw new Error("Failed to update conversation");
+
+  return {
+    id: message.id,
+    senderId: message.senderId,
+    fileUrl: message.fileUrl ?? "",
+    type: message.type,
+    createdAt: message.createdAt,
+    isRead: !!message.isRead,
+    senderName: sender.displayName,
+    senderImage: sender.profileImageUrl ?? "",
+    senderClerkId: sender.clerkId,
+    matchId: conversation.matchId ?? "",
+    content: message.content ?? "",
+    conversationId: conversationId,
+  };
 }
 
 /**

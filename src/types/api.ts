@@ -120,12 +120,13 @@ export interface MatchDetails {
 
 export interface Message {
   id: string;
-  content: string | null;
+  content: string;
   fileUrl: string | null;
   type: "text" | "audio" | "image";
   senderId: string;
   senderName: string;
-  senderImage: string | null;
+  senderClerkId: string;
+  senderImage: string;
   createdAt: Date;
   isRead: boolean;
 }

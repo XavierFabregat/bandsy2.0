@@ -19,12 +19,12 @@ interface SSEEvent {
     id: string;
     senderId: string;
     content: string;
-    timestamp: string;
     conversationId?: string;
     matchId?: string;
     groupId?: string;
     senderName: string;
     senderImage: string;
+    senderClerkId: string;
     fileUrl: string;
     type: "text" | "image" | "audio";
     createdAt: Date;
@@ -120,11 +120,20 @@ export function useNotificationSSE() {
               break;
 
             case "match_message":
-              addMessage(data.message?.conversationId ?? "", data.message!);
+              console.log("SSE: Match message received", data.message);
+              if (!data.message?.conversationId) {
+                console.error("SSE: No conversationId in match message");
+                throw new Error("No conversationId in match message");
+              }
+              addMessage(data.message.conversationId, data.message);
               break;
 
             case "group_message":
-              addMessage(data.message?.conversationId ?? "", data.message!);
+              if (!data.message?.conversationId) {
+                console.error("SSE: No conversationId in group message");
+                throw new Error("No conversationId in group message");
+              }
+              addMessage(data.message.conversationId, data.message);
               break;
 
             case "user_typing":

@@ -4,6 +4,7 @@ interface Message {
   id: string;
   senderId: string;
   senderName: string;
+  senderClerkId: string;
   content: string;
   senderImage: string;
   type: "text" | "audio" | "image";
@@ -41,7 +42,7 @@ interface ConversationState {
   setLoading: (conversationId: string, loading: boolean) => void;
 
   // Fetch messages (simple fetch for now)
-  fetchMessages: (conversationId: string) => Promise<void>;
+  fetchMessages: (matchId: string, conversationId: string) => Promise<void>;
 }
 
 export const useConversationStore = create<ConversationState>((set, get) => ({
@@ -95,7 +96,7 @@ export const useConversationStore = create<ConversationState>((set, get) => ({
       },
     })),
 
-  fetchMessages: async (conversationId) => {
+  fetchMessages: async (matchId, conversationId) => {
     const state = get();
 
     // Don't fetch if already loading
@@ -104,7 +105,7 @@ export const useConversationStore = create<ConversationState>((set, get) => ({
     state.setLoading(conversationId, true);
 
     try {
-      const response = await fetch(`/api/matches/${conversationId}/messages`);
+      const response = await fetch(`/api/matches/${matchId}/conversation`);
       const data = (await response.json()) as { messages: Message[] };
       state.setMessages(conversationId, data.messages ?? []);
     } catch (error) {
