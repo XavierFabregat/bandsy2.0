@@ -95,8 +95,9 @@
 - [x] **Message functionality**
   - [x] Create message input component
   - [x] Add text message sending
-  - [ ] Implement message history
-  - [ ] Add read receipts
+- [ ] **Message functionality QoL**
+  - [ ] Implement message history (low priority)
+  - [ ] Add read receipts (low priority)
 - [x] **Real-time messaging**
   - [x] Set up WebSocket or Server-Sent Events
   - [x] Add real-time message delivery

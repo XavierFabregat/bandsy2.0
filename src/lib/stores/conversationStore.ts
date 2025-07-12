@@ -8,6 +8,7 @@ interface Message {
   content: string;
   senderImage: string;
   type: "text" | "audio" | "image";
+  fileUrl: string | null;
   createdAt: Date;
   isRead: boolean;
   matchId?: string;
