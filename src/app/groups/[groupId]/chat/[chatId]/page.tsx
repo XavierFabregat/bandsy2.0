@@ -13,8 +13,6 @@ import { toast } from "sonner";
 import { useTypingIndicator } from "@/lib/hooks/useTypingIndicator";
 import { useDebounceImmediate } from "@/lib/hooks/useDebounce";
 import MessageBubble from "./_components/message-bubble";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { useRouter } from "next/navigation";
 import type { getGroupChat } from "@/server/conversations/queries";
 import type { getGroupById } from "../../../../../server/groups/queries";
 
@@ -40,7 +38,6 @@ export default function GroupChatPage() {
   const { user } = useUser();
   const currentUserId = user?.id;
   const params = useParams();
-  const router = useRouter();
   const { groupId, chatId } = params as { groupId: string; chatId: string };
   const {
     conversations,
