@@ -23,7 +23,7 @@ export type Transaction = Parameters<
 export async function sendMatchMessage(
   clerkId: string,
   conversationId: string,
-  content: string,
+  content: string | null,
   type: "text" | "audio" | "image" = "text",
 ): Promise<Message & { matchId?: string; conversationId: string }> {
   const { userId } = await auth();
@@ -320,4 +320,76 @@ export async function inviteToGroup(
   }
 
   return { success: true, groupId };
+}
+
+export async function sendGroupChatMessage(
+  clerkId: string,
+  conversatinId: string,
+  content: string,
+  type: "text" | "audio" | "image" = "text",
+) {
+  const { userId } = await auth();
+  if (!userId) throw new Error("Unauthorized");
+
+  const user = await getUserByClerkId(clerkId);
+
+  if (!user) throw new Error("User not found");
+
+  const currentUserId = user.id;
+
+  const conversation = await db.query.conversations.findFirst({
+    where: eq(conversations.id, conversatinId),
+    with: {
+      participants: true,
+    },
+  });
+
+  if (!conversation) throw new Error("Conversation not found");
+
+  if (!conversation.participants.some((p) => p.userId === currentUserId)) {
+    console.log(
+      "⚠️ If you are here check if the p.userId is the clerkId or the internal one.",
+    );
+    throw new Error("User is not a participant of the conversation");
+  }
+
+  const [message] = await db
+    .insert(messages)
+    .values({
+      conversationId: conversation.id,
+      senderId: currentUserId,
+      type,
+      content,
+      isRead: false,
+      createdAt: new Date(),
+    })
+    .returning({
+      id: messages.id,
+    });
+
+  if (!message) throw new Error("Failed to send message");
+
+  const createdMessage = await db.query.messages.findFirst({
+    where: eq(messages.id, message.id),
+    with: {
+      sender: true,
+    },
+  });
+
+  if (!createdMessage) throw new Error("Failed to send message");
+
+  return {
+    id: createdMessage.id,
+    senderId: createdMessage.sender.id,
+    fileUrl: createdMessage.fileUrl ?? "",
+    type: createdMessage.type,
+    createdAt: createdMessage.createdAt,
+    isRead: !!createdMessage.isRead,
+    senderName: createdMessage.sender.displayName,
+    senderImage: createdMessage.sender.profileImageUrl ?? "",
+    senderClerkId: createdMessage.sender.clerkId,
+    groupId: conversation.groupId ?? "",
+    content: createdMessage.content ?? "",
+    conversationId: conversation.id,
+  };
 }

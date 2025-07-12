@@ -8,7 +8,9 @@ export default function MessageBubble({
   message: Message;
   currentUserId: string;
 }) {
-  const isOwn = message.senderClerkId === currentUserId;
+  const isOwn = message.sender?.id
+    ? message.sender.clerkId === currentUserId
+    : message.senderClerkId === currentUserId;
   return (
     <div
       key={`${message.id}`}
@@ -20,7 +22,9 @@ export default function MessageBubble({
         {/* Avatar - Only show for other person's messages */}
         {!isOwn && (
           <Avatar className="h-6 w-6 flex-shrink-0">
-            <AvatarImage src={message.senderImage ?? ""} />
+            <AvatarImage
+              src={message.senderImage ?? message.sender?.profileImageUrl ?? ""}
+            />
             <AvatarFallback className="bg-muted text-muted-foreground text-xs">
               {message.senderName?.charAt(0) ??
                 message.sender?.displayName?.charAt(0)}
@@ -33,7 +37,7 @@ export default function MessageBubble({
           {/* Sender Name - Only show for other person's messages */}
           {!isOwn && (
             <p className="text-muted-foreground mb-1 text-xs font-medium">
-              {message.senderName}
+              {message.senderName ?? message.sender?.displayName}
             </p>
           )}
 

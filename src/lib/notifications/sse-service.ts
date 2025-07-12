@@ -6,8 +6,13 @@ interface SSEConnection {
   connectedAt: Date;
 }
 
-interface SSEMessage {
-  type: "notification" | "unread_count" | "user_typing" | "match_message";
+export interface SSEMessage {
+  type:
+    | "notification"
+    | "unread_count"
+    | "user_typing"
+    | "match_message"
+    | "group_message";
   notification?: Notification;
   count?: number;
   timestamp: string;
@@ -21,16 +26,22 @@ interface SSEMessage {
   message?: {
     id: string;
     senderId: string;
-    content: string;
+    content: string | null;
     matchId?: string;
-    senderName: string;
-    senderImage: string;
-    senderClerkId: string;
+    senderName?: string;
+    senderImage?: string;
+    senderClerkId?: string;
     fileUrl: string | null;
     type: "text" | "image" | "audio";
     createdAt: Date;
-    isRead: boolean;
+    isRead: boolean | null;
     conversationId: string;
+    sender?: {
+      id: string;
+      clerkId: string;
+      displayName: string;
+      profileImageUrl: string | null;
+    };
   };
 }
 
@@ -173,13 +184,63 @@ export class NotificationSSEService {
     });
   }
 
+  static sendTypingIndicators(
+    otherParticipantsIds: string[],
+    typing: {
+      userId: string;
+      userName: string;
+      userImage: string;
+      isTyping: boolean;
+      conversationId: string;
+    },
+  ) {
+    otherParticipantsIds.forEach((userId) => {
+      this.sendToUser(userId, {
+        type: "user_typing",
+        typing,
+        timestamp: new Date().toISOString(),
+      });
+    });
+    return true;
+  }
+
   static sendMatchMessage(
     userId: string,
     message: {
       id: string;
       senderId: string;
-      content: string;
+      content: string | null;
       matchId?: string;
+      senderName?: string;
+      senderImage?: string;
+      senderClerkId?: string;
+      fileUrl: string | null;
+      type: "text" | "image" | "audio";
+      createdAt: Date;
+      isRead: boolean | null;
+      conversationId: string;
+      sender?: {
+        id: string;
+        clerkId: string;
+        displayName: string;
+        profileImageUrl: string | null;
+      };
+    },
+  ) {
+    console.log(`SSE: Sending match message to user ${userId}`);
+    return this.sendToUser(userId, {
+      type: "match_message",
+      message,
+      timestamp: new Date().toISOString(),
+    });
+  }
+
+  static sendGroupChatMessage(
+    otherParticipantsIds: string[],
+    message: {
+      id: string;
+      senderId: string;
+      content: string;
       senderName: string;
       senderImage: string;
       senderClerkId: string;
@@ -190,11 +251,12 @@ export class NotificationSSEService {
       conversationId: string;
     },
   ) {
-    console.log(`SSE: Sending match message to user ${userId}`);
-    return this.sendToUser(userId, {
-      type: "match_message",
-      message,
-      timestamp: new Date().toISOString(),
+    otherParticipantsIds.forEach((userId) => {
+      this.sendToUser(userId, {
+        type: "group_message",
+        message,
+        timestamp: new Date().toISOString(),
+      });
     });
   }
 }
