@@ -6,7 +6,6 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
-  Heart,
   MapPin,
   Calendar,
   Music,
@@ -16,6 +15,7 @@ import {
   TrendingUp,
   Users,
   User,
+  Music4Icon,
 } from "lucide-react";
 import Link from "next/link";
 import type { MatchDetails, UserProfile } from "@/types/api";
@@ -306,9 +306,14 @@ function ChatSection({
                 ? "Continue your conversation"
                 : "Start chatting with your match!"}
             </p>
-            <Button className="w-full">
-              <MessageCircle className="mr-2 h-4 w-4" />
-              {conversation.hasMessages ? "Open Chat" : "Send First Message"}
+            <Button className="w-full" asChild>
+              <Link
+                href={`/matches/${matchId}/conversation`}
+                className="flex items-center gap-2"
+              >
+                <MessageCircle className="mr-2 h-4 w-4" />
+                {conversation.hasMessages ? "Open Chat" : "Send First Message"}
+              </Link>
             </Button>
           </div>
         ) : (
@@ -342,7 +347,7 @@ export default async function MatchPage({ params }: MatchPageProps) {
       <div className="container mx-auto px-4 py-8">
         <Card>
           <CardContent className="py-8 text-center">
-            <Heart className="text-muted-foreground mx-auto mb-4 h-12 w-12" />
+            <Music4Icon className="text-muted-foreground mx-auto mb-4 h-12 w-12" />
             <h2 className="mb-2 text-xl font-semibold">Match Not Found</h2>
             <p className="text-muted-foreground mb-4">
               This match doesn&apos;t exist or you don&apos;t have permission to
@@ -372,9 +377,9 @@ export default async function MatchPage({ params }: MatchPageProps) {
       {/* Header */}
       <div className="mb-8 text-center">
         <div className="mb-4 flex items-center justify-center gap-2">
-          <Heart className="h-8 w-8 fill-current text-red-500" />
+          <Music4Icon className="text-primary h-8 w-8" />
           <h1 className="text-3xl font-bold">It&apos;s a Match!</h1>
-          <Heart className="h-8 w-8 fill-current text-red-500" />
+          <Music4Icon className="text-primary h-8 w-8" />
         </div>
         <p className="text-muted-foreground">
           You matched on {formatDate(matchDetails.createdAt)}

@@ -6,6 +6,34 @@ interface SSEConnection {
   connectedAt: Date;
 }
 
+interface SSEMessage {
+  type: "notification" | "unread_count" | "user_typing" | "match_message";
+  notification?: Notification;
+  count?: number;
+  timestamp: string;
+  typing?: {
+    userId: string;
+    userName: string;
+    userImage: string;
+    isTyping: boolean;
+    conversationId: string;
+  };
+  message?: {
+    id: string;
+    senderId: string;
+    content: string;
+    matchId?: string;
+    senderName: string;
+    senderImage: string;
+    senderClerkId: string;
+    fileUrl: string | null;
+    type: "text" | "image" | "audio";
+    createdAt: Date;
+    isRead: boolean;
+    conversationId: string;
+  };
+}
+
 // Use globalThis to persist across module reloads
 const globalForSSE = globalThis as unknown as {
   sseConnections: Map<string, SSEConnection> | undefined;
@@ -17,7 +45,7 @@ const connections =
 globalForSSE.sseConnections = connections;
 
 export interface SSEEvent {
-  type: "notification" | "unread_count";
+  type: "notification" | "unread_count" | "user_typing";
   notification?: Notification;
   count?: number;
   timestamp: string;
@@ -55,15 +83,7 @@ export class NotificationSSEService {
     return removed;
   }
 
-  static sendToUser(
-    userId: string,
-    data: {
-      type: string;
-      notification?: Notification;
-      count?: number;
-      timestamp: string;
-    },
-  ) {
+  static sendToUser(userId: string, data: SSEMessage) {
     console.log(`SSE: Attempting to send to user ${userId}`, data.type);
     console.log(`SSE: Current connections count: ${connections.size}`);
 
@@ -130,5 +150,51 @@ export class NotificationSSEService {
       userId,
       connectedAt: conn.connectedAt,
     }));
+  }
+
+  static sendTypingIndicator(
+    userId: string,
+    typing: {
+      userId: string;
+      userName: string;
+      userImage: string;
+      isTyping: boolean;
+      conversationId: string;
+    },
+  ) {
+    console.log(
+      `SSE: Sending typing indicator to user ${userId}:`,
+      typing.isTyping ? "started" : "stopped",
+    );
+    return this.sendToUser(userId, {
+      type: "user_typing",
+      typing,
+      timestamp: new Date().toISOString(),
+    });
+  }
+
+  static sendMatchMessage(
+    userId: string,
+    message: {
+      id: string;
+      senderId: string;
+      content: string;
+      matchId?: string;
+      senderName: string;
+      senderImage: string;
+      senderClerkId: string;
+      fileUrl: string | null;
+      type: "text" | "image" | "audio";
+      createdAt: Date;
+      isRead: boolean;
+      conversationId: string;
+    },
+  ) {
+    console.log(`SSE: Sending match message to user ${userId}`);
+    return this.sendToUser(userId, {
+      type: "match_message",
+      message,
+      timestamp: new Date().toISOString(),
+    });
   }
 }

@@ -1,12 +1,42 @@
 "use client";
 
-import { useState, useEffect, useCallback, useRef } from "react";
+import { useState, useEffect, useCallback, useRef, useMemo } from "react";
 import type { Notification } from "@/types/notifications";
+import { useConversationStore } from "../stores/conversationStore";
 
 interface SSEEvent {
-  type: "connected" | "notification" | "unread_count" | "heartbeat";
+  type:
+    | "connected"
+    | "notification"
+    | "unread_count"
+    | "heartbeat"
+    | "match_message"
+    | "group_message"
+    | "user_typing";
   notification?: Notification;
   count?: number;
+  message?: {
+    id: string;
+    senderId: string;
+    content: string;
+    conversationId?: string;
+    matchId?: string;
+    groupId?: string;
+    senderName: string;
+    senderImage: string;
+    senderClerkId: string;
+    fileUrl: string;
+    type: "text" | "image" | "audio";
+    createdAt: Date;
+    isRead: boolean;
+  };
+  typing?: {
+    userId: string;
+    isTyping: boolean;
+    userName: string;
+    userImage: string;
+    conversationId: string;
+  };
   timestamp: string;
 }
 
@@ -20,6 +50,12 @@ export function useNotificationSSE() {
   const reconnectTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const reconnectAttempts = useRef(0);
   const maxReconnectAttempts = 5;
+
+  const unreadNotifications = useMemo(() => {
+    return notifications.filter((notification) => !notification.isRead);
+  }, [notifications]);
+
+  const { addMessage, setTyping, setMessages } = useConversationStore();
 
   const connect = useCallback(() => {
     if (eventSourceRef.current?.readyState === EventSource.OPEN) {
@@ -81,6 +117,33 @@ export function useNotificationSSE() {
               if (typeof data.count === "number") {
                 setUnreadCount(data.count);
               }
+              break;
+
+            case "match_message":
+              console.log("SSE: Match message received", data.message);
+              if (!data.message?.conversationId) {
+                console.error("SSE: No conversationId in match message");
+                throw new Error("No conversationId in match message");
+              }
+              addMessage(data.message.conversationId, data.message);
+              break;
+
+            case "group_message":
+              if (!data.message?.conversationId) {
+                console.error("SSE: No conversationId in group message");
+                throw new Error("No conversationId in group message");
+              }
+              addMessage(data.message.conversationId, data.message);
+              break;
+
+            case "user_typing":
+              setTyping(
+                data.typing?.conversationId ?? "",
+                data.typing?.userId ?? "",
+                data.typing?.userName ?? "",
+                data.typing?.userImage ?? "",
+                data.typing?.isTyping ?? false,
+              );
               break;
           }
         } catch (error) {
@@ -173,6 +236,7 @@ export function useNotificationSSE() {
     notifications,
     isConnected,
     error,
+    unreadNotifications,
     reconnect: connect,
     requestNotificationPermission,
   };

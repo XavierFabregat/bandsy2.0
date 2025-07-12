@@ -14,18 +14,29 @@ import { useNotificationSSE } from "@/lib/hooks/useNotificationsSSE";
 export function NotificationBell() {
   const [isOpen, setIsOpen] = useState(false);
   const [hasPermission, setHasPermission] = useState(false);
+  const [isSupported, setIsSupported] = useState(false);
   const {
     unreadCount,
     notifications,
     isConnected,
+    unreadNotifications,
     error,
     reconnect,
     requestNotificationPermission,
   } = useNotificationSSE();
 
   useEffect(() => {
-    // Check current permission status
-    setHasPermission(Notification.permission === "granted");
+    // Check if Notifications API is supported
+    const isNotificationSupported =
+      typeof window !== "undefined" &&
+      "Notification" in window &&
+      "serviceWorker" in navigator;
+
+    setIsSupported(isNotificationSupported);
+
+    if (isNotificationSupported) {
+      setHasPermission(Notification.permission === "granted");
+    }
   }, []);
 
   const handleRequestPermission = async () => {
@@ -64,7 +75,7 @@ export function NotificationBell() {
           </div>
         )}
         <NotificationsList
-          notifications={notifications}
+          notifications={unreadNotifications}
           isConnected={isConnected}
           error={error}
           onReconnect={reconnect}

@@ -81,26 +81,26 @@
   - [x] Add like/pass functionality
   - [x] Implement swipe history tracking
   - [x] Add "super like" feature
-- [ ] **Match logic**
-  - [ ] Create match detection system
-  - [ ] Add match notifications
-  - [ ] Implement match status tracking
+- [x] **Match logic**
+  - [x] Create match detection system
+  - [x] Add match notifications
+  - [x] Implement match status tracking
 
 ### Messaging System
 
-- [ ] **Conversation management**
-  - [ ] Create conversation list
-  - [ ] Add conversation creation for matches
-  - [ ] Implement conversation participants
-- [ ] **Message functionality**
-  - [ ] Create message input component
-  - [ ] Add text message sending
+- [x] **Conversation management**
+  - [x] Create conversation list
+  - [x] Add conversation creation for matches
+  - [x] Implement conversation participants
+- [x] **Message functionality**
+  - [x] Create message input component
+  - [x] Add text message sending
   - [ ] Implement message history
   - [ ] Add read receipts
-- [ ] **Real-time messaging**
-  - [ ] Set up WebSocket or Server-Sent Events
-  - [ ] Add real-time message delivery
-  - [ ] Implement typing indicators
+- [x] **Real-time messaging**
+  - [x] Set up WebSocket or Server-Sent Events
+  - [x] Add real-time message delivery
+  - [x] Implement typing indicators
 
 ---
 
@@ -302,6 +302,8 @@
 - poder pujar anauncis pagant
 - Pot pujar videos
 - pot fer boosting (??)
+
+- Star system (a bit like github, were users can leave stars and that gives us a bit of a popularity rank/viral system)
 
 _Last updated: [Current Date]_
 _Priority levels: High (immediate), Medium (next sprint), Low (future)_

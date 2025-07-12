@@ -45,7 +45,7 @@ export default function MatchCard({ match }: { match: Match }) {
   };
 
   return (
-    <Card className="group hover:border-primary/20 border-2 transition-all duration-300 hover:shadow-lg md:w-1/4">
+    <Card className="group hover:border-primary/20 min-w-[350px] border-2 transition-all duration-300 hover:shadow-lg md:w-1/4 md:min-w-[400px]">
       <CardContent className="p-6">
         {/* Header with match score */}
         <div className="mb-6 flex items-center justify-between">
@@ -165,8 +165,13 @@ export default function MatchCard({ match }: { match: Match }) {
           <Link href={`/matches/${match.id}`}>View Match</Link>
         </Button>
         <Button variant="outline" size="sm" className="flex-1">
-          <MessageCircle className="h-4 w-4" />
-          Message
+          <Link
+            href={`/matches/${match.id}/conversation`}
+            className="flex items-center gap-2"
+          >
+            <MessageCircle className="h-4 w-4" />
+            Message
+          </Link>
         </Button>
       </CardFooter>
     </Card>
