@@ -110,8 +110,8 @@
 ### Group Management
 
 - [ ] **Group creation**
-  - [ ] Create group creation form
-  - [ ] Add group name and description
+  - [x] Create group creation form
+  - [x] Add group name and description
   - [ ] Set group image upload
   - [ ] Configure member limits
 - [ ] **Group membership**
@@ -120,8 +120,8 @@
   - [ ] Add member removal functionality
   - [ ] Create group member list
 - [ ] **Group chat**
-  - [ ] Extend messaging for group conversations
-  - [ ] Add group-specific message types
+  - [x] Extend messaging for group conversations
+  - [x] Add group-specific message types
   - [ ] Implement group notification settings
 
 ### Group Collaboration
