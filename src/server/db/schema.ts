@@ -280,6 +280,7 @@ export const conversations = createTable(
       .default(sql`CURRENT_TIMESTAMP`)
       .notNull(),
     updatedAt: d.timestamp({ withTimezone: true }).$onUpdate(() => new Date()),
+    status: d.varchar({ length: 20 }).default("active"), // 'active', 'inactive'
   }),
   (t) => [
     index("conversations_match_idx").on(t.matchId),

@@ -14,6 +14,7 @@ import { useTypingIndicator } from "@/lib/hooks/useTypingIndicator";
 import { useDebounceImmediate } from "@/lib/hooks/useDebounce";
 import MessageBubble from "./_components/message-bubble";
 import ChatHeader from "./_components/chat-header";
+import { useRouter } from "next/navigation";
 
 interface Message {
   id: string;
@@ -75,6 +76,7 @@ export default function MatchConversationPage() {
   const { user } = useUser();
   const currentUserId = user?.id;
   const params = useParams();
+  const router = useRouter();
   const matchId = params.id as string;
   const {
     conversations,
@@ -279,12 +281,13 @@ export default function MatchConversationPage() {
   const fetchUserGroups = useCallback(async () => {
     setLoading(matchId, true);
     try {
-      const response = await fetch("/api/groups/my-groups");
+      const response = await fetch("/api/groups");
       if (response.ok) {
         const groups = (await response.json()) as {
           id: string;
           name: string;
         }[];
+        console.log("groups", groups);
         setUserGroups(groups);
       }
     } catch (error) {
@@ -333,11 +336,14 @@ export default function MatchConversationPage() {
         });
 
         if (response.ok) {
+          const responseData = (await response.json()) as {
+            groupId: string;
+          };
           if (outcome === "unmatch") {
-            window.location.href = "/matches";
+            router.replace("/matches");
           } else {
             toast.success("Success! Group created/joined.");
-            // Optionally redirect to group page
+            router.replace(`/groups/${responseData.groupId}`);
           }
         }
       } catch (error) {

@@ -11,17 +11,12 @@ import {
 import { eq, and } from "drizzle-orm";
 import { auth } from "@clerk/nextjs/server";
 import type { Message } from "../../types/api";
+import { getUserByClerkId } from "../queries";
 
-// id: string;
-// senderId: string;
-// content: string;
-// matchId?: string;
-// senderName: string;
-// senderImage: string;
-// fileUrl: string;
-// type: "text" | "image" | "audio";
-// createdAt: Date;
-// isRead: boolean;
+export type Transaction = Parameters<
+  Parameters<(typeof db)["transaction"]>[0]
+>[0];
+
 /**
  * Send message in match conversation
  */
@@ -157,99 +152,172 @@ export async function handleMatchOutcome(
       return { success: true };
 
     case "create_group":
-      if (!data?.groupName) throw new Error("Group name required");
+      // set the match status to group_created
+      // start transaction
+      return await db.transaction(async (tx) => {
+        await tx
+          .update(matches)
+          .set({ status: "group_created", updatedAt: new Date() })
+          .where(eq(matches.id, matchId));
 
-      // Create new group
-      const [group] = await db
-        .insert(groups)
-        .values({
-          name: data.groupName,
-          description: `Collaboration group created from match`,
-          isActive: true,
-          maxMembers: 10,
-          createdAt: new Date(),
-          updatedAt: new Date(),
-        })
-        .returning({ id: groups.id });
+        // set the conversation status to inactive
+        await tx
+          .update(conversations)
+          .set({ status: "inactive", updatedAt: new Date() })
+          .where(eq(conversations.matchId, matchId));
 
-      if (!group) throw new Error("Failed to create group");
-
-      // Add both users to group
-      await db.insert(groupMembers).values([
-        {
-          groupId: group.id,
-          userId: currentUserId,
-          role: "admin",
-          joinedAt: new Date(),
-        },
-        {
-          groupId: group.id,
-          userId: otherUserId,
-          role: "member",
-          joinedAt: new Date(),
-        },
-      ]);
-
-      // Create group conversation
-      const [groupConversation] = await db
-        .insert(conversations)
-        .values({
-          groupId: group.id,
-          isGroupChat: true,
-          createdAt: new Date(),
-          updatedAt: new Date(),
-        })
-        .returning({ id: conversations.id });
-
-      if (groupConversation) {
-        // Add participants to group conversation
-        await db.insert(conversationParticipants).values([
-          {
-            conversationId: groupConversation.id,
-            userId: currentUserId,
-            joinedAt: new Date(),
-          },
-          {
-            conversationId: groupConversation.id,
-            userId: otherUserId,
-            joinedAt: new Date(),
-          },
-        ]);
-      }
-
-      return { success: true, groupId: group.id };
-
-    case "join_group":
-      if (!data?.existingGroupId || !data?.inviteeUserId) {
-        throw new Error("Group ID and invitee user ID required");
-      }
-
-      // Add invitee to existing group
-      await db.insert(groupMembers).values({
-        groupId: data.existingGroupId,
-        userId: data.inviteeUserId,
-        role: "member",
-        joinedAt: new Date(),
+        return await createGroup(tx, data?.groupName ?? "", otherUserId);
       });
+    case "join_group":
+      // set the match status to group_joined
+      return await db.transaction(async (tx) => {
+        await tx
+          .update(matches)
+          .set({ status: "group_joined", updatedAt: new Date() })
+          .where(eq(matches.id, matchId));
 
-      // Add to group conversation if exists
-      const [existingGroupConversation] = await db
-        .select()
-        .from(conversations)
-        .where(eq(conversations.groupId, data.existingGroupId))
-        .limit(1);
+        // set the conversation status to inactive
+        await tx
+          .update(conversations)
+          .set({ status: "inactive", updatedAt: new Date() })
+          .where(eq(conversations.matchId, matchId));
 
-      if (existingGroupConversation) {
-        await db.insert(conversationParticipants).values({
-          conversationId: existingGroupConversation.id,
-          userId: data.inviteeUserId,
-          joinedAt: new Date(),
-        });
-      }
-
-      return { success: true, groupId: data.existingGroupId };
+        return await inviteToGroup(
+          tx,
+          data?.existingGroupId ?? "",
+          data?.inviteeUserId ?? "",
+        );
+      });
 
     default:
       throw new Error("Invalid outcome");
   }
+}
+
+export async function createGroup(
+  tx: Transaction,
+  groupName: string,
+  otherUserId: string,
+) {
+  const { userId } = await auth();
+  if (!userId) throw new Error("Unauthorized");
+
+  //get user internal id
+  const user = await getUserByClerkId(userId);
+  if (!user) throw new Error("User not found");
+
+  if (!groupName) throw new Error("Group name required");
+
+  // Create new group
+  const [group] = await tx
+    .insert(groups)
+    .values({
+      name: groupName,
+      description: `Collaboration group created from match`,
+      isActive: true,
+      maxMembers: 10,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    })
+    .returning({ id: groups.id });
+
+  if (!group) throw new Error("Failed to create group");
+
+  // Add both users to group
+  await tx.insert(groupMembers).values([
+    {
+      groupId: group.id,
+      userId: user.id,
+      role: "admin",
+      joinedAt: new Date(),
+    },
+    {
+      groupId: group.id,
+      userId: otherUserId,
+      role: "member",
+      joinedAt: new Date(),
+    },
+  ]);
+
+  // Create group conversation
+  const [groupConversation] = await tx
+    .insert(conversations)
+    .values({
+      groupId: group.id,
+      isGroupChat: true,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    })
+    .returning({ id: conversations.id });
+
+  if (groupConversation) {
+    // Add participants to group conversation
+    await tx.insert(conversationParticipants).values([
+      {
+        conversationId: groupConversation.id,
+        userId: user.id,
+        joinedAt: new Date(),
+      },
+      {
+        conversationId: groupConversation.id,
+        userId: otherUserId,
+        joinedAt: new Date(),
+      },
+    ]);
+  }
+
+  return { success: true, groupId: group.id };
+}
+
+export async function inviteToGroup(
+  tx: Transaction,
+  groupId: string,
+  inviteeUserId: string,
+) {
+  const { userId } = await auth();
+  if (!userId) throw new Error("Unauthorized");
+
+  //get user internal id
+  const user = await getUserByClerkId(userId);
+  if (!user) throw new Error("User not found");
+
+  // Check if user is admin of group
+  const [groupMember] = await tx
+    .select()
+    .from(groupMembers)
+    .where(
+      and(
+        eq(groupMembers.groupId, groupId),
+        eq(groupMembers.userId, user.id),
+        eq(groupMembers.role, "admin"),
+      ),
+    )
+    .limit(1);
+
+  if (!groupMember) throw new Error("Not authorized to invite to group");
+
+  // Add invitee to group
+  await tx.insert(groupMembers).values({
+    groupId,
+    userId: inviteeUserId,
+    role: "member",
+    joinedAt: new Date(),
+  });
+
+  // Add to group conversation if exists
+  const [existingGroupConversation] = await tx
+    .select()
+    .from(conversations)
+    .where(eq(conversations.groupId, groupId))
+    .limit(1);
+
+  if (existingGroupConversation) {
+    await tx.insert(conversationParticipants).values({
+      conversationId: existingGroupConversation.id,
+      userId: inviteeUserId,
+      joinedAt: new Date(),
+    });
+  }
+
+  return { success: true, groupId };
 }
