@@ -32,6 +32,7 @@ interface ConversationState {
   // Actions
   addMessage: (conversationId: string, message: Message) => void;
   setMessages: (conversationId: string, messages: Message[]) => void;
+  removeMessage: (conversationId: string, messageId: string) => void;
   setTyping: (
     conversationId: string,
     userId: string,
@@ -58,6 +59,17 @@ export const useConversationStore = create<ConversationState>((set, get) => ({
           ...(state.conversations[conversationId] ?? []),
           message,
         ],
+      },
+    })),
+
+  removeMessage: (conversationId, messageId) =>
+    set((state) => ({
+      conversations: {
+        ...state.conversations,
+        [conversationId]:
+          state.conversations[conversationId]?.filter(
+            (m) => m.id !== messageId,
+          ) ?? [],
       },
     })),
 

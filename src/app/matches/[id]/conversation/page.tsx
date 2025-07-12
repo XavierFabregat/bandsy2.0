@@ -98,6 +98,8 @@ export default function MatchConversationPage() {
     setMessages,
     setLoading,
     fetchMessages,
+    addMessage,
+    removeMessage,
   } = useConversationStore();
   const { startTyping, stopTyping } = useTypingIndicator(
     matchId,
@@ -115,16 +117,9 @@ export default function MatchConversationPage() {
   );
   const [isCurrentlyTyping, setIsCurrentlyTyping] = useState(false);
 
-  const [firstMessage, ...messages] =
-    conversations[conversation?.id ?? ""] ?? [];
+  const [_, ...messages] = conversations[conversation?.id ?? ""] ?? [];
   const typing = typingUsers[matchId] ?? {};
   const loading = isLoading[matchId] ?? false;
-
-  useEffect(() => {
-    console.log("Messages", messages);
-    console.log("Conversations", conversations);
-  }, [messages, conversations]);
-
   // Debounced typing indicator - stops typing after 2 seconds of no input
   const {
     immediate: handleStopTyping,
@@ -206,24 +201,55 @@ export default function MatchConversationPage() {
       stopTyping();
     }
 
+    const messageContent = newMessage.trim();
+    setNewMessage(""); // Clear input immediately
+
+    // Create optimistic message
+    const optimisticMessage: Message = {
+      id: `temp-${Date.now()}`, // Temporary ID
+      senderId: currentUserId!,
+      senderClerkId: currentUserId!,
+      senderName: user?.username ?? "You",
+      senderImage: user?.imageUrl ?? "",
+      content: messageContent,
+      matchId,
+      type: "text",
+      fileUrl: "",
+      createdAt: new Date(),
+      isRead: false,
+    };
+
+    // Add message optimistically
+    addMessage(conversation?.id ?? "", optimisticMessage);
+
     try {
       const response = await fetch(`/api/matches/${matchId}/conversation`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ content: newMessage }),
+        body: JSON.stringify({ content: messageContent }),
       });
 
-      if (response.ok) {
-        setNewMessage("");
-        void fetchConversation();
+      if (!response.ok) {
+        // If failed, remove the optimistic message
+        removeMessage(conversation?.id ?? "", optimisticMessage.id);
+        setNewMessage(messageContent); // Restore the message in input
+        toast.error("Failed to send message");
       }
     } catch (error) {
       console.error("Error sending message:", error);
+      // If failed, remove the optimistic message
+      removeMessage(conversation?.id ?? "", optimisticMessage.id);
+      setNewMessage(messageContent); // Restore the message in input
+      toast.error("Failed to send message");
     }
   }, [
     matchId,
     newMessage,
-    fetchConversation,
+    currentUserId,
+    user,
+    removeMessage,
+    addMessage,
+    conversation,
     isCurrentlyTyping,
     stopTyping,
     cancelStopTyping,
@@ -282,35 +308,12 @@ export default function MatchConversationPage() {
 
   // Load initial messages
   useEffect(() => {
-    console.log("Rerendering");
     void fetchConversation().then((conversationId) => {
       void fetchUserGroups();
       void fetchMatch();
-      if (!messages.length) {
-        void fetchMessages(matchId, conversationId);
-      }
+      void fetchMessages(matchId, conversationId);
     });
-    // const fetchMessages = async () => {
-    //   setLoading(matchId, true);
-    //   try {
-    //     const response = await fetch(`/api/matches/${matchId}/messages`);
-    //     const data = (await response.json()) as { messages: Message[] };
-    //     setMessages(matchId, data.messages);
-    //   } catch (error) {
-    //     console.error("Failed to fetch messages:", error);
-    //   } finally {
-    //     setLoading(matchId, false);
-    //   }
-    // };
-  }, [
-    matchId,
-    messages.length,
-    setMessages,
-    setLoading,
-    fetchConversation,
-    fetchUserGroups,
-    fetchMatch,
-  ]);
+  }, [matchId, fetchConversation, fetchUserGroups, fetchMatch, fetchMessages]);
 
   const handleOutcome = useCallback(
     async (
