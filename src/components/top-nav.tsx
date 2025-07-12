@@ -32,6 +32,7 @@ import {
   MessageCircle,
   HeartHandshake,
   ChevronRight,
+  MicVocal,
 } from "lucide-react";
 import { AuthSection } from "./auth-section";
 
@@ -116,6 +117,13 @@ export function TopNav() {
                             description="Dashboard and overview"
                           >
                             Home
+                          </MobileLink>
+                          <MobileLink
+                            href="/groups"
+                            icon={MicVocal}
+                            description="View your groups"
+                          >
+                            Groups
                           </MobileLink>
                           <MobileLink
                             href="/discover"
@@ -221,6 +229,11 @@ export function TopNav() {
                     <NavigationMenuItem>
                       <NavigationMenuLink asChild>
                         <Link href="/">Home</Link>
+                      </NavigationMenuLink>
+                    </NavigationMenuItem>
+                    <NavigationMenuItem>
+                      <NavigationMenuLink asChild>
+                        <Link href="/groups">Groups</Link>
                       </NavigationMenuLink>
                     </NavigationMenuItem>
                     <NavigationMenuItem>
