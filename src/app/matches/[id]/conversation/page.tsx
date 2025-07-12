@@ -4,6 +4,7 @@ import { useCallback, useEffect, useState, useRef } from "react";
 import { useParams } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea"; // Add this import
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import {
   Drawer,
@@ -116,6 +117,7 @@ export default function MatchConversationPage() {
     [],
   );
   const [isCurrentlyTyping, setIsCurrentlyTyping] = useState(false);
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
 
   const [_, ...messages] = conversations[conversation?.id ?? ""] ?? [];
   const typing = typingUsers[matchId] ?? {};
@@ -136,11 +138,23 @@ export default function MatchConversationPage() {
     [isCurrentlyTyping, stopTyping],
   );
 
+  function autoResizeTextarea(textarea: HTMLTextAreaElement) {
+    textarea.style.height = "auto";
+    textarea.style.height = `${Math.min(textarea.scrollHeight, 128)}px`;
+  }
+
+  function resetTextareaSize(textarea: HTMLTextAreaElement) {
+    textarea.style.height = "auto";
+  }
+
   // Handle input changes with typing indicators
   const handleInputChange = useCallback(
-    (e: React.ChangeEvent<HTMLInputElement>) => {
+    (e: React.ChangeEvent<HTMLTextAreaElement>) => {
       const value = e.target.value;
       setNewMessage(value);
+
+      // Auto-resize textarea
+      autoResizeTextarea(e.target);
 
       if (value.trim().length > 0) {
         // Start typing if not already typing
@@ -202,7 +216,10 @@ export default function MatchConversationPage() {
     }
 
     const messageContent = newMessage.trim();
-    setNewMessage(""); // Clear input immediately
+    if (textareaRef.current) {
+      resetTextareaSize(textareaRef.current);
+      setNewMessage(""); // Clear input immediately
+    }
 
     // Create optimistic message
     const optimisticMessage: Message = {
@@ -257,7 +274,7 @@ export default function MatchConversationPage() {
 
   // Handle key press events
   const handleKeyPress = useCallback(
-    (e: React.KeyboardEvent<HTMLInputElement>) => {
+    (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
       if (e.key === "Enter") {
         e.preventDefault();
         void sendMessage();
@@ -618,15 +635,19 @@ export default function MatchConversationPage() {
 
       {/* Input Area - Fixed positioning */}
       <div className="fixed right-0 bottom-0 left-0 z-50 w-full border-t bg-white px-4 py-3 dark:border-gray-700 dark:bg-gray-800">
-        <div className="flex items-center gap-2">
+        <div className="flex items-end gap-2">
+          {" "}
+          {/* Changed from items-center to items-end */}
           <div className="relative flex-1">
-            <Input
+            <Textarea
               value={newMessage}
-              onChange={handleInputChange}
-              onKeyPress={handleKeyPress}
+              ref={textareaRef}
+              onInput={handleInputChange}
+              onKeyDown={handleKeyPress}
               onBlur={handleInputBlur}
               placeholder="Type a message..."
-              className="focus:border-primary rounded-full border-gray-300 bg-gray-50 pr-12 text-base dark:border-gray-600 dark:bg-gray-700"
+              className="focus:border-primary max-h-32 min-h-[40px] resize-none border-gray-300 bg-gray-50 pr-12 text-base dark:border-gray-600 dark:bg-gray-700"
+              rows={1}
             />
             <Button
               variant="ghost"
@@ -636,7 +657,6 @@ export default function MatchConversationPage() {
               <Music className="text-muted-foreground h-4 w-4" />
             </Button>
           </div>
-
           <Button
             onClick={sendMessage}
             size="icon"
