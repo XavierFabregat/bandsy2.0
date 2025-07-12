@@ -12,6 +12,7 @@ import { GroupHeader } from "./_components/group-header";
 import type { ForwardRefExoticComponent, RefAttributes } from "react";
 import { GroupOverview } from "./_components/group-overview";
 import GroupMembers from "./_components/group-members";
+import GroupChats from "./_components/group-chats";
 
 // Instrument icon mapping
 const instrumentIcons: Record<
@@ -34,6 +35,7 @@ export default async function GroupPage({
 }) {
   const { groupId } = await params;
   const group = await getGroupById(groupId);
+  console.log(group);
 
   return (
     <div className="flex h-full flex-col bg-gradient-to-br from-slate-50 to-slate-100 dark:from-slate-900 dark:to-slate-800">
@@ -84,7 +86,7 @@ export default async function GroupPage({
               value="chats"
               className="h-full overflow-y-auto px-4 py-6 sm:px-6 lg:px-8"
             >
-              <div className="space-y-6">Implement chat here</div>
+              <GroupChats group={group} />
             </TabsContent>
 
             {/* Events Tab */}

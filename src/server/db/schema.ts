@@ -274,6 +274,7 @@ export const conversations = createTable(
     id: d.uuid().primaryKey().defaultRandom(),
     matchId: d.uuid().references(() => matches.id, { onDelete: "cascade" }),
     groupId: d.uuid().references(() => groups.id, { onDelete: "cascade" }),
+    name: d.varchar({ length: 200 }).default("New Conversation"),
     isGroupChat: d.boolean().default(false),
     createdAt: d
       .timestamp({ withTimezone: true })

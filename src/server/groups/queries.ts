@@ -59,6 +59,11 @@ export async function getGroupById(groupId: string) {
               user: true,
             },
           },
+          messages: {
+            with: {
+              sender: true,
+            },
+          },
         },
       },
     },
