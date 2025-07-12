@@ -19,15 +19,19 @@ export async function getMyGroups() {
     .where(eq(groupMembers.userId, user.id));
 
   // Get groups without joins to avoid duplicates
-  const myGroups = await db
-    .select()
-    .from(groups)
-    .where(
-      inArray(
-        groups.id,
-        myGroupsIds.map((g) => g.groupId),
-      ),
-    );
+  const myGroups = await db.query.groups.findMany({
+    where: inArray(
+      groups.id,
+      myGroupsIds.map((g) => g.groupId),
+    ),
+    with: {
+      groupMembers: {
+        with: {
+          user: true,
+        },
+      },
+    },
+  });
 
   return myGroups;
 }
