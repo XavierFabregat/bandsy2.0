@@ -3,15 +3,22 @@ import { create } from "zustand";
 interface Message {
   id: string;
   senderId: string;
-  senderName: string;
-  senderClerkId: string;
-  content: string;
-  senderImage: string;
+  senderName?: string;
+  senderClerkId?: string;
+  senderImage?: string;
+  content: string | null;
   type: "text" | "audio" | "image";
+  fileUrl: string | null;
   createdAt: Date;
-  isRead: boolean;
+  isRead: boolean | null;
   matchId?: string;
   groupId?: string;
+  sender?: {
+    id: string;
+    clerkId: string;
+    displayName: string;
+    profileImageUrl: string | null;
+  };
 }
 
 interface ConversationState {

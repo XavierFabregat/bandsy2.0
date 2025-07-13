@@ -2,13 +2,11 @@ import { type NextRequest } from "next/server";
 import { auth } from "@clerk/nextjs/server";
 import { getUserByClerkId } from "@/server/queries";
 import { NotificationSSEService } from "@/lib/notifications/sse-service";
-import { db } from "@/server/db";
-import { matches } from "@/server/db/schema";
-import { eq } from "drizzle-orm";
+import { getGroupById } from "@/server/groups/queries";
 
 export async function POST(
   request: NextRequest,
-  { params }: { params: Promise<{ matchId: string }> },
+  { params }: { params: Promise<{ groupId: string; chatId: string }> },
 ) {
   try {
     const { userId } = await auth();
@@ -16,7 +14,7 @@ export async function POST(
       return new Response("Unauthorized", { status: 401 });
     }
 
-    const { matchId } = await params;
+    const { groupId, chatId } = await params;
 
     const user = await getUserByClerkId(userId);
     if (!user) {
@@ -25,41 +23,34 @@ export async function POST(
 
     const { isTyping } = (await request.json()) as { isTyping: boolean };
 
-    // Get match to find the other participant
-    const match = await db
-      .select()
-      .from(matches)
-      .where(eq(matches.id, matchId))
-      .limit(1);
-
-    if (!match.length) {
-      return new Response("Match not found", { status: 404 });
+    // Get group to find the other participants
+    const group = await getGroupById(groupId);
+    if (!group) {
+      return new Response("Group not found", { status: 404 });
     }
 
-    // Verify user is part of this match
-    const currentMatch = match[0];
-    if (
-      currentMatch?.user1Id !== user.id &&
-      currentMatch?.user2Id !== user.id
-    ) {
-      return new Response("Forbidden", { status: 403 });
+    // Verify user is part of this group
+    const isParticipant = group.groupMembers.some(
+      (member) => member.user.id === user.id,
+    );
+    if (!isParticipant) {
+      // do nothing, not even return forbidden
+      return;
     }
 
-    // Find the other participant
-    const otherParticipantId =
-      currentMatch?.user1Id === user.id
-        ? currentMatch?.user2Id
-        : currentMatch?.user1Id;
+    const otherParticipantsIds = group.groupMembers
+      .filter((member) => member.user.id !== user.id)
+      .map((member) => member.user.id);
 
     // Send typing indicator to the other participant
-    const success = NotificationSSEService.sendTypingIndicator(
-      otherParticipantId,
+    const success = NotificationSSEService.sendTypingIndicators(
+      otherParticipantsIds,
       {
         userId: user.id,
         userName: user.displayName ?? user.username ?? "Unknown",
         userImage: user.profileImageUrl ?? "",
         isTyping,
-        conversationId: matchId,
+        conversationId: chatId,
       },
     );
 

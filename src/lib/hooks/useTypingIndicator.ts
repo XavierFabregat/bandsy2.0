@@ -1,7 +1,13 @@
 import { useCallback, useRef } from "react";
 import { useUser } from "@clerk/nextjs";
 
-export const useTypingIndicator = (matchId: string, delay: number) => {
+export const useTypingIndicator = (
+  matchId: string,
+  delay: number,
+  group = false,
+  groupId = "",
+  chatId = "",
+) => {
   const { user } = useUser();
   const typingTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const isTypingRef = useRef(false);
@@ -11,16 +17,21 @@ export const useTypingIndicator = (matchId: string, delay: number) => {
       if (!user) return;
 
       try {
-        await fetch(`/api/matches/${matchId}/typing`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ isTyping }),
-        });
+        await fetch(
+          group
+            ? `/api/groups/${groupId}/chat/${chatId}/typing`
+            : `/api/matches/${matchId}/typing`,
+          {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ isTyping }),
+          },
+        );
       } catch (error) {
         console.error("Failed to send typing indicator:", error);
       }
     },
-    [matchId, user],
+    [matchId, user, group, groupId, chatId],
   );
 
   const startTyping = useCallback(() => {

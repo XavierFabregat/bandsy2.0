@@ -4,7 +4,7 @@ import { auth } from "@clerk/nextjs/server";
 
 export async function POST(
   request: NextRequest,
-  { params }: { params: { matchId: string } },
+  { params }: { params: Promise<{ matchId: string }> },
 ) {
   try {
     const { userId } = await auth();
@@ -12,6 +12,7 @@ export async function POST(
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
+    const { matchId } = await params;
     const body = (await request.json()) as {
       outcome: "unmatch" | "create_group" | "join_group";
       data?: {
@@ -29,12 +30,7 @@ export async function POST(
       return NextResponse.json({ error: "Invalid outcome" }, { status: 400 });
     }
 
-    const result = await handleMatchOutcome(
-      userId,
-      params.matchId,
-      outcome,
-      data,
-    );
+    const result = await handleMatchOutcome(userId, matchId, outcome, data);
 
     return NextResponse.json(result);
   } catch (error) {

@@ -95,8 +95,9 @@
 - [x] **Message functionality**
   - [x] Create message input component
   - [x] Add text message sending
-  - [ ] Implement message history
-  - [ ] Add read receipts
+- [ ] **Message functionality QoL**
+  - [ ] Implement message history (low priority)
+  - [ ] Add read receipts (low priority)
 - [x] **Real-time messaging**
   - [x] Set up WebSocket or Server-Sent Events
   - [x] Add real-time message delivery
@@ -109,8 +110,8 @@
 ### Group Management
 
 - [ ] **Group creation**
-  - [ ] Create group creation form
-  - [ ] Add group name and description
+  - [x] Create group creation form
+  - [x] Add group name and description
   - [ ] Set group image upload
   - [ ] Configure member limits
 - [ ] **Group membership**
@@ -119,8 +120,8 @@
   - [ ] Add member removal functionality
   - [ ] Create group member list
 - [ ] **Group chat**
-  - [ ] Extend messaging for group conversations
-  - [ ] Add group-specific message types
+  - [x] Extend messaging for group conversations
+  - [x] Add group-specific message types
   - [ ] Implement group notification settings
 
 ### Group Collaboration

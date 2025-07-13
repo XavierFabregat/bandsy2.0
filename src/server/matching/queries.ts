@@ -46,6 +46,7 @@ import {
   calculateActivityScore,
   getTestLocation,
 } from "@/lib/utils";
+import { getUserByClerkId } from "../queries";
 
 /**
  * Get or create user match profile with all necessary data
@@ -548,7 +549,14 @@ export interface Match {
   updatedAt: Date;
   matchScore: number;
   matchFactors: MatchScore["factors"];
+  status: MatchStatus;
 }
+
+export type MatchStatus =
+  | "active"
+  | "inactive"
+  | "group_created"
+  | "group_joined";
 
 export async function getMatch(matchId: string): Promise<Match | null> {
   const { userId } = await auth();
@@ -578,6 +586,7 @@ export async function getMatch(matchId: string): Promise<Match | null> {
     id: match.id,
     user1: user1,
     user2: user2,
+    status: match.status as MatchStatus,
     createdAt: match.createdAt,
     updatedAt: match.updatedAt,
     matchScore: Number(match.matchScore),
@@ -608,6 +617,7 @@ export async function getMatches(clerkId: string): Promise<Match[]> {
       updatedAt: matches.updatedAt,
       matchScore: matches.matchScore,
       matchFactors: matches.matchFactors,
+      status: matches.status,
       // User1 data
       user1: {
         id: user1.id,
@@ -658,6 +668,7 @@ export async function getMatches(clerkId: string): Promise<Match[]> {
     },
     createdAt: match.createdAt,
     updatedAt: match.updatedAt,
+    status: match.status as MatchStatus,
     matchScore: Number(match.matchScore),
     matchFactors: match.matchFactors as MatchScore["factors"],
   }));
@@ -721,4 +732,18 @@ export async function getPendingInvites(clerkId: string): Promise<
     },
     createdAt: invite.createdAt,
   }));
+}
+
+export async function getMyActiveMatches() {
+  const { userId } = await auth();
+  if (!userId) throw new Error("Unauthorized");
+
+  const user = await getUserByClerkId(userId);
+  if (!user) throw new Error("User not found");
+
+  const allMatches = await getMatches(userId);
+
+  const activeMatches = allMatches.filter((match) => match.status === "active");
+
+  return activeMatches;
 }

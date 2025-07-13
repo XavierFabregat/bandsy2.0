@@ -274,12 +274,14 @@ export const conversations = createTable(
     id: d.uuid().primaryKey().defaultRandom(),
     matchId: d.uuid().references(() => matches.id, { onDelete: "cascade" }),
     groupId: d.uuid().references(() => groups.id, { onDelete: "cascade" }),
+    name: d.varchar({ length: 200 }).default("New Conversation"),
     isGroupChat: d.boolean().default(false),
     createdAt: d
       .timestamp({ withTimezone: true })
       .default(sql`CURRENT_TIMESTAMP`)
       .notNull(),
     updatedAt: d.timestamp({ withTimezone: true }).$onUpdate(() => new Date()),
+    status: d.varchar({ length: 20 }).default("active"), // 'active', 'inactive'
   }),
   (t) => [
     index("conversations_match_idx").on(t.matchId),

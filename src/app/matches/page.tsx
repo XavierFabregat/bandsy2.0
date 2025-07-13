@@ -1,4 +1,4 @@
-import { getMatches } from "@/server/matching/queries";
+import { getMyActiveMatches } from "@/server/matching/queries";
 import { auth } from "@clerk/nextjs/server";
 import { redirect } from "next/navigation";
 import MatchCard from "./_components/match-card";
@@ -11,7 +11,8 @@ export default async function MatchesPage() {
     redirect("/sign-in");
   }
 
-  const matches = await getMatches(userId);
+  const matches = await getMyActiveMatches();
+  console.log(matches);
 
   if (matches.length === 0) {
     return (

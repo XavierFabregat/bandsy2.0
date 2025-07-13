@@ -4,7 +4,7 @@ import { useState, useEffect, useCallback, useRef, useMemo } from "react";
 import type { Notification } from "@/types/notifications";
 import { useConversationStore } from "../stores/conversationStore";
 
-interface SSEEvent {
+export interface SSEEvent {
   type:
     | "connected"
     | "notification"

@@ -1,10 +1,10 @@
 "use client";
 
-import { useCallback, useEffect, useState, useRef } from "react";
+import { useCallback, useEffect, useState, useRef, useMemo } from "react";
 import { useParams } from "next/navigation";
 import { Button } from "@/components/ui/button";
-import { Textarea } from "@/components/ui/textarea"; // Add this import
-import { Send, Music } from "lucide-react";
+import { Textarea } from "@/components/ui/textarea";
+import { Send, Music, ArrowLeft } from "lucide-react";
 import { useUser } from "@clerk/nextjs";
 import Link from "next/link";
 import { useConversationStore } from "@/lib/stores/conversationStore";
@@ -13,16 +13,15 @@ import { toast } from "sonner";
 import { useTypingIndicator } from "@/lib/hooks/useTypingIndicator";
 import { useDebounceImmediate } from "@/lib/hooks/useDebounce";
 import MessageBubble from "./_components/message-bubble";
-import ChatHeader from "./_components/chat-header";
-import { useRouter } from "next/navigation";
+import type { getGroupChat } from "@/server/conversations/queries";
+import type { getGroupById } from "../../../../../server/groups/queries";
 
 interface Message {
   id: string;
   senderId: string;
   content: string;
-  conversationId?: string;
-  matchId?: string;
-  groupId?: string;
+  conversationId: string;
+  groupId: string;
   senderName: string;
   senderClerkId: string;
   senderImage: string;
@@ -31,86 +30,50 @@ interface Message {
   createdAt: Date;
   isRead: boolean;
 }
+type Group = Awaited<ReturnType<typeof getGroupById>>;
+type Conversation = Awaited<ReturnType<typeof getGroupChat>>;
 
-interface Conversation {
-  id: string;
-  matchId: string;
-  participants: {
-    id: string;
-    clerkId: string;
-    displayName: string;
-    profileImageUrl: string | null;
-  }[];
-}
-
-interface MatchFactor {
-  location: number;
-  genres: number;
-  instruments: number;
-  skillLevel: number;
-  activity: number;
-}
-
-interface Match {
-  id: string;
-  matchFactors: MatchFactor;
-  createdAt: Date;
-  matchScore: number;
-  updatedAt: Date;
-  user1: {
-    id: string;
-    clerkId: string;
-    displayName: string;
-    profileImageUrl: string | null;
-  };
-  user2: {
-    id: string;
-    clerkId: string;
-    displayName: string;
-    profileImageUrl: string | null;
-  };
-}
-
-export default function MatchConversationPage() {
+export default function GroupChatPage() {
   const DEBOUNCE_DELAY = 10_000;
   const { user } = useUser();
   const currentUserId = user?.id;
   const params = useParams();
-  const router = useRouter();
-  const matchId = params.id as string;
+  const { groupId, chatId } = params as { groupId: string; chatId: string };
   const {
     conversations,
     typingUsers,
     isLoading,
     setMessages,
     setLoading,
-    fetchMessages,
     addMessage,
     removeMessage,
   } = useConversationStore();
   const { startTyping, stopTyping } = useTypingIndicator(
-    matchId,
+    "", // no matchId for group chats
     DEBOUNCE_DELAY,
+    true,
+    groupId,
+    chatId,
   );
 
   const isMobile = useMediaQuery("(max-width: 768px)");
 
   const [conversation, setConversation] = useState<Conversation | null>(null);
-  const [match, setMatch] = useState<Match | null>(null);
+  const [group, setGroup] = useState<Group | null>(null);
   const [newMessage, setNewMessage] = useState("");
-  const [groupName, setGroupName] = useState("");
-  const [userGroups, setUserGroups] = useState<{ id: string; name: string }[]>(
-    [],
-  );
   const [isCurrentlyTyping, setIsCurrentlyTyping] = useState(false);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
-  const [_, ...messages] = conversations[conversation?.id ?? ""] ?? [];
-  const typing = typingUsers[matchId] ?? {};
-  const loading = isLoading[matchId] ?? false;
-  // Debounced typing indicator - stops typing after 2 seconds of no input
+  const messages = useMemo(
+    () => conversations[chatId] ?? [],
+    [conversations, chatId],
+  );
+  const typing = typingUsers[chatId] ?? {};
+  const loading = isLoading[chatId] ?? false;
+
+  // Debounced typing indicator - stops typing after delay of no input
   const {
-    immediate: handleStopTyping,
+    immediate: _,
     debounced: debouncedStopTyping,
     cancel: cancelStopTyping,
   } = useDebounceImmediate(
@@ -170,26 +133,28 @@ export default function MatchConversationPage() {
   );
 
   const fetchConversation = useCallback(async () => {
-    setLoading(matchId, true);
-    let conversationId = "";
+    setLoading(chatId, true);
     try {
-      const response = await fetch(`/api/matches/${matchId}/conversation`);
+      const response = await fetch(`/api/groups/${groupId}/chat/${chatId}`);
       if (response.ok) {
         const data = (await response.json()) as {
           conversation: Conversation;
           messages: Message[];
+          group: Group;
         };
+
+        if (!data.conversation) return;
+
         setConversation(data.conversation);
-        setMessages(data.conversation.id, data.messages);
-        conversationId = data.conversation.id;
+        setGroup(data.group);
+        setMessages(data.conversation.id, data.conversation.messages);
       }
     } catch (error) {
       console.error("Error fetching conversation:", error);
     } finally {
-      setLoading(matchId, false);
+      setLoading(chatId, false);
     }
-    return conversationId;
-  }, [matchId, setLoading, setMessages]);
+  }, [chatId, groupId, setLoading, setMessages]);
 
   const sendMessage = useCallback(async () => {
     if (!newMessage.trim()) return;
@@ -212,10 +177,11 @@ export default function MatchConversationPage() {
       id: `temp-${Date.now()}`, // Temporary ID
       senderId: currentUserId!,
       senderClerkId: currentUserId!,
-      senderName: user?.username ?? "You",
+      senderName: user?.fullName ?? user?.username ?? "You",
       senderImage: user?.imageUrl ?? "",
       content: messageContent,
-      matchId,
+      conversationId: chatId,
+      groupId,
       type: "text",
       fileUrl: "",
       createdAt: new Date(),
@@ -223,10 +189,10 @@ export default function MatchConversationPage() {
     };
 
     // Add message optimistically
-    addMessage(conversation?.id ?? "", optimisticMessage);
+    addMessage(chatId, optimisticMessage);
 
     try {
-      const response = await fetch(`/api/matches/${matchId}/conversation`, {
+      const response = await fetch(`/api/groups/${groupId}/chat/${chatId}`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ content: messageContent }),
@@ -234,25 +200,29 @@ export default function MatchConversationPage() {
 
       if (!response.ok) {
         // If failed, remove the optimistic message
-        removeMessage(conversation?.id ?? "", optimisticMessage.id);
+        removeMessage(chatId, optimisticMessage.id);
         setNewMessage(messageContent); // Restore the message in input
-        toast.error("Failed to send message");
+        toast.error("Failed to send message", {
+          description: "Please try again later",
+          dismissible: true,
+          position: "top-center",
+        });
       }
     } catch (error) {
       console.error("Error sending message:", error);
       // If failed, remove the optimistic message
-      removeMessage(conversation?.id ?? "", optimisticMessage.id);
+      removeMessage(chatId, optimisticMessage.id);
       setNewMessage(messageContent); // Restore the message in input
       toast.error("Failed to send message");
     }
   }, [
-    matchId,
+    chatId,
+    groupId,
     newMessage,
     currentUserId,
     user,
     removeMessage,
     addMessage,
-    conversation,
     isCurrentlyTyping,
     stopTyping,
     cancelStopTyping,
@@ -261,7 +231,7 @@ export default function MatchConversationPage() {
   // Handle key press events
   const handleKeyPress = useCallback(
     (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
-      if (e.key === "Enter") {
+      if (e.key === "Enter" && !e.shiftKey) {
         e.preventDefault();
         void sendMessage();
       }
@@ -278,86 +248,10 @@ export default function MatchConversationPage() {
     }
   }, [isCurrentlyTyping, stopTyping, cancelStopTyping]);
 
-  const fetchUserGroups = useCallback(async () => {
-    setLoading(matchId, true);
-    try {
-      const response = await fetch("/api/groups");
-      if (response.ok) {
-        const groups = (await response.json()) as {
-          id: string;
-          name: string;
-        }[];
-        console.log("groups", groups);
-        setUserGroups(groups);
-      }
-    } catch (error) {
-      console.error("Error fetching user groups:", error);
-    } finally {
-      setLoading(matchId, false);
-    }
-  }, [matchId, setLoading]);
-
-  const fetchMatch = useCallback(async () => {
-    setLoading(matchId, true);
-    try {
-      const response = await fetch(`/api/matches/${matchId}`);
-      const data = (await response.json()) as Match;
-      setMatch(data);
-    } catch (error) {
-      console.error("Error fetching match:", error);
-    } finally {
-      setLoading(matchId, false);
-    }
-  }, [matchId, setLoading]);
-
-  // Load initial messages
+  // Load initial data
   useEffect(() => {
-    void fetchConversation().then((conversationId) => {
-      void fetchUserGroups();
-      void fetchMatch();
-      void fetchMessages(matchId, conversationId);
-    });
-  }, [matchId, fetchConversation, fetchUserGroups, fetchMatch, fetchMessages]);
-
-  const handleOutcome = useCallback(
-    async (
-      outcome: string,
-      data?: {
-        groupName?: string;
-        existingGroupId?: string;
-        inviteeUserId?: string;
-      },
-    ) => {
-      try {
-        const response = await fetch(`/api/matches/${matchId}/outcome`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ outcome, data }),
-        });
-
-        if (response.ok) {
-          const responseData = (await response.json()) as {
-            groupId: string;
-          };
-          if (outcome === "unmatch") {
-            router.replace("/matches");
-          } else {
-            toast.success("Success! Group created/joined.");
-            router.replace(`/groups/${responseData.groupId}`);
-          }
-        }
-      } catch (error) {
-        if (error instanceof Error) {
-          console.error("Error handling outcome:", error);
-          toast.error(error.message);
-        } else {
-          console.error("Error handling outcome:", error);
-          toast.error("An unknown error occurred");
-        }
-      }
-    },
-    [matchId],
-  );
+    void fetchConversation();
+  }, [fetchConversation]);
 
   // Add ref for auto-scrolling
   const messagesEndRef = useRef<HTMLDivElement>(null);
@@ -383,30 +277,21 @@ export default function MatchConversationPage() {
     );
   }
 
-  if (!conversation || !match) {
+  if (!conversation || !group) {
     return (
       <div className="flex h-screen items-center justify-center">
         <div className="text-center">
-          <p className="text-lg font-medium">Conversation not found</p>
+          <p className="text-lg font-medium">Chat not found</p>
           <Link
-            href="/matches"
+            href={`/groups/${groupId}`}
             className="text-primary mt-2 text-sm hover:underline"
           >
-            Back to matches
+            Back to group
           </Link>
         </div>
       </div>
     );
   }
-
-  const otherParticipant = conversation.participants.find(
-    (p) => p.clerkId !== currentUserId,
-  );
-
-  // Determine if current user is the invitee (the one who was liked, not who initiated)
-  const isInvitee = match.user2.clerkId
-    ? match.user2.clerkId === currentUserId
-    : false;
 
   const isOtherUserTyping = Object.values(typing).some((typingUser) => {
     return typingUser.userId !== currentUserId;
@@ -414,26 +299,39 @@ export default function MatchConversationPage() {
 
   return (
     <div className="no-scrollbar relative flex h-[100dvh] flex-col bg-gray-50 dark:bg-gray-900">
-      {/* Header */}
-      <ChatHeader
-        otherParticipant={otherParticipant!}
-        isTyping={isOtherUserTyping}
-        isMobile={isMobile}
-        isInvitee={isInvitee}
-        groupName={groupName}
-        setGroupName={setGroupName}
-        handleOutcome={handleOutcome}
-        userGroups={userGroups}
-      />
+      {/* Fixed Header */}
+      <div className="sticky top-0 right-0 left-0 z-40 flex items-center gap-3 border-b bg-white px-4 py-3 shadow-sm dark:border-gray-700 dark:bg-gray-800">
+        <Link href={`/groups/${groupId}`}>
+          <Button variant="ghost" size="icon" className="h-9 w-9">
+            <ArrowLeft className="h-5 w-5" />
+          </Button>
+        </Link>
+
+        <div className="flex min-w-0 flex-1 items-center gap-3">
+          <div className="min-w-0 flex-1">
+            <h2 className="truncate font-semibold">{conversation.name}</h2>
+            <p className="text-muted-foreground text-xs">
+              {group.groupMembers
+                .map((member) => member.user.displayName)
+                .join(", ")}
+              {isOtherUserTyping && !isMobile ? " • Someone is typing..." : ""}
+            </p>
+          </div>
+        </div>
+
+        <Button variant="ghost" size="icon" className="h-9 w-9">
+          <Music className="h-5 w-5" />
+        </Button>
+      </div>
 
       {/* Messages Area */}
       <div className="no-scrollbar flex flex-1 flex-col space-y-4 overflow-y-auto p-4 pt-20 pb-20">
         {/* Welcome message */}
         <div className="flex justify-center">
-          <div className="max-w-xs rounded-lg bg-yellow-100 px-4 py-2 text-center text-sm dark:bg-yellow-900/30">
-            <p className="font-medium">🎵 You matched!</p>
+          <div className="max-w-xs rounded-lg bg-blue-100 px-4 py-2 text-center text-sm dark:bg-blue-900/30">
+            <p className="font-medium">💬 Welcome to {conversation.name}!</p>
             <p className="text-muted-foreground mt-1 text-xs">
-              Start chatting and discuss your collaboration ideas
+              Start collaborating with your group members
             </p>
           </div>
         </div>
@@ -454,8 +352,6 @@ export default function MatchConversationPage() {
       {/* Input Area - Fixed positioning */}
       <div className="fixed right-0 bottom-0 left-0 z-50 w-full border-t bg-white px-4 py-3 dark:border-gray-700 dark:bg-gray-800">
         <div className="flex items-end gap-2">
-          {" "}
-          {/* Changed from items-center to items-end */}
           <div className="relative flex-1">
             <Textarea
               value={newMessage}

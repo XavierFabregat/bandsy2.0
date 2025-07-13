@@ -7,6 +7,7 @@ import {
   users,
 } from "../db/schema";
 import { and, eq } from "drizzle-orm";
+import { getUserByClerkId } from "../queries";
 
 /**
  * Get match conversation with messages
@@ -108,4 +109,42 @@ export async function getMatchConversation(
     },
     messages: conversationMessages,
   };
+}
+
+export async function getGroupChat(
+  clerkId: string,
+  groupId: string,
+  chatId: string,
+) {
+  const { userId } = await auth();
+  if (!userId) throw new Error("Unauthorized");
+
+  const user = await getUserByClerkId(clerkId);
+  if (!user) throw new Error("User not found");
+
+  const currentUserId = user.id;
+
+  const conversation = await db.query.conversations.findFirst({
+    where: eq(conversations.id, chatId),
+    with: {
+      participants: {
+        with: {
+          user: true,
+        },
+      },
+      messages: {
+        with: {
+          sender: true,
+        },
+      },
+    },
+  });
+
+  if (!conversation) return null;
+
+  if (!conversation.participants.some((p) => p.user.id === currentUserId)) {
+    throw new Error("User is not a participant of the conversation");
+  }
+
+  return conversation;
 }
