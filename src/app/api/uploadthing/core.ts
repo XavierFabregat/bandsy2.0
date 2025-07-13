@@ -94,6 +94,25 @@ export const ourFileRouter = {
 
       return { uploadedBy: user.id, sampleId: id };
     }),
+  groupUploader: f({
+    image: {
+      maxFileSize: "4MB",
+      maxFileCount: 1,
+    },
+  })
+    .middleware(async ({ req: _req }) => {
+      const { userId } = await auth();
+
+      if (!userId) throw new Error("Unauthorized");
+
+      return { userId };
+    })
+    .onUploadComplete(async ({ metadata, file }) => {
+      // NOTE: Since we cannot get access to the groupID here, we will have to
+      // manually update the group image URL in the database
+      // after the upload is complete in the client side
+      return { uploadedBy: metadata.userId, fileUrl: file.ufsUrl };
+    }),
 } satisfies FileRouter;
 
 export type OurFileRouter = typeof ourFileRouter;

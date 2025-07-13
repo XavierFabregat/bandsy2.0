@@ -118,7 +118,7 @@
   - [ ] Add member invitation system
   - [ ] Implement role management (admin/member)
   - [ ] Add member removal functionality
-  - [ ] Create group member list
+  - [x] Create group member list
 - [ ] **Group chat**
   - [x] Extend messaging for group conversations
   - [x] Add group-specific message types
