@@ -14,6 +14,7 @@ import {
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { GeneralSettings } from "./settings/general-settings";
 import { MembersSettings } from "./settings/member-settings";
+import ChatsSettings from "./settings/chat-settings";
 
 export default function GroupSettings({
   group,
@@ -57,12 +58,4 @@ export default function GroupSettings({
       </DialogContent>
     </Dialog>
   );
-}
-
-function ChatsSettings({
-  group,
-}: {
-  group: Awaited<ReturnType<typeof getGroupById>>;
-}) {
-  return <div>ChatsSettings</div>;
 }
