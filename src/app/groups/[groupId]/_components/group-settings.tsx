@@ -13,6 +13,7 @@ import {
 } from "@/components/ui/dialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { GeneralSettings } from "./settings/general-settings";
+import { MembersSettings } from "./settings/member-settings";
 
 export default function GroupSettings({
   group,
@@ -32,8 +33,8 @@ export default function GroupSettings({
           <Settings className="h-4 w-4" />
         </Button>
       </DialogTrigger>
-      <DialogContent className="h-[70%]">
-        <Tabs defaultValue="general" className="w-full">
+      <DialogContent className="h-[70%] w-[95%]">
+        <Tabs defaultValue="general" className="w-full min-w-[90%]">
           <DialogHeader>
             <DialogTitle>Group Settings</DialogTitle>
             <DialogDescription>Manage your group settings</DialogDescription>
@@ -56,14 +57,6 @@ export default function GroupSettings({
       </DialogContent>
     </Dialog>
   );
-}
-
-function MembersSettings({
-  group,
-}: {
-  group: Awaited<ReturnType<typeof getGroupById>>;
-}) {
-  return <div>MembersSettings</div>;
 }
 
 function ChatsSettings({

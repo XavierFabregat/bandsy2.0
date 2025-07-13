@@ -1,6 +1,6 @@
 import Link from "next/link";
 import type { getGroupById } from "@/server/groups/queries";
-import { ArrowLeft, Settings } from "lucide-react";
+import { ArrowLeft } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarImage } from "@radix-ui/react-avatar";
 import { auth } from "@clerk/nextjs/server";
