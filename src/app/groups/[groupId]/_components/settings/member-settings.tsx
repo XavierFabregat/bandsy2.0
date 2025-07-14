@@ -5,9 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Separator } from "@/components/ui/separator";
 import {
   Accordion,
   AccordionItem,
@@ -16,9 +14,7 @@ import {
 } from "@/components/ui/accordion";
 import {
   Users,
-  UserPlus,
   Crown,
-  Shield,
   User,
   Search,
   MoreVertical,
