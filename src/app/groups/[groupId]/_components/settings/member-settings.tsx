@@ -118,8 +118,6 @@ export function MembersSettings({
     memberId: string,
     role: "admin" | "member",
   ) => {
-    console.log("TODO: Implement change role");
-    return;
     try {
       const response = await fetch(
         `/api/groups/${group.id}/members/${memberId}/role`,
@@ -307,7 +305,7 @@ export function MembersSettings({
                               {member.role !== "admin" && (
                                 <DropdownMenuItem
                                   onClick={() =>
-                                    handleChangeRole(member.id, "admin")
+                                    handleChangeRole(member.userId, "admin")
                                   }
                                 >
                                   <Crown className="mr-2 h-4 w-4" />
@@ -317,7 +315,7 @@ export function MembersSettings({
                               {member.role === "admin" && (
                                 <DropdownMenuItem
                                   onClick={() =>
-                                    handleChangeRole(member.id, "member")
+                                    handleChangeRole(member.userId, "member")
                                   }
                                 >
                                   <User className="mr-2 h-4 w-4" />
@@ -325,7 +323,9 @@ export function MembersSettings({
                                 </DropdownMenuItem>
                               )}
                               <DropdownMenuItem
-                                onClick={() => handleRemoveMember(member.id)}
+                                onClick={() =>
+                                  handleRemoveMember(member.userId)
+                                }
                                 className="text-red-600"
                               >
                                 <Trash2 className="mr-2 h-4 w-4" />
