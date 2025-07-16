@@ -1,9 +1,9 @@
 import { db } from "@/server/db";
-import { 
-  matches, 
-  groupMembers, 
-  messages, 
-  conversations, 
+import {
+  matches,
+  groupMembers,
+  messages,
+  conversations,
   conversationParticipants,
   users,
   groups
@@ -151,8 +151,8 @@ export async function getRecentActivity(): Promise<RecentActivity[]> {
   for (const match of recentMatches) {
     const otherUserId = match.user1Id === user.id ? match.user2Id : match.user1Id;
     const otherUser = await db.select({ displayName: users.displayName }).from(users).where(eq(users.id, otherUserId)).limit(1);
-    const otherUserName = otherUser[0]?.displayName || 'Someone';
-    
+    const otherUserName = otherUser[0]?.displayName ?? 'Someone';
+
     activities.push({
       id: `match-${match.id}`,
       type: 'match',
