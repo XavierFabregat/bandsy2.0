@@ -89,6 +89,34 @@ export function MembersSettings({
     }
   };
 
+  const handleCreateBlankInvite = async () => {
+    setIsInviting(true);
+    try {
+      const response = await fetch(`/api/groups/${group.id}/invite`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ createBlankInvite: true }),
+      });
+
+      if (response.ok) {
+        const result = (await response.json()) as { inviteLink: string };
+        const inviteLink = result.inviteLink;
+
+        // Copy the invite link to clipboard
+        await navigator.clipboard.writeText(inviteLink);
+        toast.success("Blank invite link copied to clipboard");
+        setIsInviteDialogOpen(false);
+      } else {
+        throw new Error("Failed to create blank invite");
+      }
+    } catch (error) {
+      console.error("Error creating blank invite:", error);
+      toast.error("Failed to create blank invite");
+    } finally {
+      setIsInviting(false);
+    }
+  };
+
   const handleRemoveMember = async (memberId: string) => {
     try {
       const response = await fetch(
@@ -136,10 +164,16 @@ export function MembersSettings({
     }
   };
 
-  const copyInviteLink = () => {
-    const inviteLink = `${window.location.origin}/groups/${group.id}/join`;
+  const copyInviteLink = async () => {
+    // generate an invite
+    const invite = await fetch(`/api/groups/${group.id}/invite`, {
+      method: "POST",
+    });
+
+    const { inviteLink } = (await invite.json()) as { inviteLink: string };
+
     void navigator.clipboard.writeText(inviteLink);
-    toast.success("Invite link copied to clipboard");
+    toast.success("Invite link copied to clipboard, valid for 1 week.");
   };
 
   return (
@@ -223,11 +257,12 @@ export function MembersSettings({
 
               <Button
                 variant="outline"
-                onClick={copyInviteLink}
+                onClick={handleCreateBlankInvite}
+                disabled={isInviting}
                 className="w-full sm:w-auto"
               >
                 <Copy className="mr-2 h-4 w-4" />
-                Copy Invite Link
+                {isInviting ? "Creating..." : "Create Blank Invite"}
               </Button>
             </div>
           </AccordionContent>
