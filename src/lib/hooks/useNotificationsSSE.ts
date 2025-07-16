@@ -3,6 +3,8 @@
 import { useState, useEffect, useCallback, useRef, useMemo } from "react";
 import type { Notification } from "@/types/notifications";
 import { useConversationStore } from "../stores/conversationStore";
+import { useRouter, usePathname } from "next/navigation";
+import { toast } from "sonner";
 
 export interface SSEEvent {
   type:
@@ -12,7 +14,8 @@ export interface SSEEvent {
     | "heartbeat"
     | "match_message"
     | "group_message"
-    | "user_typing";
+    | "user_typing"
+    | "group_access_revoked";
   notification?: Notification;
   count?: number;
   message?: {
@@ -56,6 +59,8 @@ export function useNotificationSSE() {
   }, [notifications]);
 
   const { addMessage, setTyping, setMessages } = useConversationStore();
+  const router = useRouter();
+  const pathname = usePathname();
 
   const connect = useCallback(() => {
     if (eventSourceRef.current?.readyState === EventSource.OPEN) {
@@ -145,6 +150,28 @@ export function useNotificationSSE() {
                 data.typing?.isTyping ?? false,
               );
               break;
+
+            case "group_access_revoked":
+              // User has been removed from a group
+              if (data.notification) {
+                // Show toast notification
+                toast.error(data.notification.message, {
+                  description: "You have been removed from the group",
+                  duration: 5000,
+                });
+
+                // Add to notification history
+                setNotifications((prev) => {
+                  return [data.notification!, ...prev.slice(0, 9)];
+                });
+
+                // If user is currently on the group page, navigate away
+                if (pathname.startsWith("/groups/") && !pathname.endsWith("/groups")) {
+                  console.log("SSE: User on group page, navigating to /groups");
+                  router.push("/groups");
+                }
+              }
+              break;
           }
         } catch (error) {
           console.error("SSE: Error parsing data:", error);
@@ -178,7 +205,7 @@ export function useNotificationSSE() {
       console.error("SSE: Failed to create EventSource:", error);
       setError("Failed to establish connection");
     }
-  }, []);
+  }, [router, pathname]);
 
   const disconnect = useCallback(() => {
     if (eventSourceRef.current) {

@@ -73,6 +73,14 @@ export interface NotificationData {
     fromUserImage?: string;
     fromUserUsername: string;
   };
+  // Group member removal notifications
+  group_member_removed?: {
+    groupId: string;
+    groupName: string;
+    removedByUserId: string;
+    removedByUserName: string;
+    removedByUserDisplayName: string;
+  };
 }
 
 export type NotificationType = keyof NotificationData;

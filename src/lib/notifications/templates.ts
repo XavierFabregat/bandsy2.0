@@ -99,6 +99,15 @@ export function getNotificationTemplate<T extends NotificationType>(
         actionType: "navigate",
       };
 
+    case "group_member_removed":
+      const removalData = data as NotificationData["group_member_removed"];
+      return {
+        title: "Removed from Group",
+        message: `You were removed from ${removalData?.groupName} by ${removalData?.removedByUserName}`,
+        actionUrl: `/groups`,
+        actionType: "navigate",
+      };
+
     default:
       return {
         title: "Notification",

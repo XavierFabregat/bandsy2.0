@@ -4,6 +4,8 @@ import { getUserByClerkId } from "@/server/queries";
 import { db } from "@/server/db";
 import { groupMembers, groups } from "@/server/db/schema";
 import { and, eq } from "drizzle-orm";
+import { createNotification } from "@/server/notifications/mutations";
+import { NotificationSSEService } from "@/lib/notifications/sse-service";
 
 export async function DELETE(
   request: NextRequest,
@@ -57,12 +59,45 @@ export async function DELETE(
     return NextResponse.json({ error: "Member not found" }, { status: 404 });
   }
 
+  // Get the member's user info for notifications
+  const removedMemberUser = member.user;
+
   // remove the member from the group
   await db
     .delete(groupMembers)
     .where(
       and(eq(groupMembers.groupId, groupId), eq(groupMembers.userId, memberId)),
     );
+
+  // Send notification to the removed member
+  try {
+    await createNotification({
+      userId: memberId,
+      type: "group_member_removed",
+      data: {
+        groupId: group.id,
+        groupName: group.name,
+        removedByUserId: user.id,
+        removedByUserName: user.displayName || user.username,
+        removedByUserDisplayName: user.username,
+      },
+      expiresAt: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000), // 30 days
+    });
+
+    // Send immediate SSE message for navigation
+    NotificationSSEService.sendGroupAccessRevoked(
+      removedMemberUser.id,
+      group.id,
+      group.name,
+    );
+
+    console.log(
+      `Sent group removal notification to user ${removedMemberUser.id}`,
+    );
+  } catch (error) {
+    console.error("Failed to send removal notification:", error);
+    // Don't fail the API call if notification fails
+  }
 
   return NextResponse.json({ message: "Member removed successfully" });
 }

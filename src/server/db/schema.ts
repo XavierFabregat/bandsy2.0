@@ -65,6 +65,7 @@ export const notificationTypeEnum = pgEnum("notification_type", [
   "system_update",
   "collaboration_invite", // New: collaboration invite received
   "invite_accepted", // New: collaboration invite accepted
+  "group_member_removed", // New: group member removal notification
 ]);
 
 // Users table
