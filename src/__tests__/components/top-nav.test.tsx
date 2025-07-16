@@ -9,7 +9,9 @@ vi.mock("@/app/_components/mode-toggle", () => ({
 
 // Mock the notification bell component to avoid act warnings
 vi.mock("@/components/notifications/notification-bell", () => ({
-  NotificationBell: () => <div data-testid="notification-bell">Notifications</div>,
+  NotificationBell: () => (
+    <div data-testid="notification-bell">Notifications</div>
+  ),
 }));
 
 describe("TopNav", () => {

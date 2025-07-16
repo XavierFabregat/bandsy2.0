@@ -6,7 +6,7 @@ import {
   conversations,
   conversationParticipants,
   users,
-  groups
+  groups,
 } from "@/server/db/schema";
 import { eq, and, desc, gte, sql } from "drizzle-orm";
 import { auth } from "@clerk/nextjs/server";
@@ -21,11 +21,11 @@ export interface DashboardStats {
 
 export interface RecentActivity {
   id: string;
-  type: 'match' | 'group_join' | 'profile_view';
+  type: "match" | "group_join" | "profile_view";
   title: string;
   description: string;
   timestamp: Date;
-  icon: 'zap' | 'users' | 'trending-up';
+  icon: "zap" | "users" | "trending-up";
   gradient: string;
 }
 
@@ -40,21 +40,18 @@ export async function getDashboardStats(): Promise<DashboardStats> {
   if (!user) throw new Error("User not found");
 
   // Get stats in parallel for better performance
-  const [
-    newMatchesCount,
-    activeGroupsCount,
-    unreadMessagesCount
-  ] = await Promise.all([
-    getNewMatchesCount(user.id),
-    getActiveGroupsCount(user.id),
-    getUnreadMessagesCount(user.id)
-  ]);
+  const [newMatchesCount, activeGroupsCount, unreadMessagesCount] =
+    await Promise.all([
+      getNewMatchesCount(user.id),
+      getActiveGroupsCount(user.id),
+      getUnreadMessagesCount(user.id),
+    ]);
 
   return {
     newMatches: newMatchesCount,
     activeGroups: activeGroupsCount,
     profileViews: 47, // placeholder - would need analytics table
-    unreadMessages: unreadMessagesCount
+    unreadMessages: unreadMessagesCount,
   };
 }
 
@@ -72,8 +69,8 @@ async function getNewMatchesCount(userId: string): Promise<number> {
       and(
         eq(matches.status, "matched"),
         gte(matches.createdAt, sevenDaysAgo),
-        sql`(${matches.user1Id} = ${userId} OR ${matches.user2Id} = ${userId})`
-      )
+        sql`(${matches.user1Id} = ${userId} OR ${matches.user2Id} = ${userId})`,
+      ),
     );
 
   return result?.count ?? 0;
@@ -87,12 +84,7 @@ async function getActiveGroupsCount(userId: string): Promise<number> {
     .select({ count: sql<number>`count(*)` })
     .from(groupMembers)
     .innerJoin(groups, eq(groupMembers.groupId, groups.id))
-    .where(
-      and(
-        eq(groupMembers.userId, userId),
-        eq(groups.isActive, true)
-      )
-    );
+    .where(and(eq(groupMembers.userId, userId), eq(groups.isActive, true)));
 
   return result?.count ?? 0;
 }
@@ -104,13 +96,16 @@ async function getUnreadMessagesCount(userId: string): Promise<number> {
   const [result] = await db
     .select({ count: sql<number>`count(*)` })
     .from(messages)
-    .innerJoin(conversationParticipants, eq(messages.conversationId, conversationParticipants.conversationId))
+    .innerJoin(
+      conversationParticipants,
+      eq(messages.conversationId, conversationParticipants.conversationId),
+    )
     .where(
       and(
         eq(conversationParticipants.userId, userId),
         eq(messages.isRead, false),
-        sql`${messages.senderId} != ${userId}` // Don't count own messages
-      )
+        sql`${messages.senderId} != ${userId}`, // Don't count own messages
+      ),
     );
 
   return result?.count ?? 0;
@@ -141,26 +136,31 @@ export async function getRecentActivity(): Promise<RecentActivity[]> {
       and(
         eq(matches.status, "matched"),
         gte(matches.createdAt, new Date(Date.now() - 7 * 24 * 60 * 60 * 1000)), // Last 7 days
-        sql`(${matches.user1Id} = ${user.id} OR ${matches.user2Id} = ${user.id})`
-      )
+        sql`(${matches.user1Id} = ${user.id} OR ${matches.user2Id} = ${user.id})`,
+      ),
     )
     .orderBy(desc(matches.createdAt))
     .limit(3);
 
   // Add match activities
   for (const match of recentMatches) {
-    const otherUserId = match.user1Id === user.id ? match.user2Id : match.user1Id;
-    const otherUser = await db.select({ displayName: users.displayName }).from(users).where(eq(users.id, otherUserId)).limit(1);
-    const otherUserName = otherUser[0]?.displayName ?? 'Someone';
+    const otherUserId =
+      match.user1Id === user.id ? match.user2Id : match.user1Id;
+    const otherUser = await db
+      .select({ displayName: users.displayName })
+      .from(users)
+      .where(eq(users.id, otherUserId))
+      .limit(1);
+    const otherUserName = otherUser[0]?.displayName ?? "Someone";
 
     activities.push({
       id: `match-${match.id}`,
-      type: 'match',
+      type: "match",
       title: `New match with ${otherUserName}!`,
       description: getRelativeTime(match.createdAt),
       timestamp: match.createdAt,
-      icon: 'zap',
-      gradient: 'from-purple-500 to-pink-500'
+      icon: "zap",
+      gradient: "from-purple-500 to-pink-500",
     });
   }
 
@@ -169,29 +169,32 @@ export async function getRecentActivity(): Promise<RecentActivity[]> {
     .select({
       id: groupMembers.id,
       joinedAt: groupMembers.joinedAt,
-      groupName: groups.name
+      groupName: groups.name,
     })
     .from(groupMembers)
     .innerJoin(groups, eq(groupMembers.groupId, groups.id))
     .where(
       and(
         eq(groupMembers.userId, user.id),
-        gte(groupMembers.joinedAt, new Date(Date.now() - 7 * 24 * 60 * 60 * 1000)) // Last 7 days
-      )
+        gte(
+          groupMembers.joinedAt,
+          new Date(Date.now() - 7 * 24 * 60 * 60 * 1000),
+        ), // Last 7 days
+      ),
     )
     .orderBy(desc(groupMembers.joinedAt))
     .limit(3);
 
   // Add group join activities
-  recentGroupJoins.forEach(groupJoin => {
+  recentGroupJoins.forEach((groupJoin) => {
     activities.push({
       id: `group-${groupJoin.id}`,
-      type: 'group_join',
+      type: "group_join",
       title: `Joined "${groupJoin.groupName}"`,
       description: getRelativeTime(groupJoin.joinedAt),
       timestamp: groupJoin.joinedAt,
-      icon: 'users',
-      gradient: 'from-cyan-500 to-blue-500'
+      icon: "users",
+      gradient: "from-cyan-500 to-blue-500",
     });
   });
 
@@ -223,8 +226,8 @@ function getRelativeTime(date: Date): string {
   const hours = Math.floor(minutes / 60);
   const days = Math.floor(hours / 24);
 
-  if (days > 0) return `${days} day${days > 1 ? 's' : ''} ago`;
-  if (hours > 0) return `${hours} hour${hours > 1 ? 's' : ''} ago`;
-  if (minutes > 0) return `${minutes} minute${minutes > 1 ? 's' : ''} ago`;
-  return 'Just now';
+  if (days > 0) return `${days} day${days > 1 ? "s" : ""} ago`;
+  if (hours > 0) return `${hours} hour${hours > 1 ? "s" : ""} ago`;
+  if (minutes > 0) return `${minutes} minute${minutes > 1 ? "s" : ""} ago`;
+  return "Just now";
 }
