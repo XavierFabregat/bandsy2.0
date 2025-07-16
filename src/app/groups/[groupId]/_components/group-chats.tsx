@@ -44,10 +44,8 @@ export default function GroupChats({
             <DialogHeader>
               <DialogTitle>Create New Chat</DialogTitle>
               <DialogDescription>
-                <p>
-                  Create a new chat with your group members to collaborate on
-                  music projects.
-                </p>
+                Create a new chat with your group members to collaborate on
+                music projects.
               </DialogDescription>
             </DialogHeader>
             <form action={createGroupChat} className="space-y-4">

@@ -75,6 +75,7 @@ export const users = createTable(
     clerkId: d.varchar({ length: 255 }).notNull().unique(),
     username: d.varchar({ length: 50 }).notNull().unique(),
     displayName: d.varchar({ length: 100 }).notNull(),
+    email: d.varchar({ length: 255 }).unique(), // optional for backwards compatibility
     bio: d.text(),
     age: d.integer(),
     showAge: d.boolean().default(false),
@@ -461,8 +462,6 @@ export const mediaSampleGenres = createTable(
   ],
 );
 
-// Add to your existing schema.ts file
-
 // User matching profiles - pre-computed data for fast matching
 export const userMatchProfiles = createTable(
   "user_match_profile",
@@ -631,6 +630,41 @@ export const notifications = createTable(
     index("notifications_unread_idx").on(table.userId, table.isRead),
     index("notifications_scheduled_idx").on(table.scheduledFor),
     index("notifications_expires_idx").on(table.expiresAt),
+  ],
+);
+
+export const groupInvites = createTable(
+  "group_invite",
+  (d) => ({
+    id: d.uuid().primaryKey().defaultRandom(),
+    groupId: d
+      .uuid()
+      .notNull()
+      .references(() => groups.id, { onDelete: "cascade" }),
+    userId: d
+      .uuid()
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    inviterId: d
+      .uuid()
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    status: d.varchar({ length: 20 }).default("pending"),
+    role: d.varchar({ length: 20 }).default("member"),
+    createdAt: d
+      .timestamp({ withTimezone: true })
+      .default(sql`CURRENT_TIMESTAMP`)
+      .notNull(),
+    updatedAt: d
+      .timestamp({ withTimezone: true })
+      .default(sql`CURRENT_TIMESTAMP`)
+      .notNull(),
+  }),
+  (table) => [
+    index("group_invite_group_idx").on(table.groupId),
+    index("group_invite_user_idx").on(table.userId),
+    index("group_invite_inviter_idx").on(table.inviterId),
+    index("group_invite_status_idx").on(table.status),
   ],
 );
 
@@ -913,6 +947,21 @@ export const matchesRelations = relations(matches, ({ one }) => ({
 export const notificationsRelations = relations(notifications, ({ one }) => ({
   user: one(users, {
     fields: [notifications.userId],
+    references: [users.id],
+  }),
+}));
+
+export const groupInvitesRelations = relations(groupInvites, ({ one }) => ({
+  group: one(groups, {
+    fields: [groupInvites.groupId],
+    references: [groups.id],
+  }),
+  user: one(users, {
+    fields: [groupInvites.userId],
+    references: [users.id],
+  }),
+  inviter: one(users, {
+    fields: [groupInvites.inviterId],
     references: [users.id],
   }),
 }));
