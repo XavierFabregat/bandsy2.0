@@ -165,15 +165,26 @@ export function MembersSettings({
   };
 
   const copyInviteLink = async () => {
-    // generate an invite
-    const invite = await fetch(`/api/groups/${group.id}/invite`, {
-      method: "POST",
-    });
+    try {
+      // generate an invite
+      const invite = await fetch(`/api/groups/${group.id}/invite`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ createBlankInvite: true }),
+      });
 
-    const { inviteLink } = (await invite.json()) as { inviteLink: string };
+      if (!invite.ok) {
+        throw new Error("Failed to create invite");
+      }
 
-    void navigator.clipboard.writeText(inviteLink);
-    toast.success("Invite link copied to clipboard, valid for 1 week.");
+      const { inviteLink } = (await invite.json()) as { inviteLink: string };
+
+      await navigator.clipboard.writeText(inviteLink);
+      toast.success("Invite link copied to clipboard, valid for 1 week.");
+    } catch (error) {
+      console.error("Error creating invite link:", error);
+      toast.error("Failed to create invite link");
+    }
   };
 
   return (

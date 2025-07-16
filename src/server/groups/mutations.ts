@@ -3,6 +3,7 @@ import { db } from "../db";
 import { groupInvites, groupMembers } from "../db/schema";
 import { and, eq } from "drizzle-orm";
 import { getUserByClerkId } from "../queries";
+import { randomBytes } from "crypto";
 
 export async function createGroupInvite(groupId: string, userId?: string) {
   const { userId: clerkId } = await auth();
@@ -17,7 +18,7 @@ export async function createGroupInvite(groupId: string, userId?: string) {
     throw new Error("Inviter not found");
   }
 
-  const verificationCode = Math.random().toString(36).substring(2, 15);
+  const verificationCode = randomBytes(8).toString('hex');
   const verificationCodeExpiresAt = new Date(
     Date.now() + 1000 * 60 * 60 * 24 * 7,
   );
