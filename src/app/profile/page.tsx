@@ -104,7 +104,7 @@ export default async function ProfilePage() {
                   </div>
                 )}
                 <div className="absolute -right-1 -bottom-1 z-20">
-                  <PencilUTButton />
+                  <PencilUTButton uploadTo="avatarUploader" />
                 </div>
               </div>
               <CardTitle className="text-xl">{user.displayName}</CardTitle>

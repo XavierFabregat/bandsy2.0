@@ -44,6 +44,9 @@ interface ClerkUserData {
   image_url: string | null;
   created_at: number;
   updated_at: number;
+  email_addresses: {
+    email_address: string;
+  }[];
 }
 
 interface ClerkDeletedUserData {
@@ -53,8 +56,15 @@ interface ClerkDeletedUserData {
 }
 
 async function handleUserCreated(userData: ClerkUserData) {
-  const { id, username, first_name, last_name, image_url, created_at } =
-    userData;
+  const {
+    id,
+    username,
+    first_name,
+    last_name,
+    image_url,
+    created_at,
+    email_addresses,
+  } = userData;
 
   // Create display name from first and last name
   const displayName =
@@ -67,6 +77,7 @@ async function handleUserCreated(userData: ClerkUserData) {
     profileImageUrl: image_url,
     isActive: true,
     createdAt: new Date(created_at ?? Date.now()),
+    email: email_addresses[0]?.email_address ?? "",
     updatedAt: new Date(created_at ?? Date.now()),
   });
 
