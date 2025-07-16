@@ -16,6 +16,26 @@ import {
   Music2,
   Headphones
 } from "lucide-react";
+import { 
+  getDashboardStats, 
+  getRecentActivity, 
+  getUserDisplayName,
+  type RecentActivity as RecentActivityType
+} from "@/lib/utils/dashboard";
+
+// Helper function for activity gradients
+function getActivityGradient(icon: string): string {
+  switch (icon) {
+    case 'zap':
+      return 'from-purple-50 to-pink-50';
+    case 'users':
+      return 'from-cyan-50 to-blue-50';
+    case 'trending-up':
+      return 'from-green-50 to-emerald-50';
+    default:
+      return 'from-gray-50 to-gray-100';
+  }
+}
 
 // Landing Page Component (for unauthenticated users)
 function LandingPage() {
@@ -203,87 +223,224 @@ function LandingPage() {
 }
 
 // Dashboard Component (for authenticated users)
-function Dashboard() {
+async function Dashboard() {
+  const [dashboardStats, recentActivity, userDisplayName] = await Promise.all([
+    getDashboardStats(),
+    getRecentActivity(),
+    getUserDisplayName()
+  ]);
   return (
-    <div className="from-background to-muted text-foreground flex h-full flex-col bg-gradient-to-b">
+    <div className="min-h-screen bg-gradient-to-br from-purple-50 via-white to-cyan-50 dark:from-gray-900 dark:via-purple-900/20 dark:to-gray-900">
       <div className="container mx-auto px-4 py-8">
+        {/* Welcome Section */}
         <div className="mb-8">
-          <h1 className="text-foreground text-3xl font-bold">
-            Welcome to Bandsy
-          </h1>
+          <div className="flex items-center gap-3 mb-4">
+            <div className="w-2 h-8 bg-gradient-to-b from-purple-500 to-pink-500 rounded-full" />
+            <h1 className="text-3xl font-bold bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent">
+              Welcome back, {userDisplayName}!
+            </h1>
+          </div>
+          <p className="text-muted-foreground text-lg">
+            Ready to discover your next musical collaborator? Let&apos;s make some music together.
+          </p>
         </div>
 
         {/* Quick Stats */}
-        <div className="mb-8 grid gap-4 md:grid-cols-3">
-          <div className="bg-card border-border rounded-lg border p-6">
-            <h3 className="text-foreground text-lg font-semibold">
-              Recent Matches
-            </h3>
-            <p className="text-primary text-2xl font-bold">12</p>
-          </div>
-          <div className="bg-card border-border rounded-lg border p-6">
-            <h3 className="text-foreground text-lg font-semibold">
-              Active Groups
-            </h3>
-            <p className="text-primary text-2xl font-bold">3</p>
-          </div>
-          <div className="bg-card border-border rounded-lg border p-6">
-            <h3 className="text-foreground text-lg font-semibold">
-              Profile Views
-            </h3>
-            <p className="text-primary text-2xl font-bold">47</p>
-          </div>
+        <div className="mb-8 grid gap-6 md:grid-cols-2 lg:grid-cols-4">
+          <Card className="group hover:shadow-lg transition-all duration-300 border-0 bg-gradient-to-br from-purple-50 to-pink-50 dark:from-purple-900/10 dark:to-pink-900/10">
+            <CardContent className="p-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm font-medium text-muted-foreground">New Matches</p>
+                  <p className="text-2xl font-bold text-purple-600">{dashboardStats.newMatches}</p>
+                </div>
+                <div className="w-12 h-12 bg-gradient-to-r from-purple-500 to-pink-500 rounded-xl flex items-center justify-center group-hover:scale-110 transition-transform duration-300">
+                  <Zap className="w-6 h-6 text-white" />
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card className="group hover:shadow-lg transition-all duration-300 border-0 bg-gradient-to-br from-cyan-50 to-blue-50 dark:from-cyan-900/10 dark:to-blue-900/10">
+            <CardContent className="p-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm font-medium text-muted-foreground">Active Groups</p>
+                  <p className="text-2xl font-bold text-cyan-600">{dashboardStats.activeGroups}</p>
+                </div>
+                <div className="w-12 h-12 bg-gradient-to-r from-cyan-500 to-blue-500 rounded-xl flex items-center justify-center group-hover:scale-110 transition-transform duration-300">
+                  <Users className="w-6 h-6 text-white" />
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card className="group hover:shadow-lg transition-all duration-300 border-0 bg-gradient-to-br from-green-50 to-emerald-50 dark:from-green-900/10 dark:to-emerald-900/10">
+            <CardContent className="p-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm font-medium text-muted-foreground">Profile Views</p>
+                  <p className="text-2xl font-bold text-green-600">{dashboardStats.profileViews}</p>
+                </div>
+                <div className="w-12 h-12 bg-gradient-to-r from-green-500 to-emerald-500 rounded-xl flex items-center justify-center group-hover:scale-110 transition-transform duration-300">
+                  <TrendingUp className="w-6 h-6 text-white" />
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card className="group hover:shadow-lg transition-all duration-300 border-0 bg-gradient-to-br from-orange-50 to-red-50 dark:from-orange-900/10 dark:to-red-900/10">
+            <CardContent className="p-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm font-medium text-muted-foreground">Messages</p>
+                  <p className="text-2xl font-bold text-orange-600">{dashboardStats.unreadMessages}</p>
+                </div>
+                <div className="w-12 h-12 bg-gradient-to-r from-orange-500 to-red-500 rounded-xl flex items-center justify-center group-hover:scale-110 transition-transform duration-300">
+                  <MessageCircle className="w-6 h-6 text-white" />
+                </div>
+              </div>
+            </CardContent>
+          </Card>
         </div>
 
         {/* Quick Actions */}
         <div className="mb-8">
-          <h2 className="text-foreground mb-4 text-2xl font-bold">
+          <h2 className="text-2xl font-bold mb-6 flex items-center gap-3">
+            <div className="w-2 h-6 bg-gradient-to-b from-cyan-500 to-blue-500 rounded-full" />
             Quick Actions
           </h2>
           <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-            <Link
-              href="/browse"
-              className="bg-card border-border hover:bg-muted rounded-lg border p-4 text-center transition-colors"
-            >
-              <div className="mb-2 text-2xl">👥</div>
-              <h3 className="text-foreground font-semibold">
-                Browse Musicians
-              </h3>
+            <Link href="/discover" className="group">
+              <Card className="hover:shadow-xl transition-all duration-300 border-0 bg-gradient-to-br from-purple-50 to-pink-50 dark:from-purple-900/10 dark:to-pink-900/10 overflow-hidden">
+                <CardContent className="p-6 text-center">
+                  <div className="mb-4 mx-auto w-16 h-16 bg-gradient-to-r from-purple-500 to-pink-500 rounded-2xl flex items-center justify-center group-hover:scale-110 transition-transform duration-300">
+                    <Zap className="w-8 h-8 text-white" />
+                  </div>
+                  <h3 className="font-semibold text-foreground mb-2">Discover Musicians</h3>
+                  <p className="text-sm text-muted-foreground">Find your next bandmate</p>
+                </CardContent>
+              </Card>
             </Link>
-            <Link
-              href="/profile"
-              className="bg-card border-border hover:bg-muted rounded-lg border p-4 text-center transition-colors"
-            >
-              <div className="mb-2 text-2xl">👤</div>
-              <h3 className="text-foreground font-semibold">My Profile</h3>
+
+            <Link href="/profile" className="group">
+              <Card className="hover:shadow-xl transition-all duration-300 border-0 bg-gradient-to-br from-cyan-50 to-blue-50 dark:from-cyan-900/10 dark:to-blue-900/10 overflow-hidden">
+                <CardContent className="p-6 text-center">
+                  <div className="mb-4 mx-auto w-16 h-16 bg-gradient-to-r from-cyan-500 to-blue-500 rounded-2xl flex items-center justify-center group-hover:scale-110 transition-transform duration-300">
+                    <Users className="w-8 h-8 text-white" />
+                  </div>
+                  <h3 className="font-semibold text-foreground mb-2">My Profile</h3>
+                  <p className="text-sm text-muted-foreground">Update your musical identity</p>
+                </CardContent>
+              </Card>
             </Link>
-            <Link
-              href="/groups"
-              className="bg-card border-border hover:bg-muted rounded-lg border p-4 text-center transition-colors"
-            >
-              <div className="mb-2 text-2xl">🎭</div>
-              <h3 className="text-foreground font-semibold">My Groups</h3>
+
+            <Link href="/groups" className="group">
+              <Card className="hover:shadow-xl transition-all duration-300 border-0 bg-gradient-to-br from-green-50 to-emerald-50 dark:from-green-900/10 dark:to-emerald-900/10 overflow-hidden">
+                <CardContent className="p-6 text-center">
+                  <div className="mb-4 mx-auto w-16 h-16 bg-gradient-to-r from-green-500 to-emerald-500 rounded-2xl flex items-center justify-center group-hover:scale-110 transition-transform duration-300">
+                    <Music2 className="w-8 h-8 text-white" />
+                  </div>
+                  <h3 className="font-semibold text-foreground mb-2">My Groups</h3>
+                  <p className="text-sm text-muted-foreground">Manage your bands</p>
+                </CardContent>
+              </Card>
             </Link>
-            <Link
-              href="/matches"
-              className="bg-card border-border hover:bg-muted rounded-lg border p-4 text-center transition-colors"
-            >
-              <div className="mb-2 text-2xl">💬</div>
-              <h3 className="text-foreground font-semibold">Messages</h3>
+
+            <Link href="/matches" className="group">
+              <Card className="hover:shadow-xl transition-all duration-300 border-0 bg-gradient-to-br from-orange-50 to-red-50 dark:from-orange-900/10 dark:to-red-900/10 overflow-hidden">
+                <CardContent className="p-6 text-center">
+                  <div className="mb-4 mx-auto w-16 h-16 bg-gradient-to-r from-orange-500 to-red-500 rounded-2xl flex items-center justify-center group-hover:scale-110 transition-transform duration-300">
+                    <MessageCircle className="w-8 h-8 text-white" />
+                  </div>
+                  <h3 className="font-semibold text-foreground mb-2">Messages</h3>
+                  <p className="text-sm text-muted-foreground">Chat with matches</p>
+                </CardContent>
+              </Card>
             </Link>
           </div>
         </div>
 
-        {/* Recent Activity */}
-        <div>
-          <h2 className="text-foreground mb-4 text-2xl font-bold">
-            Recent Activity
-          </h2>
-          <div className="bg-card border-border rounded-lg border p-6">
-            <p className="text-muted-foreground">
-              No recent activity. Start browsing musicians to see updates here!
-            </p>
-          </div>
+        {/* Recent Activity & Quick Tips */}
+        <div className="grid gap-6 lg:grid-cols-2">
+          {/* Recent Activity */}
+          <Card className="border-0 bg-white/50 dark:bg-gray-800/20 backdrop-blur-sm">
+            <CardContent className="p-6">
+              <h3 className="text-xl font-semibold mb-4 flex items-center gap-2">
+                <div className="w-2 h-5 bg-gradient-to-b from-purple-500 to-pink-500 rounded-full" />
+                Recent Activity
+              </h3>
+              <div className="space-y-4">
+                {recentActivity.length > 0 ? (
+                  recentActivity.map((activity) => {
+                    const IconComponent = activity.icon === 'zap' ? Zap : 
+                                        activity.icon === 'users' ? Users : TrendingUp;
+                    return (
+                      <div key={activity.id} className={`flex items-center gap-3 p-3 rounded-lg bg-gradient-to-r ${getActivityGradient(activity.icon)} dark:from-${activity.icon === 'zap' ? 'purple' : activity.icon === 'users' ? 'cyan' : 'green'}-900/10 dark:to-${activity.icon === 'zap' ? 'pink' : activity.icon === 'users' ? 'blue' : 'emerald'}-900/10`}>
+                        <div className={`w-8 h-8 bg-gradient-to-r ${activity.gradient} rounded-full flex items-center justify-center`}>
+                          <IconComponent className="w-4 h-4 text-white" />
+                        </div>
+                        <div>
+                          <p className="font-medium text-sm">{activity.title}</p>
+                          <p className="text-xs text-muted-foreground">{activity.description}</p>
+                        </div>
+                      </div>
+                    );
+                  })
+                ) : (
+                  <div className="text-center py-8">
+                    <p className="text-muted-foreground">No recent activity yet.</p>
+                    <p className="text-sm text-muted-foreground mt-1">Start exploring to see your activity here!</p>
+                  </div>
+                )}
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Quick Tips */}
+          <Card className="border-0 bg-white/50 dark:bg-gray-800/20 backdrop-blur-sm">
+            <CardContent className="p-6">
+              <h3 className="text-xl font-semibold mb-4 flex items-center gap-2">
+                <div className="w-2 h-5 bg-gradient-to-b from-cyan-500 to-blue-500 rounded-full" />
+                Tips for Success
+              </h3>
+              <div className="space-y-4">
+                <div className="p-4 rounded-lg bg-gradient-to-r from-purple-50 to-pink-50 dark:from-purple-900/10 dark:to-pink-900/10">
+                  <div className="flex items-start gap-3">
+                    <div className="w-6 h-6 bg-gradient-to-r from-purple-500 to-pink-500 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
+                      <Sparkles className="w-3 h-3 text-white" />
+                    </div>
+                    <div>
+                      <p className="font-medium text-sm">Upload audio samples</p>
+                      <p className="text-xs text-muted-foreground mt-1">Profiles with samples get 3x more matches</p>
+                    </div>
+                  </div>
+                </div>
+                <div className="p-4 rounded-lg bg-gradient-to-r from-cyan-50 to-blue-50 dark:from-cyan-900/10 dark:to-blue-900/10">
+                  <div className="flex items-start gap-3">
+                    <div className="w-6 h-6 bg-gradient-to-r from-cyan-500 to-blue-500 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
+                      <Award className="w-3 h-3 text-white" />
+                    </div>
+                    <div>
+                      <p className="font-medium text-sm">Complete your profile</p>
+                      <p className="text-xs text-muted-foreground mt-1">Add instruments, genres, and experience level</p>
+                    </div>
+                  </div>
+                </div>
+                <div className="p-4 rounded-lg bg-gradient-to-r from-green-50 to-emerald-50 dark:from-green-900/10 dark:to-emerald-900/10">
+                  <div className="flex items-start gap-3">
+                    <div className="w-6 h-6 bg-gradient-to-r from-green-500 to-emerald-500 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
+                      <MessageCircle className="w-3 h-3 text-white" />
+                    </div>
+                    <div>
+                      <p className="font-medium text-sm">Be active in conversations</p>
+                      <p className="text-xs text-muted-foreground mt-1">Respond to messages within 24 hours</p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
         </div>
       </div>
     </div>
