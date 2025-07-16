@@ -48,6 +48,8 @@ export function MembersSettings({
   const [isInviteDialogOpen, setIsInviteDialogOpen] = useState(false);
   const [inviteEmail, setInviteEmail] = useState("");
   const [isInviting, setIsInviting] = useState(false);
+  const [memberToRemove, setMemberToRemove] = useState<string | null>(null);
+  const [isRemoveDialogOpen, setIsRemoveDialogOpen] = useState(false);
 
   const { user } = useUser();
 
@@ -62,8 +64,6 @@ export function MembersSettings({
     ) || [];
 
   const handleInviteMember = async () => {
-    console.log("TODO: Implement invite member");
-    return;
     if (!inviteEmail.trim()) return;
 
     setIsInviting(true);
@@ -90,10 +90,6 @@ export function MembersSettings({
   };
 
   const handleRemoveMember = async (memberId: string) => {
-    console.log("TODO: Implement remove member");
-    return;
-    if (!confirm("Are you sure you want to remove this member?")) return;
-
     try {
       const response = await fetch(
         `/api/groups/${group.id}/members/${memberId}`,
@@ -323,9 +319,10 @@ export function MembersSettings({
                                 </DropdownMenuItem>
                               )}
                               <DropdownMenuItem
-                                onClick={() =>
-                                  handleRemoveMember(member.userId)
-                                }
+                                onClick={() => {
+                                  setMemberToRemove(member.userId);
+                                  setIsRemoveDialogOpen(true);
+                                }}
                                 className="text-red-600"
                               >
                                 <Trash2 className="mr-2 h-4 w-4" />
@@ -352,6 +349,43 @@ export function MembersSettings({
           </AccordionContent>
         </AccordionItem>
       </Accordion>
+      {/* Remove Member Confirmation Dialog */}
+      <Dialog open={isRemoveDialogOpen} onOpenChange={setIsRemoveDialogOpen}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Remove Member</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <p>
+              Are you sure you want to remove this member? This action cannot be
+              undone.
+            </p>
+            <div className="flex justify-end gap-2">
+              <Button
+                variant="outline"
+                onClick={() => {
+                  setIsRemoveDialogOpen(false);
+                  setMemberToRemove(null);
+                }}
+              >
+                Cancel
+              </Button>
+              <Button
+                variant="destructive"
+                onClick={async () => {
+                  if (memberToRemove) {
+                    await handleRemoveMember(memberToRemove);
+                  }
+                  setIsRemoveDialogOpen(false);
+                  setMemberToRemove(null);
+                }}
+              >
+                Remove
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
