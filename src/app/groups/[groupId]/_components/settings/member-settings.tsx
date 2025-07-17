@@ -38,6 +38,7 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import { useUser } from "@clerk/nextjs";
+import { useRouter } from "next/navigation";
 
 export function MembersSettings({
   group,
@@ -51,6 +52,7 @@ export function MembersSettings({
   const [memberToRemove, setMemberToRemove] = useState<string | null>(null);
   const [isRemoveDialogOpen, setIsRemoveDialogOpen] = useState(false);
 
+  const router = useRouter();
   const { user } = useUser();
 
   // Filter members based on search term
@@ -128,7 +130,7 @@ export function MembersSettings({
 
       if (response.ok) {
         toast.success("Member removed successfully");
-        window.location.reload();
+        router.refresh();
       } else {
         throw new Error("Failed to remove member");
       }
@@ -154,7 +156,7 @@ export function MembersSettings({
 
       if (response.ok) {
         toast.success("Member role updated successfully");
-        window.location.reload();
+        router.refresh();
       } else {
         throw new Error("Failed to update member role");
       }
