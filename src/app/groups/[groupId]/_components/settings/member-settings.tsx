@@ -167,213 +167,244 @@ export function MembersSettings({
   };
 
   return (
-    <div className="h-full w-full overflow-y-auto">
-      <Accordion
-        type="single"
-        collapsible
-        defaultValue="stats"
-        className="w-full space-y-3 px-2 py-2"
-      >
-        {/* Member Stats */}
-        <AccordionItem value="stats" className="rounded-lg border">
-          <AccordionTrigger className="px-4 py-3 text-sm font-medium">
-            Member Stats
-          </AccordionTrigger>
-          <AccordionContent className="px-4 pb-4">
-            <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
-              <div className="text-center">
-                <div className="text-primary text-xl font-bold sm:text-2xl">
-                  {group.groupMembers?.length || 0}
-                </div>
-                <div className="text-muted-foreground text-xs sm:text-sm">
-                  Total Members
-                </div>
-              </div>
-              <div className="text-center">
-                <div className="text-xl font-bold text-blue-600 sm:text-2xl">
-                  {group.groupMembers?.filter((m) => m.role === "admin")
-                    .length || 0}
-                </div>
-                <div className="text-muted-foreground text-xs sm:text-sm">
-                  Admins
-                </div>
-              </div>
+    <div className="space-y-8">
+      {/* Member Stats */}
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+        <div className="rounded-xl border border-slate-200 bg-slate-50 p-6 dark:border-slate-700 dark:bg-slate-800/50">
+          <div className="flex items-center gap-3">
+            <div className="rounded-lg bg-blue-100 p-3 dark:bg-blue-900/30">
+              <Users className="h-6 w-6 text-blue-600 dark:text-blue-400" />
             </div>
-          </AccordionContent>
-        </AccordionItem>
+            <div>
+              <p className="text-3xl font-bold text-slate-900 dark:text-white">
+                {group.groupMembers?.length || 0}
+              </p>
+              <p className="text-sm text-slate-600 dark:text-slate-400">
+                Total Members
+              </p>
+            </div>
+          </div>
+        </div>
 
-        {/* Invite Section */}
-        <AccordionItem value="invite" className="rounded-lg border">
-          <AccordionTrigger className="px-4 py-3 text-sm font-medium">
-            Invite Members
-          </AccordionTrigger>
-          <AccordionContent className="px-4 pb-4">
-            <div className="flex flex-col gap-2 sm:flex-row">
-              <Dialog
-                open={isInviteDialogOpen}
-                onOpenChange={setIsInviteDialogOpen}
-              >
-                <DialogTrigger asChild>
-                  <Button className="w-full sm:w-auto">
-                    <Mail className="mr-2 h-4 w-4" />
-                    Invite by Email
-                  </Button>
-                </DialogTrigger>
-                <DialogContent className="sm:max-w-md">
-                  <DialogHeader>
-                    <DialogTitle>Invite Member</DialogTitle>
-                  </DialogHeader>
-                  <div className="space-y-4">
-                    <div>
-                      <Label htmlFor="inviteEmail">Email Address</Label>
-                      <Input
-                        id="inviteEmail"
-                        type="email"
-                        placeholder="Enter email address"
-                        value={inviteEmail}
-                        onChange={(e) => setInviteEmail(e.target.value)}
-                      />
-                    </div>
-                    <Button
-                      onClick={handleInviteMember}
-                      disabled={isInviting || !inviteEmail.trim()}
-                      className="w-full"
-                    >
-                      {isInviting ? "Sending..." : "Send Invitation"}
-                    </Button>
-                  </div>
-                </DialogContent>
-              </Dialog>
+        <div className="rounded-xl border border-slate-200 bg-slate-50 p-6 dark:border-slate-700 dark:bg-slate-800/50">
+          <div className="flex items-center gap-3">
+            <div className="rounded-lg bg-amber-100 p-3 dark:bg-amber-900/30">
+              <Crown className="h-6 w-6 text-amber-600 dark:text-amber-400" />
+            </div>
+            <div>
+              <p className="text-3xl font-bold text-slate-900 dark:text-white">
+                {group.groupMembers?.filter((m) => m.role === "admin").length ||
+                  0}
+              </p>
+              <p className="text-sm text-slate-600 dark:text-slate-400">
+                Admins
+              </p>
+            </div>
+          </div>
+        </div>
+      </div>
 
-              <Button
-                variant="outline"
-                onClick={handleCreateBlankInvite}
-                disabled={isInviting}
-                className="w-full sm:w-auto"
-              >
-                <Copy className="mr-2 h-4 w-4" />
-                {isInviting ? "Creating..." : "Create invite link"}
+      {/* Invite Section */}
+      <div className="rounded-xl border border-slate-200 bg-slate-50 p-6 dark:border-slate-700 dark:bg-slate-800/50">
+        <div className="mb-6 flex items-center gap-3">
+          <div className="rounded-lg bg-green-100 p-2 dark:bg-green-900/30">
+            <Mail className="h-5 w-5 text-green-600 dark:text-green-400" />
+          </div>
+          <div>
+            <h3 className="font-semibold text-slate-900 dark:text-white">
+              Invite Members
+            </h3>
+            <p className="text-sm text-slate-600 dark:text-slate-400">
+              Add new members to your group
+            </p>
+          </div>
+        </div>
+
+        <div className="flex flex-col justify-around gap-3 sm:flex-row">
+          <Dialog
+            open={isInviteDialogOpen}
+            onOpenChange={setIsInviteDialogOpen}
+          >
+            <DialogTrigger asChild>
+              <Button className="w-full bg-green-600 hover:bg-green-700 sm:w-auto">
+                <Mail className="mr-2 h-4 w-4" />
+                Invite by Email
               </Button>
-            </div>
-          </AccordionContent>
-        </AccordionItem>
-
-        {/* Member List */}
-        <AccordionItem value="members" className="rounded-lg border">
-          <AccordionTrigger className="px-4 py-3 text-sm font-medium">
-            Members
-          </AccordionTrigger>
-          <AccordionContent className="px-4 pb-4">
-            <div className="relative py-2">
-              <Search className="text-muted-foreground absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2" />
-              <Input
-                placeholder="Search members..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="pl-10 text-sm"
-              />
-            </div>
-            <div className="max-h-[250px] overflow-y-auto pr-2 md:h-[300px]">
-              <div className="space-y-2">
-                {filteredMembers.length > 0 ? (
-                  filteredMembers.map((member) => {
-                    const isSelf = member.user.clerkId === user?.id;
-                    return (
-                      <div
-                        key={member.id}
-                        className="flex items-center justify-between rounded-lg border p-3"
-                      >
-                        <div className="flex min-w-0 flex-1 items-center gap-3">
-                          <Avatar className="h-8 w-8 flex-shrink-0 sm:h-10 sm:w-10">
-                            <AvatarImage
-                              src={member.user.profileImageUrl ?? ""}
-                            />
-                            <AvatarFallback className="text-xs">
-                              {member.user.displayName?.charAt(0) || "U"}
-                            </AvatarFallback>
-                          </Avatar>
-
-                          <div className="min-w-0 flex-1">
-                            <div className="flex items-center gap-2">
-                              <p className="truncate text-sm font-medium">
-                                {member.user.displayName || "Unknown User"}
-                              </p>
-                              {member.role === "admin" && (
-                                <Badge variant="secondary" className="text-xs">
-                                  <Crown className="mr-1 h-3 w-3" />
-                                  Admin
-                                </Badge>
-                              )}
-                            </div>
-                            <p className="text-muted-foreground truncate text-xs">
-                              @{member.user.username}
-                            </p>
-                          </div>
-                        </div>
-
-                        {!isSelf && (
-                          <DropdownMenu>
-                            <DropdownMenuTrigger asChild>
-                              <Button
-                                variant="ghost"
-                                size="icon"
-                                className="h-8 w-8 flex-shrink-0"
-                              >
-                                <MoreVertical className="h-4 w-4" />
-                              </Button>
-                            </DropdownMenuTrigger>
-                            <DropdownMenuContent align="end">
-                              {member.role !== "admin" && (
-                                <DropdownMenuItem
-                                  onClick={() =>
-                                    handleChangeRole(member.userId, "admin")
-                                  }
-                                >
-                                  <Crown className="mr-2 h-4 w-4" />
-                                  Make Admin
-                                </DropdownMenuItem>
-                              )}
-                              {member.role === "admin" && (
-                                <DropdownMenuItem
-                                  onClick={() =>
-                                    handleChangeRole(member.userId, "member")
-                                  }
-                                >
-                                  <User className="mr-2 h-4 w-4" />
-                                  Remove Admin
-                                </DropdownMenuItem>
-                              )}
-                              <DropdownMenuItem
-                                onClick={() => {
-                                  setMemberToRemove(member.userId);
-                                  setIsRemoveDialogOpen(true);
-                                }}
-                                className="text-red-600"
-                              >
-                                <Trash2 className="mr-2 h-4 w-4" />
-                                Remove Member
-                              </DropdownMenuItem>
-                            </DropdownMenuContent>
-                          </DropdownMenu>
-                        )}
-                      </div>
-                    );
-                  })
-                ) : (
-                  <div className="py-6 text-center">
-                    <Users className="text-muted-foreground mx-auto h-8 w-8 sm:h-12 sm:w-12" />
-                    <p className="text-muted-foreground mt-2 text-xs sm:text-sm">
-                      {searchTerm
-                        ? "No members found matching your search."
-                        : "No members yet."}
-                    </p>
-                  </div>
-                )}
+            </DialogTrigger>
+            <DialogContent className="sm:max-w-md">
+              <DialogHeader>
+                <DialogTitle>Invite Member</DialogTitle>
+              </DialogHeader>
+              <div className="space-y-4">
+                <div>
+                  <Label htmlFor="inviteEmail">Email Address</Label>
+                  <Input
+                    id="inviteEmail"
+                    type="email"
+                    placeholder="Enter email address"
+                    value={inviteEmail}
+                    onChange={(e) => setInviteEmail(e.target.value)}
+                  />
+                </div>
+                <Button
+                  onClick={handleInviteMember}
+                  disabled={isInviting || !inviteEmail.trim()}
+                  className="w-full"
+                >
+                  {isInviting ? "Sending..." : "Send Invitation"}
+                </Button>
               </div>
-            </div>
-          </AccordionContent>
-        </AccordionItem>
-      </Accordion>
+            </DialogContent>
+          </Dialog>
+
+          <Button
+            variant="outline"
+            onClick={handleCreateBlankInvite}
+            disabled={isInviting}
+            className="w-full sm:w-auto"
+          >
+            <Copy className="mr-2 h-4 w-4" />
+            {isInviting ? "Creating..." : "Create invite link"}
+          </Button>
+        </div>
+      </div>
+
+      {/* Member List */}
+      <div className="rounded-xl border border-slate-200 bg-slate-50 p-6 dark:border-slate-700 dark:bg-slate-800/50">
+        <div className="mb-6 flex items-center gap-3">
+          <div className="rounded-lg bg-purple-100 p-2 dark:bg-purple-900/30">
+            <Users className="h-5 w-5 text-purple-600 dark:text-purple-400" />
+          </div>
+          <div>
+            <h3 className="font-semibold text-slate-900 dark:text-white">
+              Members
+            </h3>
+            <p className="text-sm text-slate-600 dark:text-slate-400">
+              Manage group members and their roles
+            </p>
+          </div>
+        </div>
+
+        <div className="relative mb-6">
+          <Search className="absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 text-slate-400" />
+          <Input
+            placeholder="Search members..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            className="bg-white pl-10 dark:bg-slate-900"
+          />
+        </div>
+
+        <div className="max-h-[400px] overflow-y-auto">
+          <div className="space-y-3">
+            {filteredMembers.length > 0 ? (
+              filteredMembers.map((member) => {
+                const isSelf = member.user.clerkId === user?.id;
+                return (
+                  <div
+                    key={member.id}
+                    className="flex items-center justify-between rounded-lg border border-slate-200 bg-white p-4 transition-colors hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-900 dark:hover:bg-slate-800/50"
+                  >
+                    <div className="flex min-w-0 flex-1 items-center gap-4">
+                      <Avatar className="h-12 w-12 flex-shrink-0 ring-2 ring-slate-200 dark:ring-slate-700">
+                        <AvatarImage src={member.user.profileImageUrl ?? ""} />
+                        <AvatarFallback className="bg-gradient-to-r from-purple-500 to-blue-500 font-semibold text-white">
+                          {member.user.displayName?.charAt(0) || "U"}
+                        </AvatarFallback>
+                      </Avatar>
+
+                      <div className="min-w-0 flex-1">
+                        <div className="mb-1 flex items-center gap-2">
+                          <p className="truncate font-medium text-slate-900 dark:text-white">
+                            {member.user.displayName || "Unknown User"}
+                          </p>
+                          {member.role === "admin" && (
+                            <Badge
+                              variant="secondary"
+                              className="bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-300"
+                            >
+                              <Crown className="mr-1 h-3 w-3" />
+                              Admin
+                            </Badge>
+                          )}
+                          {isSelf && (
+                            <Badge variant="outline" className="text-xs">
+                              You
+                            </Badge>
+                          )}
+                        </div>
+                        <p className="truncate text-sm text-slate-600 dark:text-slate-400">
+                          @{member.user.username}
+                        </p>
+                        <p className="text-xs text-slate-500 dark:text-slate-500">
+                          Joined{" "}
+                          {new Date(member.joinedAt).toLocaleDateString()}
+                        </p>
+                      </div>
+                    </div>
+
+                    {!isSelf && (
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-8 w-8 flex-shrink-0"
+                          >
+                            <MoreVertical className="h-4 w-4" />
+                          </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end">
+                          {member.role !== "admin" && (
+                            <DropdownMenuItem
+                              onClick={() =>
+                                handleChangeRole(member.userId, "admin")
+                              }
+                            >
+                              <Crown className="mr-2 h-4 w-4" />
+                              Make Admin
+                            </DropdownMenuItem>
+                          )}
+                          {member.role === "admin" && (
+                            <DropdownMenuItem
+                              onClick={() =>
+                                handleChangeRole(member.userId, "member")
+                              }
+                            >
+                              <User className="mr-2 h-4 w-4" />
+                              Remove Admin
+                            </DropdownMenuItem>
+                          )}
+                          <DropdownMenuItem
+                            onClick={() => {
+                              setMemberToRemove(member.userId);
+                              setIsRemoveDialogOpen(true);
+                            }}
+                            className="text-red-600"
+                          >
+                            <Trash2 className="mr-2 h-4 w-4" />
+                            Remove Member
+                          </DropdownMenuItem>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
+                    )}
+                  </div>
+                );
+              })
+            ) : (
+              <div className="py-12 text-center">
+                <Users className="mx-auto mb-4 h-12 w-12 text-slate-400" />
+                <p className="text-slate-500 dark:text-slate-400">
+                  {searchTerm
+                    ? "No members found matching your search."
+                    : "No members yet."}
+                </p>
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
+
       {/* Remove Member Confirmation Dialog */}
       <Dialog open={isRemoveDialogOpen} onOpenChange={setIsRemoveDialogOpen}>
         <DialogContent className="sm:max-w-md">
@@ -381,7 +412,7 @@ export function MembersSettings({
             <DialogTitle>Remove Member</DialogTitle>
           </DialogHeader>
           <div className="space-y-4">
-            <p>
+            <p className="text-slate-600 dark:text-slate-400">
               Are you sure you want to remove this member? This action cannot be
               undone.
             </p>
