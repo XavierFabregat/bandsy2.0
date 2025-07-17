@@ -11,7 +11,7 @@ export default function GroupNotFound() {
           <div className="mx-auto mb-8 flex h-24 w-24 items-center justify-center rounded-full bg-gradient-to-r from-purple-500 to-blue-500">
             <Users className="h-12 w-12 text-white" />
           </div>
-          
+
           <Card className="border-slate-200 dark:border-slate-700">
             <CardHeader>
               <CardTitle className="flex items-center justify-center gap-2 text-2xl">
@@ -22,15 +22,16 @@ export default function GroupNotFound() {
             <CardContent className="space-y-6">
               <div className="space-y-2">
                 <p className="text-slate-600 dark:text-slate-400">
-                  We couldn't find the group you're looking for. This might be because:
+                  We couldn&apos;t find the group you&apos;re looking for. This
+                  might be because:
                 </p>
-                <ul className="text-left text-sm text-slate-500 dark:text-slate-500 space-y-1">
+                <ul className="space-y-1 text-left text-sm text-slate-500 dark:text-slate-500">
                   <li>• The group name was typed incorrectly</li>
                   <li>• The group has been deleted or made private</li>
-                  <li>• The group doesn't exist on Bandsy</li>
+                  <li>• The group doesn&apos;t exist on Bandsy</li>
                 </ul>
               </div>
-              
+
               <div className="flex flex-col gap-4 sm:flex-row sm:justify-center">
                 <Button asChild>
                   <Link href="/groups">
@@ -39,9 +40,7 @@ export default function GroupNotFound() {
                   </Link>
                 </Button>
                 <Button variant="outline" asChild>
-                  <Link href="/">
-                    Go Home
-                  </Link>
+                  <Link href="/">Go Home</Link>
                 </Button>
               </div>
             </CardContent>
