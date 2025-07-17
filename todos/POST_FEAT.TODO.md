@@ -30,13 +30,13 @@
   - [x] Update post endpoint
   - [x] Soft delete post endpoint
   - [x] Post pagination logic
-- [ ] **Interaction Endpoints**
-  - [ ] Like/unlike post endpoint
-  - [ ] Add/remove comment endpoint
-  - [ ] Like/unlike comment endpoint
-  - [ ] Nested comment support
-  - [ ] Share/repost functionality
-  - [ ] Bookmark/save functionality
+- [x] **Interaction Endpoints**
+  - [x] Like/unlike post endpoint
+  - [x] Add/remove comment endpoint
+  - [x] Like/unlike comment endpoint
+  - [x] Nested comment support
+  - [x] Share/repost functionality
+  - [x] Bookmark/save functionality
 - [x] **Permission System**
   - [x] User post permissions
   - [x] Group posting permissions (admin-only initially)
