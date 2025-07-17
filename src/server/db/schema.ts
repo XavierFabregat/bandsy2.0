@@ -7,6 +7,7 @@ import {
   pgTableCreator,
   pgEnum,
   uniqueIndex,
+  type AnyPgColumn,
 } from "drizzle-orm/pg-core";
 
 /**
@@ -66,6 +67,39 @@ export const notificationTypeEnum = pgEnum("notification_type", [
   "collaboration_invite", // New: collaboration invite received
   "invite_accepted", // New: collaboration invite accepted
   "group_member_removed", // New: group member removal notification
+  "post_liked", // New: post liked notification
+  "post_commented", // New: post commented notification
+  "post_shared", // New: post shared notification
+  "comment_liked", // New: comment liked notification
+  "comment_replied", // New: comment replied notification
+  "user_mentioned", // New: user mentioned in post/comment
+]);
+
+// Post-related enums
+export const postTypeEnum = pgEnum("post_type", [
+  "text",
+  "image",
+  "video",
+  "audio",
+  "link",
+  "media_sample",
+  "mixed", // posts with multiple types of content
+]);
+
+export const postAuthorTypeEnum = pgEnum("post_author_type", ["user", "group"]);
+
+export const postVisibilityEnum = pgEnum("post_visibility", [
+  "public",
+  "followers_only", // for future use
+  "group_members_only", // for future use
+  "private", // for future use
+]);
+
+export const postStatusEnum = pgEnum("post_status", [
+  "published",
+  "draft", // for future use
+  "archived",
+  "deleted", // soft delete
 ]);
 
 // Users table
@@ -682,6 +716,288 @@ export const groupInvites = createTable(
 );
 
 // ============================================================================
+// POSTS SYSTEM TABLES
+// ============================================================================
+
+// Posts table - supports both user and group posts
+export const posts = createTable(
+  "post",
+  (d) => ({
+    id: d.uuid().primaryKey().defaultRandom(),
+
+    // Author information - polymorphic relationship
+    authorType: postAuthorTypeEnum().notNull(),
+    authorId: d.uuid().notNull(), // references users.id or groups.id
+
+    // Content
+    content: d.text(), // main text content
+    type: postTypeEnum().notNull().default("text"),
+
+    // Media and samples
+    mediaSampleId: d
+      .uuid()
+      .references(() => mediaSamples.id, { onDelete: "set null" }),
+
+    // Metadata
+    visibility: postVisibilityEnum().notNull().default("public"),
+    status: postStatusEnum().notNull().default("published"),
+
+    // Character limits - regular: 500, premium: 2000
+    characterLimit: d.integer().default(500),
+
+    // Engagement counts (denormalized for performance)
+    likesCount: d.integer().default(0),
+    commentsCount: d.integer().default(0),
+    sharesCount: d.integer().default(0),
+
+    // Timestamps
+    createdAt: d
+      .timestamp({ withTimezone: true })
+      .default(sql`CURRENT_TIMESTAMP`)
+      .notNull(),
+    updatedAt: d.timestamp({ withTimezone: true }).$onUpdate(() => new Date()),
+    deletedAt: d.timestamp({ withTimezone: true }), // soft delete
+  }),
+  (table) => [
+    index("posts_author_idx").on(table.authorType, table.authorId),
+    index("posts_status_idx").on(table.status),
+    index("posts_created_at_idx").on(table.createdAt),
+    index("posts_visibility_idx").on(table.visibility),
+    index("posts_type_idx").on(table.type),
+    index("posts_deleted_at_idx").on(table.deletedAt),
+  ],
+);
+
+// Post media attachments (images, videos, files)
+export const postAttachments = createTable(
+  "post_attachment",
+  (d) => ({
+    id: d.uuid().primaryKey().defaultRandom(),
+    postId: d
+      .uuid()
+      .notNull()
+      .references(() => posts.id, { onDelete: "cascade" }),
+
+    // File information
+    url: d.varchar({ length: 500 }).notNull(),
+    filename: d.varchar({ length: 255 }),
+    mimeType: d.varchar({ length: 100 }),
+    fileSize: d.integer(), // in bytes
+
+    // Media specific data
+    type: d.varchar({ length: 50 }).notNull(), // "image", "video", "audio", "document"
+    width: d.integer(), // for images/videos
+    height: d.integer(), // for images/videos
+    duration: d.integer(), // for videos/audio in seconds
+
+    // Metadata
+    alt: d.text(), // alt text for accessibility
+    caption: d.text(),
+
+    createdAt: d
+      .timestamp({ withTimezone: true })
+      .default(sql`CURRENT_TIMESTAMP`)
+      .notNull(),
+  }),
+  (table) => [
+    index("post_attachments_post_idx").on(table.postId),
+    index("post_attachments_type_idx").on(table.type),
+  ],
+);
+
+// Post likes
+export const postLikes = createTable(
+  "post_like",
+  (d) => ({
+    id: d.uuid().primaryKey().defaultRandom(),
+    postId: d
+      .uuid()
+      .notNull()
+      .references(() => posts.id, { onDelete: "cascade" }),
+    userId: d
+      .uuid()
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+
+    createdAt: d
+      .timestamp({ withTimezone: true })
+      .default(sql`CURRENT_TIMESTAMP`)
+      .notNull(),
+  }),
+  (table) => [
+    index("post_likes_post_idx").on(table.postId),
+    index("post_likes_user_idx").on(table.userId),
+    // Unique constraint to prevent duplicate likes
+    uniqueIndex("post_likes_unique").on(table.postId, table.userId),
+  ],
+);
+
+// Comments on posts
+export const comments = createTable(
+  "comment",
+  (d) => ({
+    id: d.uuid().primaryKey().defaultRandom(),
+    postId: d
+      .uuid()
+      .notNull()
+      .references(() => posts.id, { onDelete: "cascade" }),
+    userId: d
+      .uuid()
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    // Content
+    content: d.text().notNull(),
+    // Nested comments support
+    parentCommentId: d
+      .uuid()
+      .references((): AnyPgColumn => comments.id, { onDelete: "cascade" }),
+    // Engagement
+    likesCount: d.integer().default(0),
+    repliesCount: d.integer().default(0),
+    // Timestamps
+    createdAt: d
+      .timestamp({ withTimezone: true })
+      .default(sql`CURRENT_TIMESTAMP`)
+      .notNull(),
+    updatedAt: d.timestamp({ withTimezone: true }).$onUpdate(() => new Date()),
+    deletedAt: d.timestamp({ withTimezone: true }), // soft delete
+  }),
+  (table) => [
+    index("comments_post_idx").on(table.postId),
+    index("comments_user_idx").on(table.userId),
+    index("comments_parent_idx").on(table.parentCommentId),
+    index("comments_created_at_idx").on(table.createdAt),
+    index("comments_deleted_at_idx").on(table.deletedAt),
+  ],
+);
+
+// Comment likes
+export const commentLikes = createTable(
+  "comment_like",
+  (d) => ({
+    id: d.uuid().primaryKey().defaultRandom(),
+    commentId: d
+      .uuid()
+      .notNull()
+      .references(() => comments.id, { onDelete: "cascade" }),
+    userId: d
+      .uuid()
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+
+    createdAt: d
+      .timestamp({ withTimezone: true })
+      .default(sql`CURRENT_TIMESTAMP`)
+      .notNull(),
+  }),
+  (table) => [
+    index("comment_likes_comment_idx").on(table.commentId),
+    index("comment_likes_user_idx").on(table.userId),
+    // Unique constraint to prevent duplicate likes
+    uniqueIndex("comment_likes_unique").on(table.commentId, table.userId),
+  ],
+);
+
+// Post shares/reposts
+export const postShares = createTable(
+  "post_share",
+  (d) => ({
+    id: d.uuid().primaryKey().defaultRandom(),
+    originalPostId: d
+      .uuid()
+      .notNull()
+      .references(() => posts.id, { onDelete: "cascade" }),
+    userId: d
+      .uuid()
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+
+    // Optional comment when sharing
+    comment: d.text(),
+
+    createdAt: d
+      .timestamp({ withTimezone: true })
+      .default(sql`CURRENT_TIMESTAMP`)
+      .notNull(),
+  }),
+  (table) => [
+    index("post_shares_original_idx").on(table.originalPostId),
+    index("post_shares_user_idx").on(table.userId),
+    index("post_shares_created_at_idx").on(table.createdAt),
+  ],
+);
+
+// Post bookmarks/saves
+export const postBookmarks = createTable(
+  "post_bookmark",
+  (d) => ({
+    id: d.uuid().primaryKey().defaultRandom(),
+    postId: d
+      .uuid()
+      .notNull()
+      .references(() => posts.id, { onDelete: "cascade" }),
+    userId: d
+      .uuid()
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+
+    // Optional collection/folder for organization (future feature)
+    collectionName: d.varchar({ length: 100 }),
+
+    createdAt: d
+      .timestamp({ withTimezone: true })
+      .default(sql`CURRENT_TIMESTAMP`)
+      .notNull(),
+  }),
+  (table) => [
+    index("post_bookmarks_post_idx").on(table.postId),
+    index("post_bookmarks_user_idx").on(table.userId),
+    index("post_bookmarks_collection_idx").on(table.collectionName),
+    // Unique constraint to prevent duplicate bookmarks
+    uniqueIndex("post_bookmarks_unique").on(table.postId, table.userId),
+  ],
+);
+
+// Mentions in posts and comments
+export const mentions = createTable(
+  "mention",
+  (d) => ({
+    id: d.uuid().primaryKey().defaultRandom(),
+
+    // What contains the mention
+    mentionableType: d.varchar({ length: 20 }).notNull(), // "post" or "comment"
+    mentionableId: d.uuid().notNull(), // references posts.id or comments.id
+
+    // Who is mentioned
+    mentionedType: d.varchar({ length: 20 }).notNull(), // "user" or "group"
+    mentionedId: d.uuid().notNull(), // references users.id or groups.id
+
+    // Who created the mention
+    mentionerUserId: d
+      .uuid()
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+
+    // Position in text for highlighting
+    startPosition: d.integer(),
+    endPosition: d.integer(),
+
+    createdAt: d
+      .timestamp({ withTimezone: true })
+      .default(sql`CURRENT_TIMESTAMP`)
+      .notNull(),
+  }),
+  (table) => [
+    index("mentions_mentionable_idx").on(
+      table.mentionableType,
+      table.mentionableId,
+    ),
+    index("mentions_mentioned_idx").on(table.mentionedType, table.mentionedId),
+    index("mentions_mentioner_idx").on(table.mentionerUserId),
+  ],
+);
+
+// ============================================================================
 // RELATIONS
 // ============================================================================
 
@@ -710,6 +1026,15 @@ export const usersRelations = relations(users, ({ one, many }) => ({
 
   // Notification relations
   notifications: many(notifications),
+
+  // Posts system relations
+  // Note: posts relation is polymorphic, handled in queries
+  comments: many(comments),
+  postLikes: many(postLikes),
+  commentLikes: many(commentLikes),
+  postShares: many(postShares),
+  postBookmarks: many(postBookmarks),
+  mentions: many(mentions, { relationName: "mentioner" }),
 }));
 
 // Instruments relations
@@ -975,6 +1300,115 @@ export const groupInvitesRelations = relations(groupInvites, ({ one }) => ({
   }),
   inviter: one(users, {
     fields: [groupInvites.inviterId],
+    references: [users.id],
+  }),
+}));
+
+// ============================================================================
+// POSTS SYSTEM RELATIONS
+// ============================================================================
+
+// Posts relations
+export const postsRelations = relations(posts, ({ one, many }) => ({
+  // Note: authorType/authorId is polymorphic, handled in queries
+  mediaSample: one(mediaSamples, {
+    fields: [posts.mediaSampleId],
+    references: [mediaSamples.id],
+  }),
+
+  // Post interactions
+  postLikes: many(postLikes),
+  comments: many(comments),
+  postShares: many(postShares),
+  postBookmarks: many(postBookmarks),
+  postAttachments: many(postAttachments),
+  mentions: many(mentions, { relationName: "postMentions" }),
+}));
+
+// Post attachments relations
+export const postAttachmentsRelations = relations(
+  postAttachments,
+  ({ one }) => ({
+    post: one(posts, {
+      fields: [postAttachments.postId],
+      references: [posts.id],
+    }),
+  }),
+);
+
+// Post likes relations
+export const postLikesRelations = relations(postLikes, ({ one }) => ({
+  post: one(posts, {
+    fields: [postLikes.postId],
+    references: [posts.id],
+  }),
+  user: one(users, {
+    fields: [postLikes.userId],
+    references: [users.id],
+  }),
+}));
+
+// Comments relations
+export const commentsRelations = relations(comments, ({ one, many }) => ({
+  post: one(posts, {
+    fields: [comments.postId],
+    references: [posts.id],
+  }),
+  user: one(users, {
+    fields: [comments.userId],
+    references: [users.id],
+  }),
+  parentComment: one(comments, {
+    fields: [comments.parentCommentId],
+    references: [comments.id],
+    relationName: "replies",
+  }),
+  replies: many(comments, { relationName: "replies" }),
+  commentLikes: many(commentLikes),
+  mentions: many(mentions, { relationName: "commentMentions" }),
+}));
+
+// Comment likes relations
+export const commentLikesRelations = relations(commentLikes, ({ one }) => ({
+  comment: one(comments, {
+    fields: [commentLikes.commentId],
+    references: [comments.id],
+  }),
+  user: one(users, {
+    fields: [commentLikes.userId],
+    references: [users.id],
+  }),
+}));
+
+// Post shares relations
+export const postSharesRelations = relations(postShares, ({ one }) => ({
+  originalPost: one(posts, {
+    fields: [postShares.originalPostId],
+    references: [posts.id],
+  }),
+  user: one(users, {
+    fields: [postShares.userId],
+    references: [users.id],
+  }),
+}));
+
+// Post bookmarks relations
+export const postBookmarksRelations = relations(postBookmarks, ({ one }) => ({
+  post: one(posts, {
+    fields: [postBookmarks.postId],
+    references: [posts.id],
+  }),
+  user: one(users, {
+    fields: [postBookmarks.userId],
+    references: [users.id],
+  }),
+}));
+
+// Mentions relations
+export const mentionsRelations = relations(mentions, ({ one }) => ({
+  // Note: mentionableType/mentionableId and mentionedType/mentionedId are polymorphic
+  mentioner: one(users, {
+    fields: [mentions.mentionerUserId],
     references: [users.id],
   }),
 }));
