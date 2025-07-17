@@ -18,7 +18,7 @@ export async function createGroupInvite(groupId: string, userId?: string) {
     throw new Error("Inviter not found");
   }
 
-  const verificationCode = randomBytes(8).toString('hex');
+  const verificationCode = randomBytes(8).toString("hex");
   const verificationCodeExpiresAt = new Date(
     Date.now() + 1000 * 60 * 60 * 24 * 7,
   );

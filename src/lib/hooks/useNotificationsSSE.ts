@@ -166,7 +166,10 @@ export function useNotificationSSE() {
                 });
 
                 // If user is currently on the group page, navigate away
-                if (pathname.startsWith("/groups/") && !pathname.endsWith("/groups")) {
+                if (
+                  pathname.startsWith("/groups/") &&
+                  !pathname.endsWith("/groups")
+                ) {
                   console.log("SSE: User on group page, navigating to /groups");
                   router.push("/groups");
                 }

@@ -35,7 +35,7 @@ export default async function GroupPage({
   params: Promise<{ groupId: string }>;
 }) {
   const { groupId } = await params;
-  
+
   try {
     const group = await getGroupById(groupId);
     console.log(group);
@@ -54,10 +54,10 @@ export default async function GroupPage({
         </div>
 
         {/* Tabs Container - Fixed TabsList + Scrollable Content */}
-        <div className="flex-1 overflow-hidden">
+        <div className="flex-1 overflow-hidden px-20">
           <Tabs defaultValue="overview" className="flex h-full flex-col">
             {/* Fixed TabsList */}
-            <div className="flex-shrink-0 bg-white px-4 py-4 shadow-sm dark:bg-slate-900">
+            <div className="flex-shrink-0 bg-transparent px-4 py-4 shadow-sm">
               <TabsList className="grid w-full grid-cols-4">
                 <TabsTrigger value="overview">Overview</TabsTrigger>
                 <TabsTrigger value="members">Members</TabsTrigger>
@@ -67,7 +67,7 @@ export default async function GroupPage({
             </div>
 
             {/* Scrollable Content Area */}
-            <div className="flex-1 overflow-hidden">
+            <div className="flex-1 overflow-hidden px-20">
               {/* Overview Tab */}
               <TabsContent
                 value="overview"
