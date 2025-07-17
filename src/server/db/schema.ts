@@ -205,19 +205,29 @@ export const mediaSamples = createTable(
 );
 
 // Groups/Bands
-export const groups = createTable("group", (d) => ({
-  id: d.uuid().primaryKey().defaultRandom(),
-  name: d.varchar({ length: 200 }).notNull(),
-  description: d.text(),
-  imageUrl: d.varchar({ length: 500 }),
-  isActive: d.boolean().default(true),
-  maxMembers: d.integer().default(10),
-  createdAt: d
-    .timestamp({ withTimezone: true })
-    .default(sql`CURRENT_TIMESTAMP`)
-    .notNull(),
-  updatedAt: d.timestamp({ withTimezone: true }).$onUpdate(() => new Date()),
-}));
+export const groups = createTable(
+  "group",
+  (d) => ({
+    id: d.uuid().primaryKey().defaultRandom(),
+    name: d.varchar({ length: 200 }).notNull(),
+    handle: d.varchar({ length: 200 }).notNull().unique(),
+    description: d.text(),
+    imageUrl: d.varchar({ length: 500 }),
+    isActive: d.boolean().default(true),
+    maxMembers: d.integer().default(10),
+    createdAt: d
+      .timestamp({ withTimezone: true })
+      .default(sql`CURRENT_TIMESTAMP`)
+      .notNull(),
+    updatedAt: d.timestamp({ withTimezone: true }).$onUpdate(() => new Date()),
+  }),
+  (t) => [
+    index("groups_handle_idx").on(t.handle),
+    index("groups_name_idx").on(t.name),
+    index("groups_is_active_idx").on(t.isActive),
+    index("groups_created_at_idx").on(t.createdAt),
+  ],
+);
 
 // Group members
 export const groupMembers = createTable(

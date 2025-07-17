@@ -21,6 +21,7 @@ export function GeneralSettings({
   const [groupDescription, setGroupDescription] = useState(
     group.description ?? "",
   );
+  const [groupHandle, setGroupHandle] = useState(group.handle);
   const [isEditing, setIsEditing] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [hasChanges, setHasChanges] = useState(false);
@@ -41,6 +42,11 @@ export function GeneralSettings({
     );
   };
 
+  const handleHandleChange = (value: string) => {
+    setGroupHandle(value);
+    setHasChanges(value !== group.handle);
+  };
+
   const handleSave = async () => {
     if (!hasChanges) return;
     setIsLoading(true);
@@ -51,6 +57,7 @@ export function GeneralSettings({
         body: JSON.stringify({
           name: groupName,
           description: groupDescription,
+          handle: groupHandle,
         }),
       });
       if (response.ok) {
@@ -220,6 +227,22 @@ export function GeneralSettings({
             </div>
           </div>
 
+          <div className="space-y-2">
+            <Label
+              htmlFor="groupHandle"
+              className="text-sm font-medium text-slate-700 dark:text-slate-300"
+            >
+              Group Handle
+            </Label>
+            <Input
+              id="groupHandle"
+              value={groupHandle}
+              onChange={(e) => handleHandleChange(e.target.value)}
+              placeholder="Enter group handle"
+              className="flex-1"
+              disabled={!isEditing}
+            />
+          </div>
           <div className="space-y-2">
             <Label
               htmlFor="groupDescription"
