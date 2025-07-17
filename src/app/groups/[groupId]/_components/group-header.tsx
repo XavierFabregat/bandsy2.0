@@ -94,6 +94,12 @@ export async function GroupHeader({
               <h1 className="mb-2 text-3xl font-bold text-white sm:text-4xl">
                 {group.name}
               </h1>
+              <Link
+                href={`/g/${group.handle}`}
+                className="mb-4 text-lg text-white/80"
+              >
+                <p className="mb-4 text-lg text-white/80">@{group.handle}</p>
+              </Link>
               <p className="mb-4 text-lg text-white/80">
                 {group.description ?? "A collaborative music group"}
               </p>

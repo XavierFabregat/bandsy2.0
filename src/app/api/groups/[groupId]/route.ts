@@ -4,6 +4,7 @@ import { db } from "@/server/db";
 import { groups } from "@/server/db/schema";
 import { eq } from "drizzle-orm";
 import { UTApi } from "uploadthing/server";
+import { getGroupByHandle } from "../../../../server/groups/queries";
 
 const ut = new UTApi();
 
@@ -22,8 +23,9 @@ export async function PATCH(
       name?: string;
       imageUrl?: string;
       description?: string;
+      handle?: string;
     };
-    const { name, imageUrl, description } = body;
+    const { name, imageUrl, description, handle } = body;
 
     // if there is a new image, we want to check
     // if the group already has an image, if so
@@ -44,6 +46,9 @@ export async function PATCH(
       }
     }
 
+    // since handle update can fail for the unique constraint,
+    // we need to check if the handle is already taken
+
     // Update group settings
     await db
       .update(groups)
@@ -51,6 +56,21 @@ export async function PATCH(
         ...(name && { name }),
         ...(imageUrl && { imageUrl }),
         ...(description && { description }),
+      })
+      .where(eq(groups.id, groupId));
+
+    if (handle) {
+      const existingGroup = await getGroupByHandle(handle);
+      if (existingGroup) {
+        return new Response("Handle already taken", { status: 400 });
+      }
+    }
+
+    // here handle is unique, so we can update it
+    await db
+      .update(groups)
+      .set({
+        ...(handle && { handle }),
       })
       .where(eq(groups.id, groupId));
 
