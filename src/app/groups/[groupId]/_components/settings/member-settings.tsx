@@ -164,29 +164,6 @@ export function MembersSettings({
     }
   };
 
-  const copyInviteLink = async () => {
-    try {
-      // generate an invite
-      const invite = await fetch(`/api/groups/${group.id}/invite`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ createBlankInvite: true }),
-      });
-
-      if (!invite.ok) {
-        throw new Error("Failed to create invite");
-      }
-
-      const { inviteLink } = (await invite.json()) as { inviteLink: string };
-
-      await navigator.clipboard.writeText(inviteLink);
-      toast.success("Invite link copied to clipboard, valid for 1 week.");
-    } catch (error) {
-      console.error("Error creating invite link:", error);
-      toast.error("Failed to create invite link");
-    }
-  };
-
   return (
     <div className="h-full w-full overflow-y-auto">
       <Accordion
@@ -273,7 +250,7 @@ export function MembersSettings({
                 className="w-full sm:w-auto"
               >
                 <Copy className="mr-2 h-4 w-4" />
-                {isInviting ? "Creating..." : "Create Blank Invite"}
+                {isInviting ? "Creating..." : "Create invite link"}
               </Button>
             </div>
           </AccordionContent>
