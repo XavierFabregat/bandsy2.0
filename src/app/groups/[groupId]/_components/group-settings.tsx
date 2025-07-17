@@ -45,24 +45,24 @@ export default function GroupSettings({
             </DialogDescription>
 
             {/* Tab Navigation */}
-            <TabsList className="h-fulldark:border-slate-700 w-full flex-shrink-0 justify-start border-slate-200 bg-slate-50 dark:bg-slate-900/50">
+            <TabsList className="h-fulldark:border-slate-700 w-full flex-shrink-0 justify-start border-slate-200 bg-slate-100 dark:bg-slate-800">
               <TabsTrigger
                 value="general"
-                className="flex items-center gap-2 px-4 py-2"
+                className="flex items-center gap-2 px-4 py-2 data-[state=active]:bg-gradient-to-r data-[state=active]:from-purple-500 data-[state=active]:via-blue-500 data-[state=active]:to-cyan-500 data-[state=active]:text-white"
               >
                 <Info className="h-4 w-4" />
                 General
               </TabsTrigger>
               <TabsTrigger
                 value="members"
-                className="flex items-center gap-2 px-4 py-2"
+                className="flex items-center gap-2 px-4 py-2 data-[state=active]:bg-gradient-to-r data-[state=active]:from-purple-500 data-[state=active]:via-blue-500 data-[state=active]:to-cyan-500 data-[state=active]:text-white"
               >
                 <Users className="h-4 w-4" />
                 Members
               </TabsTrigger>
               <TabsTrigger
                 value="chats"
-                className="flex items-center gap-2 px-4 py-2"
+                className="flex items-center gap-2 px-4 py-2 data-[state=active]:bg-gradient-to-r data-[state=active]:from-purple-500 data-[state=active]:via-blue-500 data-[state=active]:to-cyan-500 data-[state=active]:text-white"
               >
                 <MessageCircle className="h-4 w-4" />
                 Chats
