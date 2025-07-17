@@ -112,12 +112,12 @@
 - [ ] **Group creation**
   - [x] Create group creation form
   - [x] Add group name and description
-  - [ ] Set group image upload
-  - [ ] Configure member limits
-- [ ] **Group membership**
-  - [ ] Add member invitation system
-  - [ ] Implement role management (admin/member)
-  - [ ] Add member removal functionality
+  - [x] Set group image upload
+  - [ ] Configure member limits - move to premium features
+- [x] **Group membership**
+  - [x] Add member invitation system
+  - [x] Implement role management (admin/member)
+  - [x] Add member removal functionality
   - [x] Create group member list
 - [ ] **Group chat**
   - [x] Extend messaging for group conversations
