@@ -1,7 +1,7 @@
 import { db } from "@/server/db";
 import { groupInvites, groupMembers, groups, users } from "@/server/db/schema";
 import { auth } from "@clerk/nextjs/server";
-import { and, eq, inArray } from "drizzle-orm";
+import { and, eq, inArray, sql } from "drizzle-orm";
 import { getUserByClerkId } from "../queries";
 
 export async function getMyGroups() {
@@ -109,4 +109,48 @@ export async function getGroupInvitesByGroupId(groupId: string) {
   });
 
   return invites;
+}
+
+// Get group by name for public profile (no auth required)
+export async function getGroupByName(groupName: string) {
+  const group = await db.query.groups.findFirst({
+    where: sql`LOWER(${groups.name}) = LOWER(${groupName})`,
+    with: {
+      groupMembers: {
+        with: {
+          user: true,
+        },
+      },
+      conversations: {
+        with: {
+          participants: {
+            with: {
+              user: true,
+            },
+          },
+          messages: {
+            with: {
+              sender: true,
+            },
+          },
+        },
+      },
+    },
+  });
+
+  return group;
+}
+
+export async function getGroupByHandle(groupHandle: string) {
+  const group = await db.query.groups.findFirst({
+    where: eq(groups.handle, groupHandle),
+    with: {
+      groupMembers: {
+        with: {
+          user: true,
+        },
+      },
+    },
+  });
+  return group;
 }

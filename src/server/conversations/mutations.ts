@@ -110,6 +110,7 @@ export async function handleMatchOutcome(
     groupName?: string;
     existingGroupId?: string;
     inviteeUserId?: string; // For join_group scenario
+    handle?: string;
   },
 ): Promise<{ success: boolean; groupId?: string }> {
   const { userId } = await auth();
@@ -166,7 +167,12 @@ export async function handleMatchOutcome(
           .set({ status: "inactive", updatedAt: new Date() })
           .where(eq(conversations.matchId, matchId));
 
-        return await createGroup(tx, data?.groupName ?? "", otherUserId);
+        return await createGroup(
+          tx,
+          data?.groupName ?? "",
+          otherUserId,
+          data?.handle,
+        );
       });
     case "join_group":
       // set the match status to group_joined
@@ -198,6 +204,7 @@ export async function createGroup(
   tx: Transaction,
   groupName: string,
   otherUserId: string,
+  handle?: string,
 ) {
   const { userId } = await auth();
   if (!userId) throw new Error("Unauthorized");
@@ -213,6 +220,7 @@ export async function createGroup(
     .insert(groups)
     .values({
       name: groupName,
+      handle: handle ?? groupName.toLowerCase().replace(/\s+/g, "_"),
       description: `Collaboration group created from match`,
       isActive: true,
       maxMembers: 10,
