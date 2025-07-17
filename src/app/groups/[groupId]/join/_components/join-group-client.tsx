@@ -27,10 +27,11 @@ interface JoinGroupClientProps {
 }
 
 export function JoinGroupClient({ group, inviteCode }: JoinGroupClientProps) {
-  if (!group) return null;
   const [isLoading, setIsLoading] = useState(false);
   const [action, setAction] = useState<"accept" | "decline" | null>(null);
   const router = useRouter();
+
+  if (!group) return null;
 
   const handleAction = async (action: "accept" | "decline") => {
     setIsLoading(true);
@@ -47,7 +48,10 @@ export function JoinGroupClient({ group, inviteCode }: JoinGroupClientProps) {
       });
 
       if (response.ok) {
-        const result = await response.json();
+        const result = (await response.json()) as {
+          success: boolean;
+          message: string;
+        };
 
         if (action === "accept") {
           toast.success(
@@ -61,10 +65,13 @@ export function JoinGroupClient({ group, inviteCode }: JoinGroupClientProps) {
           router.push("/groups");
         }
       } else {
-        const error = await response.json();
+        const error = (await response.json()) as {
+          error: string;
+          message: string;
+        };
         console.error("API error response:", error);
         throw new Error(
-          error.error || error.message || "Failed to process invitation",
+          error.error ?? error.message ?? "Failed to process invitation",
         );
       }
     } catch (error) {
@@ -102,7 +109,7 @@ export function JoinGroupClient({ group, inviteCode }: JoinGroupClientProps) {
               Group Invitation
             </h1>
             <p className="text-slate-600 dark:text-slate-300">
-              You've been invited to join a music group
+              You&apos;ve been invited to join a music group
             </p>
           </div>
         </div>
@@ -233,7 +240,12 @@ export function JoinGroupClient({ group, inviteCode }: JoinGroupClientProps) {
                 <div className="flex items-center gap-2 text-sm text-slate-600 dark:text-slate-300">
                   <Calendar className="h-4 w-4" />
                   <span>
-                    Created {new Date(group.createdAt).toLocaleDateString()}
+                    Created{" "}
+                    {new Date(group.createdAt).toLocaleDateString("en-US", {
+                      year: "numeric",
+                      month: "long",
+                      day: "numeric",
+                    })}
                   </span>
                 </div>
                 <div className="flex items-center gap-2 text-sm text-slate-600 dark:text-slate-300">
@@ -270,8 +282,8 @@ export function JoinGroupClient({ group, inviteCode }: JoinGroupClientProps) {
           {/* Additional Info */}
           <div className="text-center text-sm text-slate-500">
             <p>
-              By joining this group, you'll be able to collaborate with other
-              musicians, share music samples, and participate in group
+              By joining this group, you&apos;ll be able to collaborate with
+              other musicians, share music samples, and participate in group
               conversations.
             </p>
           </div>
