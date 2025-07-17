@@ -74,6 +74,10 @@ export async function POST(request: NextRequest) {
 
 export async function GET(request: NextRequest) {
   try {
+    const { userId } = await auth();
+    if (!userId) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
     const { searchParams } = new URL(request.url);
     const authorType = searchParams.get("authorType") as PostAuthorType | null;
     const authorId = searchParams.get("authorId");
