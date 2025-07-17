@@ -20,7 +20,6 @@ import {
   getDashboardStats,
   getRecentActivity,
   getUserDisplayName,
-  type RecentActivity as RecentActivityType,
 } from "@/lib/utils/dashboard";
 
 // Helper function for activity gradients

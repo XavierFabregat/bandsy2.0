@@ -1,6 +1,13 @@
 import Link from "next/link";
 import type { getGroupById } from "@/server/groups/queries";
-import { ArrowLeft, Users, Calendar, Crown, Shield, MessageCircle } from "lucide-react";
+import {
+  ArrowLeft,
+  Users,
+  Calendar,
+  Crown,
+  Shield,
+  MessageCircle,
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
@@ -23,7 +30,9 @@ export async function GroupHeader({
   );
 
   const memberCount = group.groupMembers.length;
-  const adminCount = group.groupMembers.filter(member => member.role === 'admin').length;
+  const adminCount = group.groupMembers.filter(
+    (member) => member.role === "admin",
+  ).length;
 
   return (
     <div className="relative">
@@ -31,7 +40,7 @@ export async function GroupHeader({
       <div className="absolute inset-0 bg-gradient-to-br from-purple-600 via-blue-600 to-cyan-600">
         <div className="absolute inset-0 bg-black/20"></div>
         {group.imageUrl && (
-          <div 
+          <div
             className="absolute inset-0 bg-cover bg-center opacity-20"
             style={{ backgroundImage: `url(${group.imageUrl})` }}
           />
@@ -41,21 +50,24 @@ export async function GroupHeader({
       {/* Content */}
       <div className="relative z-10 px-4 py-8 sm:px-6 lg:px-8">
         {/* Top Navigation */}
-        <div className="flex items-center justify-between mb-6">
+        <div className="mb-6 flex items-center justify-between">
           <Link href="/groups">
-            <Button 
-              variant="ghost" 
-              size="icon" 
+            <Button
+              variant="ghost"
+              size="icon"
               className="h-10 w-10 text-white hover:bg-white/20 hover:text-white"
             >
               <ArrowLeft className="h-5 w-5" />
             </Button>
           </Link>
-          
+
           {isAdmin && (
             <div className="flex items-center gap-2">
-              <Badge variant="secondary" className="bg-white/20 text-white border-white/20">
-                <Shield className="h-3 w-3 mr-1" />
+              <Badge
+                variant="secondary"
+                className="border-white/20 bg-white/20 text-white"
+              >
+                <Shield className="mr-1 h-3 w-3" />
                 Admin
               </Badge>
               <GroupSettings group={group} />
@@ -64,7 +76,7 @@ export async function GroupHeader({
         </div>
 
         {/* Main Header Content */}
-        <div className="flex flex-col sm:flex-row sm:items-start gap-6">
+        <div className="flex flex-col gap-6 sm:flex-row sm:items-start">
           {/* Group Avatar and Info */}
           <div className="flex items-center gap-4">
             <Avatar className="h-20 w-20 border-4 border-white/20 shadow-2xl">
@@ -73,19 +85,19 @@ export async function GroupHeader({
                 alt={group.name}
                 className="object-cover"
               />
-              <AvatarFallback className="bg-white/20 text-white text-2xl font-bold">
+              <AvatarFallback className="bg-white/20 text-2xl font-bold text-white">
                 {group.name.charAt(0).toUpperCase()}
               </AvatarFallback>
             </Avatar>
-            
+
             <div className="flex-1">
-              <h1 className="text-3xl sm:text-4xl font-bold text-white mb-2">
+              <h1 className="mb-2 text-3xl font-bold text-white sm:text-4xl">
                 {group.name}
               </h1>
-              <p className="text-white/80 text-lg mb-4">
-                {group.description || "A collaborative music group"}
+              <p className="mb-4 text-lg text-white/80">
+                {group.description ?? "A collaborative music group"}
               </p>
-              
+
               {/* Stats */}
               <div className="flex items-center gap-6 text-white/90">
                 <div className="flex items-center gap-2">
@@ -110,25 +122,28 @@ export async function GroupHeader({
         </div>
 
         {/* Quick Actions */}
-        <div className="flex items-center gap-3 mt-8 pt-6 border-t border-white/20">
-          <Button 
-            variant="secondary" 
-            size="sm" 
-            className="bg-white/20 text-white hover:bg-white/30 border-white/20"
+        <div className="mt-8 flex items-center gap-3 border-t border-white/20 pt-6">
+          <Button
+            variant="secondary"
+            size="sm"
+            className="border-white/20 bg-white/20 text-white hover:bg-white/30"
           >
-            <MessageCircle className="h-4 w-4 mr-2" />
+            <MessageCircle className="mr-2 h-4 w-4" />
             Chat
           </Button>
-          <Button 
-            variant="secondary" 
-            size="sm" 
-            className="bg-white/20 text-white hover:bg-white/30 border-white/20"
+          <Button
+            variant="secondary"
+            size="sm"
+            className="border-white/20 bg-white/20 text-white hover:bg-white/30"
           >
-            <Calendar className="h-4 w-4 mr-2" />
+            <Calendar className="mr-2 h-4 w-4" />
             Events
           </Button>
           <div className="flex-1"></div>
-          <Badge variant="secondary" className="bg-green-500/20 text-green-100 border-green-500/20">
+          <Badge
+            variant="secondary"
+            className="border-green-500/20 bg-green-500/20 text-green-100"
+          >
             Active
           </Badge>
         </div>

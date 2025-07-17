@@ -17,6 +17,7 @@ import GroupChats from "./_components/group-chats";
 import { redirect } from "next/navigation";
 
 // Instrument icon mapping
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 const instrumentIcons: Record<
   string,
   ForwardRefExoticComponent<
@@ -52,28 +53,28 @@ export default async function GroupPage({
         <div className="container mx-auto px-4 py-8 sm:px-6 lg:px-8">
           <Tabs defaultValue="overview" className="w-full">
             {/* Tabs Navigation */}
-            <div className="flex justify-center mb-8">
-              <TabsList className="grid w-full max-w-md grid-cols-4 bg-white/80 dark:bg-slate-800/80 backdrop-blur-sm border border-slate-200 dark:border-slate-700 shadow-sm">
-                <TabsTrigger 
-                  value="overview" 
+            <div className="mb-8 flex justify-center">
+              <TabsList className="grid w-full max-w-md grid-cols-4 border border-slate-200 bg-white/80 shadow-sm backdrop-blur-sm dark:border-slate-700 dark:bg-slate-800/80">
+                <TabsTrigger
+                  value="overview"
                   className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-purple-500 data-[state=active]:to-blue-500 data-[state=active]:text-white"
                 >
                   Overview
                 </TabsTrigger>
-                <TabsTrigger 
-                  value="members" 
+                <TabsTrigger
+                  value="members"
                   className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-purple-500 data-[state=active]:to-blue-500 data-[state=active]:text-white"
                 >
                   Members
                 </TabsTrigger>
-                <TabsTrigger 
-                  value="chats" 
+                <TabsTrigger
+                  value="chats"
                   className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-purple-500 data-[state=active]:to-blue-500 data-[state=active]:text-white"
                 >
                   Chats
                 </TabsTrigger>
-                <TabsTrigger 
-                  value="events" 
+                <TabsTrigger
+                  value="events"
                   className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-purple-500 data-[state=active]:to-blue-500 data-[state=active]:text-white"
                 >
                   Events
@@ -82,10 +83,10 @@ export default async function GroupPage({
             </div>
 
             {/* Tab Content */}
-            <div className="max-w-6xl mx-auto">
+            <div className="mx-auto max-w-6xl">
               {/* Overview Tab */}
               <TabsContent value="overview" className="mt-0">
-                <div className="bg-white/80 dark:bg-slate-800/80 backdrop-blur-sm rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm overflow-hidden">
+                <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white/80 shadow-sm backdrop-blur-sm dark:border-slate-700 dark:bg-slate-800/80">
                   <div className="p-6 sm:p-8">
                     <GroupOverview group={group} />
                   </div>
@@ -94,7 +95,7 @@ export default async function GroupPage({
 
               {/* Members Tab */}
               <TabsContent value="members" className="mt-0">
-                <div className="bg-white/80 dark:bg-slate-800/80 backdrop-blur-sm rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm overflow-hidden">
+                <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white/80 shadow-sm backdrop-blur-sm dark:border-slate-700 dark:bg-slate-800/80">
                   <div className="p-6 sm:p-8">
                     <GroupMembers group={group} />
                   </div>
@@ -103,7 +104,7 @@ export default async function GroupPage({
 
               {/* Chat Tab */}
               <TabsContent value="chats" className="mt-0">
-                <div className="bg-white/80 dark:bg-slate-800/80 backdrop-blur-sm rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm overflow-hidden">
+                <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white/80 shadow-sm backdrop-blur-sm dark:border-slate-700 dark:bg-slate-800/80">
                   <div className="p-6 sm:p-8">
                     <GroupChats group={group} />
                   </div>
@@ -112,11 +113,11 @@ export default async function GroupPage({
 
               {/* Events Tab */}
               <TabsContent value="events" className="mt-0">
-                <div className="bg-white/80 dark:bg-slate-800/80 backdrop-blur-sm rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm overflow-hidden">
+                <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white/80 shadow-sm backdrop-blur-sm dark:border-slate-700 dark:bg-slate-800/80">
                   <div className="p-6 sm:p-8">
-                    <div className="text-center py-12">
-                      <Calendar className="h-12 w-12 text-slate-400 mx-auto mb-4" />
-                      <h3 className="text-lg font-semibold text-slate-900 dark:text-white mb-2">
+                    <div className="py-12 text-center">
+                      <Calendar className="mx-auto mb-4 h-12 w-12 text-slate-400" />
+                      <h3 className="mb-2 text-lg font-semibold text-slate-900 dark:text-white">
                         Events Coming Soon
                       </h3>
                       <p className="text-slate-600 dark:text-slate-400">

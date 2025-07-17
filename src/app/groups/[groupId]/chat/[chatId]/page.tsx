@@ -72,20 +72,17 @@ export default function GroupChatPage() {
   const loading = isLoading[chatId] ?? false;
 
   // Debounced typing indicator - stops typing after delay of no input
-  const {
-    immediate: _,
-    debounced: debouncedStopTyping,
-    cancel: cancelStopTyping,
-  } = useDebounceImmediate(
-    () => {
-      if (isCurrentlyTyping) {
-        setIsCurrentlyTyping(false);
-        stopTyping();
-      }
-    },
-    DEBOUNCE_DELAY,
-    [isCurrentlyTyping, stopTyping],
-  );
+  const { debounced: debouncedStopTyping, cancel: cancelStopTyping } =
+    useDebounceImmediate(
+      () => {
+        if (isCurrentlyTyping) {
+          setIsCurrentlyTyping(false);
+          stopTyping();
+        }
+      },
+      DEBOUNCE_DELAY,
+      [isCurrentlyTyping, stopTyping],
+    );
 
   function autoResizeTextarea(textarea: HTMLTextAreaElement) {
     textarea.style.height = "auto";

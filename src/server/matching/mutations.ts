@@ -9,10 +9,8 @@ import {
   conversations,
   conversationParticipants,
   messages,
-  groups,
-  groupMembers,
 } from "@/server/db/schema";
-import { eq, and, or, not, exists, desc } from "drizzle-orm";
+import { eq, and, or } from "drizzle-orm";
 import { auth } from "@clerk/nextjs/server";
 import type {
   UserMatchProfile,

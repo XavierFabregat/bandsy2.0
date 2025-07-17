@@ -6,12 +6,6 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import {
-  Accordion,
-  AccordionItem,
-  AccordionTrigger,
-  AccordionContent,
-} from "@/components/ui/accordion";
-import {
   MessageCircle,
   Trash2,
   Plus,
@@ -99,14 +93,16 @@ export default function ChatsSettings({
   return (
     <div className="space-y-8">
       {/* Chat Overview */}
-      <div className="rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/50 p-6">
-        <div className="flex items-center justify-between mb-6">
+      <div className="rounded-xl border border-slate-200 bg-slate-50 p-6 dark:border-slate-700 dark:bg-slate-800/50">
+        <div className="mb-6 flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <div className="p-2 bg-blue-100 dark:bg-blue-900/30 rounded-lg">
+            <div className="rounded-lg bg-blue-100 p-2 dark:bg-blue-900/30">
               <MessageCircle className="h-5 w-5 text-blue-600 dark:text-blue-400" />
             </div>
             <div>
-              <h3 className="font-semibold text-slate-900 dark:text-white">Group Chats</h3>
+              <h3 className="font-semibold text-slate-900 dark:text-white">
+                Group Chats
+              </h3>
               <p className="text-sm text-slate-600 dark:text-slate-400">
                 Manage conversations and notifications
               </p>
@@ -147,7 +143,7 @@ export default function ChatsSettings({
 
         {/* Chat Stats */}
         <div className="grid grid-cols-2 gap-4">
-          <div className="rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 p-4 text-center">
+          <div className="rounded-lg border border-slate-200 bg-white p-4 text-center dark:border-slate-700 dark:bg-slate-900">
             <div className="text-3xl font-bold text-slate-900 dark:text-white">
               {group.conversations?.length || 0}
             </div>
@@ -155,9 +151,10 @@ export default function ChatsSettings({
               Total Chats
             </div>
           </div>
-          <div className="rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 p-4 text-center">
+          <div className="rounded-lg border border-slate-200 bg-white p-4 text-center dark:border-slate-700 dark:bg-slate-900">
             <div className="text-3xl font-bold text-green-600">
-              {group.conversations?.filter((c) => c.status === "active").length || 0}
+              {group.conversations?.filter((c) => c.status === "active")
+                .length || 0}
             </div>
             <div className="text-sm text-slate-600 dark:text-slate-400">
               Active Chats
@@ -167,13 +164,15 @@ export default function ChatsSettings({
       </div>
 
       {/* Chat List */}
-      <div className="rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/50 p-6">
-        <div className="flex items-center gap-3 mb-6">
-          <div className="p-2 bg-green-100 dark:bg-green-900/30 rounded-lg">
+      <div className="rounded-xl border border-slate-200 bg-slate-50 p-6 dark:border-slate-700 dark:bg-slate-800/50">
+        <div className="mb-6 flex items-center gap-3">
+          <div className="rounded-lg bg-green-100 p-2 dark:bg-green-900/30">
             <MessageCircle className="h-5 w-5 text-green-600 dark:text-green-400" />
           </div>
           <div>
-            <h3 className="font-semibold text-slate-900 dark:text-white">Manage Chats</h3>
+            <h3 className="font-semibold text-slate-900 dark:text-white">
+              Manage Chats
+            </h3>
             <p className="text-sm text-slate-600 dark:text-slate-400">
               Configure and manage your group conversations
             </p>
@@ -186,18 +185,22 @@ export default function ChatsSettings({
               group.conversations.map((chat) => (
                 <div
                   key={chat.id}
-                  className="flex items-center justify-between rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 p-4 hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors"
+                  className="flex items-center justify-between rounded-lg border border-slate-200 bg-white p-4 transition-colors hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-900 dark:hover:bg-slate-800/50"
                 >
                   <div className="flex items-center gap-4">
                     <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-gradient-to-r from-blue-500 to-cyan-500">
                       <MessageCircle className="h-6 w-6 text-white" />
                     </div>
                     <div className="min-w-0 flex-1">
-                      <div className="flex items-center gap-2 mb-1">
+                      <div className="mb-1 flex items-center gap-2">
                         <p className="truncate font-medium text-slate-900 dark:text-white">
                           {chat.name}
                         </p>
-                        <Badge variant={chat.status === "active" ? "default" : "secondary"}>
+                        <Badge
+                          variant={
+                            chat.status === "active" ? "default" : "secondary"
+                          }
+                        >
                           {chat.status}
                         </Badge>
                       </div>
@@ -212,11 +215,7 @@ export default function ChatsSettings({
 
                   <DropdownMenu>
                     <DropdownMenuTrigger asChild>
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        className="h-8 w-8"
-                      >
+                      <Button variant="ghost" size="icon" className="h-8 w-8">
                         <MoreVertical className="h-4 w-4" />
                       </Button>
                     </DropdownMenuTrigger>
@@ -250,8 +249,8 @@ export default function ChatsSettings({
               ))
             ) : (
               <div className="py-12 text-center">
-                <MessageCircle className="mx-auto h-12 w-12 text-slate-400 mb-4" />
-                <p className="text-slate-500 dark:text-slate-400 mb-2">
+                <MessageCircle className="mx-auto mb-4 h-12 w-12 text-slate-400" />
+                <p className="mb-2 text-slate-500 dark:text-slate-400">
                   No chats created yet
                 </p>
                 <p className="text-sm text-slate-400">
