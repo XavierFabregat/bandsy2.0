@@ -22,28 +22,28 @@ The main posts table supporting both user and group authorship.
 ```sql
 CREATE TABLE bandsy_post (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  
+
   -- Polymorphic author relationship
   author_type post_author_type NOT NULL, -- 'user' | 'group'
   author_id UUID NOT NULL,               -- references users.id or groups.id
-  
+
   -- Content
   content TEXT,                          -- main text content
   type post_type NOT NULL DEFAULT 'text', -- 'text' | 'image' | 'video' | 'audio' | 'link' | 'media_sample' | 'mixed'
-  
+
   -- Media integration
   media_sample_id UUID REFERENCES bandsy_media_sample(id) ON DELETE SET NULL,
-  
+
   -- Settings
   visibility post_visibility NOT NULL DEFAULT 'public', -- 'public' | 'followers_only' | 'group_members_only' | 'private'
   status post_status NOT NULL DEFAULT 'published',      -- 'published' | 'draft' | 'archived' | 'deleted'
   character_limit INTEGER DEFAULT 500,                  -- 500 for regular, 2000 for premium
-  
+
   -- Engagement metrics (denormalized for performance)
   likes_count INTEGER DEFAULT 0,
   comments_count INTEGER DEFAULT 0,
   shares_count INTEGER DEFAULT 0,
-  
+
   -- Timestamps
   created_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
   updated_at TIMESTAMPTZ,
@@ -52,6 +52,7 @@ CREATE TABLE bandsy_post (
 ```
 
 **Indexes:**
+
 - `posts_author_idx` - (author_type, author_id) for finding user/group posts
 - `posts_created_at_idx` - created_at for chronological feeds
 - `posts_status_idx` - status for filtering published posts
@@ -67,23 +68,23 @@ Handles media files attached to posts (images, videos, documents).
 CREATE TABLE bandsy_post_attachment (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   post_id UUID NOT NULL REFERENCES bandsy_post(id) ON DELETE CASCADE,
-  
+
   -- File information
   url VARCHAR(500) NOT NULL,           -- file URL/path
   filename VARCHAR(255),               -- original filename
   mime_type VARCHAR(100),              -- MIME type
   file_size INTEGER,                   -- size in bytes
-  
+
   -- Media metadata
   type VARCHAR(50) NOT NULL,           -- 'image' | 'video' | 'audio' | 'document'
   width INTEGER,                       -- for images/videos
   height INTEGER,                      -- for images/videos
   duration INTEGER,                    -- for videos/audio (seconds)
-  
+
   -- Accessibility and captions
   alt TEXT,                           -- alt text for images
   caption TEXT,                       -- user-provided caption
-  
+
   created_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
 ```
@@ -98,7 +99,7 @@ CREATE TABLE bandsy_post_like (
   post_id UUID NOT NULL REFERENCES bandsy_post(id) ON DELETE CASCADE,
   user_id UUID NOT NULL REFERENCES bandsy_user(id) ON DELETE CASCADE,
   created_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
-  
+
   UNIQUE(post_id, user_id) -- prevent duplicate likes
 );
 ```
@@ -112,17 +113,17 @@ CREATE TABLE bandsy_comment (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   post_id UUID NOT NULL REFERENCES bandsy_post(id) ON DELETE CASCADE,
   user_id UUID NOT NULL REFERENCES bandsy_user(id) ON DELETE CASCADE,
-  
+
   -- Content
   content TEXT NOT NULL,
-  
+
   -- Nested comments
   parent_comment_id UUID REFERENCES bandsy_comment(id) ON DELETE CASCADE,
-  
+
   -- Engagement metrics
   likes_count INTEGER DEFAULT 0,
   replies_count INTEGER DEFAULT 0,
-  
+
   -- Timestamps
   created_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
   updated_at TIMESTAMPTZ,
@@ -138,7 +139,7 @@ CREATE TABLE bandsy_comment_like (
   comment_id UUID NOT NULL REFERENCES bandsy_comment(id) ON DELETE CASCADE,
   user_id UUID NOT NULL REFERENCES bandsy_user(id) ON DELETE CASCADE,
   created_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
-  
+
   UNIQUE(comment_id, user_id) -- prevent duplicate likes
 );
 ```
@@ -164,7 +165,7 @@ CREATE TABLE bandsy_post_bookmark (
   user_id UUID NOT NULL REFERENCES bandsy_user(id) ON DELETE CASCADE,
   collection_name VARCHAR(100),        -- future: bookmark collections
   created_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
-  
+
   UNIQUE(post_id, user_id) -- prevent duplicate bookmarks
 );
 ```
@@ -178,22 +179,22 @@ Handles @mentions of users and groups in posts and comments.
 ```sql
 CREATE TABLE bandsy_mention (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  
+
   -- Where the mention appears (polymorphic)
   mentionable_type VARCHAR(20) NOT NULL,    -- 'post' | 'comment'
   mentionable_id UUID NOT NULL,             -- references post.id or comment.id
-  
+
   -- Who is mentioned (polymorphic)
   mentioned_type VARCHAR(20) NOT NULL,      -- 'user' | 'group'
   mentioned_id UUID NOT NULL,               -- references user.id or group.id
-  
+
   -- Who created the mention
   mentioner_user_id UUID NOT NULL REFERENCES bandsy_user(id) ON DELETE CASCADE,
-  
+
   -- Text position for highlighting
   start_position INTEGER,
   end_position INTEGER,
-  
+
   created_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
 ```
@@ -257,30 +258,33 @@ CREATE TYPE notification_type AS ENUM (
 ### Common Queries
 
 #### Get User Posts
+
 ```sql
-SELECT * FROM bandsy_post 
-WHERE author_type = 'user' 
-  AND author_id = $userId 
-  AND status = 'published' 
+SELECT * FROM bandsy_post
+WHERE author_type = 'user'
+  AND author_id = $userId
+  AND status = 'published'
   AND deleted_at IS NULL
 ORDER BY created_at DESC
 LIMIT 20 OFFSET $offset;
 ```
 
 #### Get Group Posts
+
 ```sql
-SELECT * FROM bandsy_post 
-WHERE author_type = 'group' 
-  AND author_id = $groupId 
-  AND status = 'published' 
+SELECT * FROM bandsy_post
+WHERE author_type = 'group'
+  AND author_id = $groupId
+  AND status = 'published'
   AND deleted_at IS NULL
 ORDER BY created_at DESC
 LIMIT 20 OFFSET $offset;
 ```
 
 #### Get Post with Full Details
+
 ```sql
-SELECT 
+SELECT
   p.*,
   -- Author info (requires UNION for polymorphic relationship)
   -- Post attachments
@@ -296,15 +300,16 @@ WHERE p.id = $postId;
 ```
 
 #### Get Comments Thread
+
 ```sql
 WITH RECURSIVE comment_tree AS (
   -- Root comments
   SELECT id, content, user_id, parent_comment_id, 0 as depth
-  FROM bandsy_comment 
+  FROM bandsy_comment
   WHERE post_id = $postId AND parent_comment_id IS NULL AND deleted_at IS NULL
-  
+
   UNION ALL
-  
+
   -- Nested replies
   SELECT c.id, c.content, c.user_id, c.parent_comment_id, ct.depth + 1
   FROM bandsy_comment c
@@ -321,11 +326,13 @@ SELECT * FROM comment_tree ORDER BY depth, created_at;
 **Engagement Counts**: Likes, comments, and shares counts are stored directly on posts for fast display. These are updated via database triggers or application-level increment/decrement operations.
 
 **Benefits:**
+
 - Fast feed rendering without COUNT() queries
 - Reduced database load for popular posts
 - Better caching efficiency
 
 **Trade-offs:**
+
 - Slight complexity in maintaining count accuracy
 - Potential for count drift (mitigated by periodic reconciliation)
 
@@ -340,10 +347,12 @@ SELECT * FROM comment_tree ORDER BY depth, created_at;
 ## Character Limits
 
 ### Regular Users
+
 - **Posts**: 500 characters
 - **Comments**: 200 characters
 
-### Premium Users  
+### Premium Users
+
 - **Posts**: 2000 characters
 - **Comments**: 500 characters
 
@@ -352,11 +361,13 @@ Character limits are enforced at both the application and database levels using 
 ## File Upload Limits
 
 ### Supported Formats
+
 - **Images**: JPG, PNG, GIF, WebP (max 10MB each)
 - **Videos**: MP4, WebM (max 100MB each)
 - **Audio**: MP3, WAV, OGG (integrated with existing media samples)
 
 ### Storage Strategy
+
 - Files stored in cloud storage (AWS S3/CloudFlare R2)
 - Database stores URLs and metadata only
 - Progressive image loading and video streaming support
@@ -364,16 +375,19 @@ Character limits are enforced at both the application and database levels using 
 ## Security Considerations
 
 ### Input Validation
+
 - Content sanitization to prevent XSS
 - File type validation and virus scanning
 - Rate limiting for post creation and interactions
 
 ### Access Control
+
 - Polymorphic author validation (users can only post as themselves or groups they admin)
 - Visibility rules enforcement
 - Mention permission validation
 
 ### Privacy
+
 - Soft deletes preserve data integrity while respecting user deletion requests
 - Personal data anonymization support for GDPR compliance
 
