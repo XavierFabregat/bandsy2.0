@@ -65,6 +65,7 @@ export const notificationTypeEnum = pgEnum("notification_type", [
   "system_update",
   "collaboration_invite", // New: collaboration invite received
   "invite_accepted", // New: collaboration invite accepted
+  "group_member_removed", // New: group member removal notification
 ]);
 
 // Users table
@@ -641,16 +642,18 @@ export const groupInvites = createTable(
       .uuid()
       .notNull()
       .references(() => groups.id, { onDelete: "cascade" }),
-    userId: d
-      .uuid()
-      .notNull()
-      .references(() => users.id, { onDelete: "cascade" }),
+    userId: d.uuid().references(() => users.id, { onDelete: "cascade" }), // nullable for blank invites
     inviterId: d
       .uuid()
       .notNull()
       .references(() => users.id, { onDelete: "cascade" }),
     status: d.varchar({ length: 20 }).default("pending"),
     role: d.varchar({ length: 20 }).default("member"),
+    verificationCode: d.varchar({ length: 20 }).notNull(),
+    verificationCodeExpiresAt: d
+      .timestamp({ withTimezone: true })
+      .default(sql`CURRENT_TIMESTAMP + INTERVAL '1 week'`)
+      .notNull(),
     createdAt: d
       .timestamp({ withTimezone: true })
       .default(sql`CURRENT_TIMESTAMP`)

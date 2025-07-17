@@ -1,9 +1,10 @@
-import { auth } from "@clerk/nextjs/server";
+import { auth, type User } from "@clerk/nextjs/server";
 import { type NextRequest, NextResponse } from "next/server";
 import { getUserByClerkId, getUserByEmail } from "@/server/queries";
 import { groupInvites, groups } from "@/server/db/schema";
 import { db } from "@/server/db";
 import { and, eq } from "drizzle-orm";
+import { createGroupInvite } from "../../../../../server/groups/mutations";
 
 export async function POST(
   request: NextRequest,
@@ -45,53 +46,100 @@ export async function POST(
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  const { email } = (await request.json()) as { email: string };
+  const { email, userToInviteId, createBlankInvite } =
+    (await request.json()) as {
+      email?: string;
+      userToInviteId?: string;
+      createBlankInvite?: boolean;
+    };
 
-  if (!email) {
-    return NextResponse.json({ error: "Email is required" }, { status: 400 });
-  }
+  // Handle blank invite creation
+  if (createBlankInvite) {
+    const inviteCreated = await createGroupInvite(groupId);
+    const inviteLink = `${process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000"}/groups/${groupId}/join?invite=${inviteCreated.verificationCode}`;
 
-  const userToInvite = await getUserByEmail(email);
-
-  if (!userToInvite) {
-    return NextResponse.json({ error: "User not found" }, { status: 404 });
-  }
-
-  const isUserAlreadyMember = group.groupMembers.some(
-    (member) => member.user.id === userToInvite.id,
-  );
-
-  if (isUserAlreadyMember) {
     return NextResponse.json(
-      { error: "User is already a member of the group" },
+      {
+        message: "Blank invite created successfully",
+        invite: inviteCreated,
+        inviteLink,
+      },
+      { status: 200 },
+    );
+  }
+
+  // Handle email or user ID invites
+  if (!email && !userToInviteId) {
+    return NextResponse.json(
+      {
+        error: "Email, userToInviteId, or createBlankInvite is required",
+      },
       { status: 400 },
     );
   }
 
-  const isUserAlreadyInvited = await db.query.groupInvites.findFirst({
-    where: and(
-      eq(groupInvites.groupId, groupId),
-      eq(groupInvites.userId, userToInvite.id),
-    ),
-  });
+  let userToInvite: Awaited<ReturnType<typeof getUserByEmail>> | null = null;
 
-  if (isUserAlreadyInvited) {
-    return NextResponse.json(
-      { error: "User is already invited to the group" },
-      { status: 400 },
+  if (email) {
+    userToInvite = await getUserByEmail(email);
+    if (!userToInvite) {
+      return NextResponse.json(
+        {
+          error:
+            "User with this email not found. You can create a blank invite instead.",
+        },
+        { status: 404 },
+      );
+    }
+  } else if (userToInviteId) {
+    userToInvite = await getUserByClerkId(userToInviteId);
+    if (!userToInvite) {
+      return NextResponse.json({ error: "User not found" }, { status: 404 });
+    }
+
+    // Check if user is already a member
+    const isUserAlreadyMember = group.groupMembers.some(
+      (member) => member.user.id === userToInvite?.id,
     );
+
+    if (isUserAlreadyMember) {
+      return NextResponse.json(
+        { error: "User is already a member of the group" },
+        { status: 400 },
+      );
+    }
+
+    // Check if user is already invited
+    const isUserAlreadyInvited = await db.query.groupInvites.findFirst({
+      where: and(
+        eq(groupInvites.groupId, groupId),
+        eq(groupInvites.userId, userToInvite.id),
+        eq(groupInvites.status, "pending"),
+      ),
+    });
+
+    if (isUserAlreadyInvited) {
+      return NextResponse.json(
+        { error: "User is already invited to the group" },
+        { status: 400 },
+      );
+    }
   }
 
-  await db.insert(groupInvites).values({
-    groupId,
-    userId: userToInvite.id,
-    inviterId: user.id,
-  });
+  const inviteCreated = await createGroupInvite(groupId, userToInvite?.id);
+  const inviteLink = `${process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000"}/groups/${groupId}/join?invite=${inviteCreated.verificationCode}`;
 
-  //TODO: Send email to user to invite them to the group
+  if (email) {
+    //TODO: Send email to user to invite them to the group
+    // send email to user to invite them to the group
+  }
 
   return NextResponse.json(
-    { message: "Invite sent successfully" },
+    {
+      message: "Invite sent successfully",
+      invite: inviteCreated,
+      inviteLink,
+    },
     { status: 200 },
   );
 }

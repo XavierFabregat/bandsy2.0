@@ -38,6 +38,7 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import { useUser } from "@clerk/nextjs";
+import { useRouter } from "next/navigation";
 
 export function MembersSettings({
   group,
@@ -48,7 +49,10 @@ export function MembersSettings({
   const [isInviteDialogOpen, setIsInviteDialogOpen] = useState(false);
   const [inviteEmail, setInviteEmail] = useState("");
   const [isInviting, setIsInviting] = useState(false);
+  const [memberToRemove, setMemberToRemove] = useState<string | null>(null);
+  const [isRemoveDialogOpen, setIsRemoveDialogOpen] = useState(false);
 
+  const router = useRouter();
   const { user } = useUser();
 
   // Filter members based on search term
@@ -62,8 +66,6 @@ export function MembersSettings({
     ) || [];
 
   const handleInviteMember = async () => {
-    console.log("TODO: Implement invite member");
-    return;
     if (!inviteEmail.trim()) return;
 
     setIsInviting(true);
@@ -89,11 +91,35 @@ export function MembersSettings({
     }
   };
 
-  const handleRemoveMember = async (memberId: string) => {
-    console.log("TODO: Implement remove member");
-    return;
-    if (!confirm("Are you sure you want to remove this member?")) return;
+  const handleCreateBlankInvite = async () => {
+    setIsInviting(true);
+    try {
+      const response = await fetch(`/api/groups/${group.id}/invite`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ createBlankInvite: true }),
+      });
 
+      if (response.ok) {
+        const result = (await response.json()) as { inviteLink: string };
+        const inviteLink = result.inviteLink;
+
+        // Copy the invite link to clipboard
+        await navigator.clipboard.writeText(inviteLink);
+        toast.success("Blank invite link copied to clipboard");
+        setIsInviteDialogOpen(false);
+      } else {
+        throw new Error("Failed to create blank invite");
+      }
+    } catch (error) {
+      console.error("Error creating blank invite:", error);
+      toast.error("Failed to create blank invite");
+    } finally {
+      setIsInviting(false);
+    }
+  };
+
+  const handleRemoveMember = async (memberId: string) => {
     try {
       const response = await fetch(
         `/api/groups/${group.id}/members/${memberId}`,
@@ -104,7 +130,7 @@ export function MembersSettings({
 
       if (response.ok) {
         toast.success("Member removed successfully");
-        window.location.reload();
+        router.refresh();
       } else {
         throw new Error("Failed to remove member");
       }
@@ -130,7 +156,7 @@ export function MembersSettings({
 
       if (response.ok) {
         toast.success("Member role updated successfully");
-        window.location.reload();
+        router.refresh();
       } else {
         throw new Error("Failed to update member role");
       }
@@ -138,12 +164,6 @@ export function MembersSettings({
       console.error("Error updating member role:", error);
       toast.error("Failed to update member role");
     }
-  };
-
-  const copyInviteLink = () => {
-    const inviteLink = `${window.location.origin}/groups/${group.id}/join`;
-    void navigator.clipboard.writeText(inviteLink);
-    toast.success("Invite link copied to clipboard");
   };
 
   return (
@@ -227,11 +247,12 @@ export function MembersSettings({
 
               <Button
                 variant="outline"
-                onClick={copyInviteLink}
+                onClick={handleCreateBlankInvite}
+                disabled={isInviting}
                 className="w-full sm:w-auto"
               >
                 <Copy className="mr-2 h-4 w-4" />
-                Copy Invite Link
+                {isInviting ? "Creating..." : "Create invite link"}
               </Button>
             </div>
           </AccordionContent>
@@ -323,9 +344,10 @@ export function MembersSettings({
                                 </DropdownMenuItem>
                               )}
                               <DropdownMenuItem
-                                onClick={() =>
-                                  handleRemoveMember(member.userId)
-                                }
+                                onClick={() => {
+                                  setMemberToRemove(member.userId);
+                                  setIsRemoveDialogOpen(true);
+                                }}
                                 className="text-red-600"
                               >
                                 <Trash2 className="mr-2 h-4 w-4" />
@@ -352,6 +374,43 @@ export function MembersSettings({
           </AccordionContent>
         </AccordionItem>
       </Accordion>
+      {/* Remove Member Confirmation Dialog */}
+      <Dialog open={isRemoveDialogOpen} onOpenChange={setIsRemoveDialogOpen}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Remove Member</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <p>
+              Are you sure you want to remove this member? This action cannot be
+              undone.
+            </p>
+            <div className="flex justify-end gap-2">
+              <Button
+                variant="outline"
+                onClick={() => {
+                  setIsRemoveDialogOpen(false);
+                  setMemberToRemove(null);
+                }}
+              >
+                Cancel
+              </Button>
+              <Button
+                variant="destructive"
+                onClick={async () => {
+                  if (memberToRemove) {
+                    await handleRemoveMember(memberToRemove);
+                  }
+                  setIsRemoveDialogOpen(false);
+                  setMemberToRemove(null);
+                }}
+              >
+                Remove
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

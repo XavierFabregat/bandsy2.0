@@ -12,7 +12,8 @@ export interface SSEMessage {
     | "unread_count"
     | "user_typing"
     | "match_message"
-    | "group_message";
+    | "group_message"
+    | "group_access_revoked";
   notification?: Notification;
   count?: number;
   timestamp: string;
@@ -257,6 +258,39 @@ export class NotificationSSEService {
         message,
         timestamp: new Date().toISOString(),
       });
+    });
+  }
+
+  static sendGroupAccessRevoked(
+    userId: string,
+    groupId: string,
+    groupName: string,
+  ) {
+    console.log(
+      `SSE: Sending group access revoked to user ${userId} for group ${groupName}`,
+    );
+    return this.sendToUser(userId, {
+      type: "group_access_revoked",
+      notification: {
+        id: `temp-${Date.now()}`,
+        type: "group_member_removed",
+        title: "Removed from Group",
+        message: `You were removed from ${groupName}`,
+        data: {
+          group_member_removed: {
+            groupId,
+            groupName,
+            removedByUserId: userId,
+            removedByUserName: "System",
+            removedByUserDisplayName: "System",
+          },
+        },
+        actionUrl: "/groups",
+        actionType: "navigate",
+        isRead: false,
+        createdAt: new Date(),
+      },
+      timestamp: new Date().toISOString(),
     });
   }
 }
