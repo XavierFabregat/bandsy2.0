@@ -18,8 +18,12 @@ export async function PATCH(
     }
 
     const { groupId } = params;
-    const body = (await request.json()) as { name?: string; imageUrl?: string };
-    const { name, imageUrl } = body;
+    const body = (await request.json()) as {
+      name?: string;
+      imageUrl?: string;
+      description?: string;
+    };
+    const { name, imageUrl, description } = body;
 
     // if there is a new image, we want to check
     // if the group already has an image, if so
@@ -46,6 +50,7 @@ export async function PATCH(
       .set({
         ...(name && { name }),
         ...(imageUrl && { imageUrl }),
+        ...(description && { description }),
       })
       .where(eq(groups.id, groupId));
 
