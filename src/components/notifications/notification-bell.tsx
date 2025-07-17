@@ -14,10 +14,11 @@ import { useNotificationSSE } from "@/lib/hooks/useNotificationsSSE";
 export function NotificationBell() {
   const [isOpen, setIsOpen] = useState(false);
   const [hasPermission, setHasPermission] = useState(false);
+  // TODO: Use this to check if notifications are supported
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const [isSupported, setIsSupported] = useState(false);
   const {
     unreadCount,
-    notifications,
     isConnected,
     unreadNotifications,
     error,

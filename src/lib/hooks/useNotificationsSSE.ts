@@ -58,7 +58,7 @@ export function useNotificationSSE() {
     return notifications.filter((notification) => !notification.isRead);
   }, [notifications]);
 
-  const { addMessage, setTyping, setMessages } = useConversationStore();
+  const { addMessage, setTyping } = useConversationStore();
   const router = useRouter();
   const pathname = usePathname();
 
@@ -208,7 +208,7 @@ export function useNotificationSSE() {
       console.error("SSE: Failed to create EventSource:", error);
       setError("Failed to establish connection");
     }
-  }, [router, pathname]);
+  }, [router, pathname, addMessage, setTyping]);
 
   const disconnect = useCallback(() => {
     if (eventSourceRef.current) {

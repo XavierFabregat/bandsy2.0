@@ -105,24 +105,22 @@ export default function MatchConversationPage() {
   const [isCurrentlyTyping, setIsCurrentlyTyping] = useState(false);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
-  const [_, ...messages] = conversations[conversation?.id ?? ""] ?? [];
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  const [_notUsed, ...messages] = conversations[conversation?.id ?? ""] ?? [];
   const typing = typingUsers[matchId] ?? {};
   const loading = isLoading[matchId] ?? false;
   // Debounced typing indicator - stops typing after 2 seconds of no input
-  const {
-    immediate: handleStopTyping,
-    debounced: debouncedStopTyping,
-    cancel: cancelStopTyping,
-  } = useDebounceImmediate(
-    () => {
-      if (isCurrentlyTyping) {
-        setIsCurrentlyTyping(false);
-        stopTyping();
-      }
-    },
-    DEBOUNCE_DELAY,
-    [isCurrentlyTyping, stopTyping],
-  );
+  const { debounced: debouncedStopTyping, cancel: cancelStopTyping } =
+    useDebounceImmediate(
+      () => {
+        if (isCurrentlyTyping) {
+          setIsCurrentlyTyping(false);
+          stopTyping();
+        }
+      },
+      DEBOUNCE_DELAY,
+      [isCurrentlyTyping, stopTyping],
+    );
 
   function autoResizeTextarea(textarea: HTMLTextAreaElement) {
     textarea.style.height = "auto";
@@ -356,7 +354,7 @@ export default function MatchConversationPage() {
         }
       }
     },
-    [matchId],
+    [matchId, router],
   );
 
   // Add ref for auto-scrolling

@@ -40,6 +40,7 @@ export function useDebounceCallback<T extends (...args: unknown[]) => unknown>(
   // Update callback ref when dependencies change
   useEffect(() => {
     callbackRef.current = callback;
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [callback, ...deps]);
 
   const debouncedCallback = useCallback(
@@ -90,6 +91,7 @@ export function useDebounceImmediate<T extends (...args: unknown[]) => unknown>(
   // Update callback ref when dependencies change
   useEffect(() => {
     callbackRef.current = callback;
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [callback, ...deps]);
 
   const immediate = useCallback(

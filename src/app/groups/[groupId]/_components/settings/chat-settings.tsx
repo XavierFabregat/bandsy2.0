@@ -4,12 +4,7 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import {
-  Accordion,
-  AccordionItem,
-  AccordionTrigger,
-  AccordionContent,
-} from "@/components/ui/accordion";
+import { Badge } from "@/components/ui/badge";
 import {
   MessageCircle,
   Trash2,
@@ -96,168 +91,176 @@ export default function ChatsSettings({
   };
 
   return (
-    <div className="h-full overflow-y-auto">
-      <Accordion
-        type="single"
-        collapsible
-        defaultValue="overview"
-        className="w-full space-y-3 px-2 py-2"
-      >
-        {/* Chat Overview */}
-        <AccordionItem value="overview" className="rounded-lg border">
-          <AccordionTrigger className="px-4 py-3 text-sm font-medium">
-            Chat Overview
-          </AccordionTrigger>
-          <AccordionContent className="px-4 pb-4">
-            <div className="space-y-4">
-              <div className="flex items-center justify-between">
-                <div>
-                  <h3 className="text-base font-semibold">Group Chats</h3>
-                  <p className="text-muted-foreground text-sm">
-                    Manage conversations and notifications
-                  </p>
-                </div>
-                <Dialog open={isCreatingChat} onOpenChange={setIsCreatingChat}>
-                  <DialogTrigger asChild>
-                    <Button size="sm">
-                      <Plus className="mr-2 h-4 w-4" />
-                      New Chat
-                    </Button>
-                  </DialogTrigger>
-                  <DialogContent>
-                    <DialogHeader>
-                      <DialogTitle>Create New Chat</DialogTitle>
-                    </DialogHeader>
-                    <div className="space-y-4">
-                      <div>
-                        <Label htmlFor="chatName">Chat Name</Label>
-                        <Input
-                          id="chatName"
-                          placeholder="Enter chat name"
-                          value={newChatName}
-                          onChange={(e) => setNewChatName(e.target.value)}
-                        />
-                      </div>
-                      <Button
-                        onClick={handleCreateChat}
-                        disabled={isLoading || !newChatName.trim()}
-                        className="w-full"
-                      >
-                        {isLoading ? "Creating..." : "Create Chat"}
-                      </Button>
-                    </div>
-                  </DialogContent>
-                </Dialog>
-              </div>
-
-              {/* Chat Stats */}
-              <div className="grid grid-cols-2 gap-4 rounded-lg border p-4">
-                <div className="text-center">
-                  <div className="text-primary text-xl font-bold sm:text-2xl">
-                    {group.conversations?.length || 0}
-                  </div>
-                  <div className="text-muted-foreground text-xs sm:text-sm">
-                    Total Chats
-                  </div>
-                </div>
-                <div className="text-center">
-                  <div className="text-xl font-bold text-green-600 sm:text-2xl">
-                    {group.conversations?.filter((c) => c.status === "active")
-                      .length || 0}
-                  </div>
-                  <div className="text-muted-foreground text-xs sm:text-sm">
-                    Active Chats
-                  </div>
-                </div>
-              </div>
+    <div className="space-y-8">
+      {/* Chat Overview */}
+      <div className="rounded-xl border border-slate-200 bg-slate-50 p-6 dark:border-slate-700 dark:bg-slate-800/50">
+        <div className="mb-6 flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <div className="rounded-lg bg-blue-100 p-2 dark:bg-blue-900/30">
+              <MessageCircle className="h-5 w-5 text-blue-600 dark:text-blue-400" />
             </div>
-          </AccordionContent>
-        </AccordionItem>
+            <div>
+              <h3 className="font-semibold text-slate-900 dark:text-white">
+                Group Chats
+              </h3>
+              <p className="text-sm text-slate-600 dark:text-slate-400">
+                Manage conversations and notifications
+              </p>
+            </div>
+          </div>
+          <Dialog open={isCreatingChat} onOpenChange={setIsCreatingChat}>
+            <DialogTrigger asChild>
+              <Button size="sm" className="bg-blue-600 hover:bg-blue-700">
+                <Plus className="mr-2 h-4 w-4" />
+                New Chat
+              </Button>
+            </DialogTrigger>
+            <DialogContent>
+              <DialogHeader>
+                <DialogTitle>Create New Chat</DialogTitle>
+              </DialogHeader>
+              <div className="space-y-4">
+                <div>
+                  <Label htmlFor="chatName">Chat Name</Label>
+                  <Input
+                    id="chatName"
+                    placeholder="Enter chat name"
+                    value={newChatName}
+                    onChange={(e) => setNewChatName(e.target.value)}
+                  />
+                </div>
+                <Button
+                  onClick={handleCreateChat}
+                  disabled={isLoading || !newChatName.trim()}
+                  className="w-full"
+                >
+                  {isLoading ? "Creating..." : "Create Chat"}
+                </Button>
+              </div>
+            </DialogContent>
+          </Dialog>
+        </div>
 
-        {/* Chat List */}
-        <AccordionItem value="chats" className="rounded-lg border">
-          <AccordionTrigger className="px-4 py-3 text-sm font-medium">
-            Manage Chats
-          </AccordionTrigger>
-          <AccordionContent className="px-4 pb-4">
-            <div className="space-y-3">
-              <h4 className="text-sm font-medium">Chats</h4>
-              <div className="max-h-[250px] overflow-y-auto pr-2">
-                <div className="space-y-2">
-                  {group.conversations && group.conversations.length > 0 ? (
-                    group.conversations.map((chat) => (
-                      <div
-                        key={chat.id}
-                        className="flex items-center justify-between rounded-lg border p-3"
-                      >
-                        <div className="flex items-center gap-3">
-                          <div className="bg-primary/10 flex h-8 w-8 items-center justify-center rounded-lg sm:h-10 sm:w-10">
-                            <MessageCircle className="text-primary h-4 w-4 sm:h-5 sm:w-5" />
-                          </div>
-                          <div className="min-w-0 flex-1">
-                            <div className="flex items-center gap-2">
-                              <p className="truncate text-sm font-medium">
-                                {chat.name}
-                              </p>
-                            </div>
-                            <p className="text-muted-foreground text-xs">
-                              {chat.messages?.length || 0} messages
-                            </p>
-                          </div>
-                        </div>
+        {/* Chat Stats */}
+        <div className="grid grid-cols-2 gap-4">
+          <div className="rounded-lg border border-slate-200 bg-white p-4 text-center dark:border-slate-700 dark:bg-slate-900">
+            <div className="text-3xl font-bold text-slate-900 dark:text-white">
+              {group.conversations?.length || 0}
+            </div>
+            <div className="text-sm text-slate-600 dark:text-slate-400">
+              Total Chats
+            </div>
+          </div>
+          <div className="rounded-lg border border-slate-200 bg-white p-4 text-center dark:border-slate-700 dark:bg-slate-900">
+            <div className="text-3xl font-bold text-green-600">
+              {group.conversations?.filter((c) => c.status === "active")
+                .length || 0}
+            </div>
+            <div className="text-sm text-slate-600 dark:text-slate-400">
+              Active Chats
+            </div>
+          </div>
+        </div>
+      </div>
 
-                        <DropdownMenu>
-                          <DropdownMenuTrigger asChild>
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              className="h-8 w-8"
-                            >
-                              <MoreVertical className="h-4 w-4" />
-                            </Button>
-                          </DropdownMenuTrigger>
-                          <DropdownMenuContent align="end">
-                            <DropdownMenuItem
-                              onClick={() => {
-                                console.log("TODO: Implement edit chat");
-                              }}
-                            >
-                              <Edit className="mr-2 h-4 w-4" />
-                              Edit Chat
-                            </DropdownMenuItem>
-                            <DropdownMenuItem
-                              onClick={() => {
-                                console.log("TODO: Implement archive chat");
-                              }}
-                            >
-                              <Archive className="mr-2 h-4 w-4" />
-                              Archive Chat
-                            </DropdownMenuItem>
-                            <DropdownMenuItem
-                              onClick={() => handleDeleteChat(chat.id)}
-                              className="text-red-600"
-                            >
-                              <Trash2 className="mr-2 h-4 w-4" />
-                              Delete Chat
-                            </DropdownMenuItem>
-                          </DropdownMenuContent>
-                        </DropdownMenu>
+      {/* Chat List */}
+      <div className="rounded-xl border border-slate-200 bg-slate-50 p-6 dark:border-slate-700 dark:bg-slate-800/50">
+        <div className="mb-6 flex items-center gap-3">
+          <div className="rounded-lg bg-green-100 p-2 dark:bg-green-900/30">
+            <MessageCircle className="h-5 w-5 text-green-600 dark:text-green-400" />
+          </div>
+          <div>
+            <h3 className="font-semibold text-slate-900 dark:text-white">
+              Manage Chats
+            </h3>
+            <p className="text-sm text-slate-600 dark:text-slate-400">
+              Configure and manage your group conversations
+            </p>
+          </div>
+        </div>
+
+        <div className="max-h-[400px] overflow-y-auto">
+          <div className="space-y-3">
+            {group.conversations && group.conversations.length > 0 ? (
+              group.conversations.map((chat) => (
+                <div
+                  key={chat.id}
+                  className="flex items-center justify-between rounded-lg border border-slate-200 bg-white p-4 transition-colors hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-900 dark:hover:bg-slate-800/50"
+                >
+                  <div className="flex items-center gap-4">
+                    <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-gradient-to-r from-blue-500 to-cyan-500">
+                      <MessageCircle className="h-6 w-6 text-white" />
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <div className="mb-1 flex items-center gap-2">
+                        <p className="truncate font-medium text-slate-900 dark:text-white">
+                          {chat.name}
+                        </p>
+                        <Badge
+                          variant={
+                            chat.status === "active" ? "default" : "secondary"
+                          }
+                        >
+                          {chat.status}
+                        </Badge>
                       </div>
-                    ))
-                  ) : (
-                    <div className="py-6 text-center">
-                      <MessageCircle className="text-muted-foreground mx-auto h-8 w-8 sm:h-12 sm:w-12" />
-                      <p className="text-muted-foreground mt-2 text-xs sm:text-sm">
-                        No chats created yet
+                      <p className="text-sm text-slate-600 dark:text-slate-400">
+                        {chat.messages?.length || 0} messages
+                      </p>
+                      <p className="text-xs text-slate-500 dark:text-slate-500">
+                        Created {new Date(chat.createdAt).toLocaleDateString()}
                       </p>
                     </div>
-                  )}
+                  </div>
+
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Button variant="ghost" size="icon" className="h-8 w-8">
+                        <MoreVertical className="h-4 w-4" />
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end">
+                      <DropdownMenuItem
+                        onClick={() => {
+                          console.log("TODO: Implement edit chat");
+                        }}
+                      >
+                        <Edit className="mr-2 h-4 w-4" />
+                        Edit Chat
+                      </DropdownMenuItem>
+                      <DropdownMenuItem
+                        onClick={() => {
+                          console.log("TODO: Implement archive chat");
+                        }}
+                      >
+                        <Archive className="mr-2 h-4 w-4" />
+                        Archive Chat
+                      </DropdownMenuItem>
+                      <DropdownMenuItem
+                        onClick={() => handleDeleteChat(chat.id)}
+                        className="text-red-600"
+                      >
+                        <Trash2 className="mr-2 h-4 w-4" />
+                        Delete Chat
+                      </DropdownMenuItem>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
                 </div>
+              ))
+            ) : (
+              <div className="py-12 text-center">
+                <MessageCircle className="mx-auto mb-4 h-12 w-12 text-slate-400" />
+                <p className="mb-2 text-slate-500 dark:text-slate-400">
+                  No chats created yet
+                </p>
+                <p className="text-sm text-slate-400">
+                  Create your first chat to start conversations
+                </p>
               </div>
-            </div>
-          </AccordionContent>
-        </AccordionItem>
-      </Accordion>
+            )}
+          </div>
+        </div>
+      </div>
     </div>
   );
 }

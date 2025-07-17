@@ -1,4 +1,4 @@
-import { auth, type User } from "@clerk/nextjs/server";
+import { auth } from "@clerk/nextjs/server";
 import { type NextRequest, NextResponse } from "next/server";
 import { getUserByClerkId, getUserByEmail } from "@/server/queries";
 import { groupInvites, groups } from "@/server/db/schema";

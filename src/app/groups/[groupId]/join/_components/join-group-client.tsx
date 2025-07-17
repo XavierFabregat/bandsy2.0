@@ -48,11 +48,6 @@ export function JoinGroupClient({ group, inviteCode }: JoinGroupClientProps) {
       });
 
       if (response.ok) {
-        const result = (await response.json()) as {
-          success: boolean;
-          message: string;
-        };
-
         if (action === "accept") {
           toast.success(
             "Welcome to the group! You've been added successfully.",

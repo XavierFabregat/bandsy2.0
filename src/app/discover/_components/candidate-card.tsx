@@ -33,10 +33,7 @@ interface CandidateCardProps {
   onInteraction: (action: "pass" | "invite") => void;
 }
 
-export function CandidateCard({
-  candidate,
-  onInteraction,
-}: CandidateCardProps) {
+export function CandidateCard({ candidate }: CandidateCardProps) {
   const [isExpanded, setIsExpanded] = useState(false);
 
   const getScoreColor = (score: number) => {
