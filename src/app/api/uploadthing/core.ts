@@ -3,6 +3,8 @@ import { UTApi } from "uploadthing/server";
 import { auth } from "@clerk/nextjs/server";
 import { updateUserProfileImage, uploadSample } from "@/server/mutations";
 import { getUserByClerkId } from "@/server/queries";
+import { db } from "@/server/db";
+import { postAttachments } from "@/server/db/schema";
 
 const f = createUploadthing();
 const ut = new UTApi();
@@ -112,6 +114,84 @@ export const ourFileRouter = {
       // manually update the group image URL in the database
       // after the upload is complete in the client side
       return { uploadedBy: metadata.userId, fileUrl: file.ufsUrl };
+    }),
+  postMediaUploader: f({
+    image: {
+      maxFileSize: "8MB",
+      maxFileCount: 5,
+    },
+    video: {
+      maxFileSize: "64MB",
+      maxFileCount: 3,
+    },
+    audio: {
+      maxFileSize: "32MB",
+      maxFileCount: 3,
+    },
+  })
+    .middleware(async ({ req: _req }) => {
+      const { userId } = await auth();
+
+      if (!userId) throw new Error("Unauthorized");
+
+      const user = await getUserByClerkId(userId);
+      if (!user?.id) throw new Error("User not found");
+
+      return { userId, dbUserId: user.id };
+    })
+    .onUploadComplete(async ({ metadata, file }) => {
+      console.log("uploaded file", file);
+      // Determine file type
+      const getFileType = (
+        mimeType: string,
+      ): "image" | "video" | "audio" | "document" => {
+        if (mimeType.startsWith("image/")) return "image";
+        if (mimeType.startsWith("video/")) return "video";
+        if (mimeType.startsWith("audio/")) return "audio";
+        return "document";
+      };
+
+      const fileType = getFileType(file.type);
+
+      // Extract dimensions for images/videos if available
+      let width: number | undefined;
+      let height: number | undefined;
+      let duration: number | undefined;
+
+      // For videos and audio, duration might be available in the future
+      // For now, we'll set these as undefined and can be populated later
+
+      // Create attachment record (without postId for now - will be linked when post is created)
+      console.log("file", file);
+      const [attachment] = await db
+        .insert(postAttachments)
+        .values({
+          postId: null, // Will be updated when post is created
+          url: file.ufsUrl,
+          filename: file.name,
+          mimeType: file.type,
+          fileSize: file.size,
+          type: fileType,
+          width: width,
+          height: height,
+          duration: duration,
+          alt: "Post media by " + metadata.userId,
+          caption: null,
+        })
+        .returning();
+
+      console.log(
+        `Uploaded post media: ${file.name} (${fileType}) for user ${metadata.userId}`,
+      );
+
+      return {
+        uploadedBy: metadata.userId,
+        attachmentId: attachment?.id ?? "",
+        fileUrl: file.ufsUrl,
+        fileType: fileType,
+        filename: file.name,
+        fileSize: file.size,
+      };
     }),
 } satisfies FileRouter;
 

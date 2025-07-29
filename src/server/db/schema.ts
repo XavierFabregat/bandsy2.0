@@ -775,7 +775,6 @@ export const postAttachments = createTable(
     id: d.uuid().primaryKey().defaultRandom(),
     postId: d
       .uuid()
-      .notNull()
       .references(() => posts.id, { onDelete: "cascade" }),
 
     // File information

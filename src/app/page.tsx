@@ -21,6 +21,9 @@ import {
   getRecentActivity,
   getUserDisplayName,
 } from "@/lib/utils/dashboard";
+import { getUserByClerkId } from "@/server/queries";
+import { auth } from "@clerk/nextjs/server";
+import { PostCreationSection } from "@/components/dashboard/post-creation-section";
 
 // Helper function for activity gradients
 function getActivityGradient(icon: string): string {
@@ -247,11 +250,16 @@ function LandingPage() {
 
 // Dashboard Component (for authenticated users)
 async function Dashboard() {
-  const [dashboardStats, recentActivity, userDisplayName] = await Promise.all([
-    getDashboardStats(),
-    getRecentActivity(),
-    getUserDisplayName(),
-  ]);
+  const { userId } = await auth();
+  if (!userId) throw new Error("Unauthorized");
+
+  const [dashboardStats, recentActivity, userDisplayName, currentUser] =
+    await Promise.all([
+      getDashboardStats(),
+      getRecentActivity(),
+      getUserDisplayName(),
+      getUserByClerkId(userId),
+    ]);
   return (
     <div className="min-h-screen bg-gradient-to-br from-purple-50 via-white to-cyan-50 dark:from-gray-900 dark:via-purple-900/20 dark:to-gray-900">
       <div className="container mx-auto px-4 py-8">
@@ -268,6 +276,19 @@ async function Dashboard() {
             some music together.
           </p>
         </div>
+
+        {/* Post Creation Section */}
+        {currentUser && (
+          <PostCreationSection
+            currentUser={{
+              id: currentUser.id,
+              username: currentUser.username,
+              displayName: currentUser.displayName,
+              profileImageUrl: currentUser.profileImageUrl,
+              isPremium: false,
+            }}
+          />
+        )}
 
         {/* Quick Stats */}
         <div className="mb-8 grid gap-6 md:grid-cols-2 lg:grid-cols-4">
